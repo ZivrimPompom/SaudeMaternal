@@ -3,38 +3,87 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useSearch } from '@/context/SearchContext';
+import { supabase } from '@/lib/supabase';
 
 interface Operator {
-  id: string;
-  name: string;
+  nome: string;
   cpf: string;
   status: 'Ativo' | 'Bloqueado';
-  initials: string;
+  sigla: string;
 }
 
 export default function OperadoresPage() {
   const { searchQuery } = useSearch();
-  const [operators, setOperators] = useState<Operator[]>([
-    { id: '1', name: 'Alice Becker', cpf: '123.456.789-01', status: 'Ativo', initials: 'AB' },
-    { id: '2', name: 'Julian Morris', cpf: '987.654.321-00', status: 'Ativo', initials: 'JM' },
-    { id: '3', name: 'Cassandra Hook', cpf: '555.444.333-22', status: 'Bloqueado', initials: 'CH' },
-    { id: '4', name: 'Ricardo Pereira', cpf: '222.333.444-55', status: 'Ativo', initials: 'RP' },
-  ]);
+  const [operators, setOperators] = useState<Operator[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredOperators = operators.filter(op => 
-    op.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    op.cpf.replace(/\D/g, '').includes(searchQuery.replace(/\D/g, ''))
-  );
+  useEffect(() => {
+    let isMounted = true;
+    const loadOperators = async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('operadores')
+        .select('*')
+        .order('nome');
+      
+      if (isMounted) {
+        if (error) {
+          console.error('Error fetching operators:', error);
+        } else if (data) {
+          setOperators(data as Operator[]);
+        }
+        setLoading(false);
+      }
+    };
+    loadOperators();
+    return () => { isMounted = false; };
+  }, []);
+
+  const fetchOperators = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('operadores')
+      .select('*')
+      .order('nome');
+    
+    if (error) {
+      console.error('Error fetching operators:', error);
+    } else if (data) {
+      setOperators(data as Operator[]);
+    }
+    setLoading(false);
+  };
+
+  const filteredOperators = operators.filter(op => {
+    const query = searchQuery.toLowerCase().trim();
+    if (!query) return true;
+
+    // Normaliza para remover acentos (ex: 'João' vira 'Joao')
+    const normalize = (str: string) => 
+      str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+    const nome = normalize(op.nome);
+    const cpf = op.cpf.replace(/\D/g, '');
+    const sigla = normalize(op.sigla);
+    
+    const queryNormalizada = normalize(query);
+    const queryNumeros = query.replace(/\D/g, '');
+
+    return (
+      nome.includes(queryNormalizada) ||
+      sigla.includes(queryNormalizada) ||
+      (queryNumeros !== '' && cpf.includes(queryNumeros))
+    );
+  });
 
   const [formData, setFormData] = useState({
-    name: '',
+    nome: '',
     cpf: '',
-    password: '',
+    senha: '',
     status: 'Ativo' as 'Ativo' | 'Bloqueado'
   });
 
-  const [editingId, setEditingId] = useState<string | null>(null);
-
+  const [editingId, setEditingId] = useState<string | null>(null); // Now stores the CPF
   const [error, setError] = useState<string | null>(null);
 
   const formatCPF = (value: string) => {
@@ -62,11 +111,11 @@ export default function OperadoresPage() {
       .substring(0, 2);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    if (!formData.name.trim()) {
+    if (!formData.nome.trim()) {
       setError('O nome é obrigatório.');
       return;
     }
@@ -76,45 +125,60 @@ export default function OperadoresPage() {
       return;
     }
 
-    if (!editingId && !formData.password) {
+    if (!editingId && !formData.senha) {
       setError('A senha é obrigatória para novos operadores.');
       return;
     }
 
+    const operatorData = {
+      nome: formData.nome,
+      cpf: formData.cpf,
+      status: formData.status,
+      sigla: getInitials(formData.nome),
+      ...(formData.senha ? { senha: formData.senha } : {})
+    };
+
     if (editingId) {
-      setOperators(prev => prev.map(op => 
-        op.id === editingId 
-          ? { ...op, name: formData.name, cpf: formData.cpf, status: formData.status, initials: getInitials(formData.name) }
-          : op
-      ));
+      const { error: updateError } = await supabase
+        .from('operadores')
+        .update(operatorData)
+        .eq('cpf', editingId);
+
+      if (updateError) {
+        console.error('Erro detalhado Supabase (Update):', updateError);
+        setError(`Erro ao atualizar: ${updateError.message} (Código: ${updateError.code})`);
+        return;
+      }
       setEditingId(null);
     } else {
-      const newOp: Operator = {
-        id: Math.random().toString(36).substring(2, 11),
-        name: formData.name,
-        cpf: formData.cpf,
-        status: formData.status,
-        initials: getInitials(formData.name)
-      };
-      setOperators(prev => [...prev, newOp]);
+      const { error: insertError } = await supabase
+        .from('operadores')
+        .insert([operatorData]);
+
+      if (insertError) {
+        console.error('Erro detalhado Supabase (Insert):', insertError);
+        setError(`Erro ao salvar: ${insertError.message} (Código: ${insertError.code})`);
+        return;
+      }
     }
 
-    setFormData({ name: '', cpf: '', password: '', status: 'Ativo' });
+    setFormData({ nome: '', cpf: '', senha: '', status: 'Ativo' });
+    fetchOperators();
   };
 
   const handleEdit = (op: Operator) => {
-    setEditingId(op.id);
+    setEditingId(op.cpf);
     setFormData({
-      name: op.name,
+      nome: op.nome,
       cpf: op.cpf,
-      password: '', // Password usually not shown
+      senha: '', // Password usually not shown
       status: op.status
     });
   };
 
   const cancelEdit = () => {
     setEditingId(null);
-    setFormData({ name: '', cpf: '', password: '', status: 'Ativo' });
+    setFormData({ nome: '', cpf: '', senha: '', status: 'Ativo' });
     setError(null);
   };
 
@@ -149,9 +213,9 @@ export default function OperadoresPage() {
                     className="w-full bg-surface-container-low border-b-2 border-transparent focus:border-primary focus:ring-0 rounded-t-lg px-4 py-3 transition-all font-body" 
                     placeholder="Ex: Jean Luc Picard" 
                     type="text" 
-                    value={formData.name}
+                    value={formData.nome}
                     onChange={(e) => {
-                      setFormData({ ...formData, name: e.target.value });
+                      setFormData({ ...formData, nome: e.target.value });
                       setError(null);
                     }}
                     required
@@ -175,9 +239,9 @@ export default function OperadoresPage() {
                     className="w-full bg-surface-container-low border-b-2 border-transparent focus:border-primary focus:ring-0 rounded-t-lg px-4 py-3 transition-all font-body" 
                     placeholder={editingId ? "Deixe em branco para manter" : "••••••••"} 
                     type="password" 
-                    value={formData.password}
+                    value={formData.senha}
                     onChange={(e) => {
-                      setFormData({ ...formData, password: e.target.value });
+                      setFormData({ ...formData, senha: e.target.value });
                       setError(null);
                     }}
                     required={!editingId}
@@ -199,7 +263,7 @@ export default function OperadoresPage() {
                     <span className="material-symbols-outlined text-sm">{editingId ? 'edit' : 'save'}</span>
                     {editingId ? 'Atualizar Operador' : 'Salvar Operador'}
                   </button>
-                  {(editingId || formData.name || formData.cpf || formData.password) && (
+                  {(editingId || formData.nome || formData.cpf || formData.senha) && (
                     <button 
                       type="button"
                       onClick={cancelEdit}
@@ -233,7 +297,17 @@ export default function OperadoresPage() {
                 <span className="bg-tertiary-container text-on-tertiary-container px-3 py-1 rounded-full text-[10px] font-bold font-label uppercase tracking-widest">{filteredOperators.length} Registros</span>
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
+                {loading ? (
+                  <div className="p-12 text-center text-slate-400 font-body">
+                    <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+                    Carregando operadores...
+                  </div>
+                ) : filteredOperators.length === 0 ? (
+                  <div className="p-12 text-center text-slate-400 font-body">
+                    Nenhum operador encontrado.
+                  </div>
+                ) : (
+                  <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-surface-container-low/50">
                       <th className="px-8 py-4 text-[11px] font-black uppercase tracking-widest text-on-surface-variant font-label">Nome</th>
@@ -245,11 +319,11 @@ export default function OperadoresPage() {
                   </thead>
                   <tbody className="divide-y divide-surface-container-low">
                     {filteredOperators.map((op) => (
-                      <tr key={op.id} className="hover:bg-surface-container-low transition-colors group">
+                      <tr key={op.cpf} className="hover:bg-surface-container-low transition-colors group">
                         <td className="px-8 py-5">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-500">{op.initials}</div>
-                            <p className="font-semibold text-on-surface text-sm">{op.name}</p>
+                            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-500">{op.sigla}</div>
+                            <p className="font-semibold text-on-surface text-sm">{op.nome}</p>
                           </div>
                         </td>
                         <td className="px-6 py-5 text-sm font-body text-secondary">{op.cpf}</td>
@@ -276,6 +350,7 @@ export default function OperadoresPage() {
                     ))}
                   </tbody>
                 </table>
+                )}
               </div>
             </div>
 
