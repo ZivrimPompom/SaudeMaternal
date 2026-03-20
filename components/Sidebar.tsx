@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 
 interface SubItem {
   name: string;
@@ -18,7 +19,10 @@ interface MenuItem {
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { operator } = useAuth();
   const [openMenus, setOpenMenus] = useState<string[]>(['Cadastros']);
+
+  if (!operator) return null;
 
   const toggleMenu = (name: string) => {
     setOpenMenus((prev) =>
@@ -122,11 +126,11 @@ export default function Sidebar() {
       <div className="mt-auto pt-8 border-t border-slate-200/50 dark:border-slate-800 space-y-1">
         <Link href="#" className="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors duration-200 font-headline text-sm font-semibold tracking-tight">
           <span className="material-symbols-outlined">settings</span>
-          <span>Settings</span>
+          <span>Configurações</span>
         </Link>
         <Link href="#" className="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors duration-200 font-headline text-sm font-semibold tracking-tight">
           <span className="material-symbols-outlined">help_outline</span>
-          <span>Support</span>
+          <span>Suporte</span>
         </Link>
       </div>
     </aside>

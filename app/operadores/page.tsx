@@ -6,11 +6,11 @@ import { useSearch } from '@/context/SearchContext';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
 interface Operator {
-  nome: string;
+  id: string;
+  name: string;
   cpf: string;
   status: 'Ativo' | 'Bloqueado';
-  nivel_acesso: 'Usuário' | 'Administrador';
-  sigla: string;
+  initials: string;
 }
 
 export default function OperadoresPage() {
@@ -25,18 +25,41 @@ export default function OperadoresPage() {
     let isMounted = true;
     const loadOperators = async () => {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('operadores')
-        .select('*')
-        .order('nome');
-      
-      if (isMounted) {
-        if (error) {
-          console.error('Error fetching operators:', error);
-        } else if (data) {
-          setOperators(data as Operator[]);
+      try {
+        // Tenta buscar ordenando por 'name' ou 'nome'
+        let result = await supabase
+          .from('operadores')
+          .select('*')
+          .order('name', { ascending: true });
+        
+        if (result.error) {
+          // Se falhar por causa da coluna 'name', tenta 'nome'
+          result = await supabase
+            .from('operadores')
+            .select('*')
+            .order('nome', { ascending: true });
         }
-        setLoading(false);
+
+        if (isMounted) {
+          if (result.error) {
+            console.error('Erro ao buscar operadores:', result.error);
+            setError(`Erro ao carregar dados: ${result.error.message}`);
+          } else if (result.data) {
+            // Mapeia os dados para garantir que usem as chaves esperadas pela interface Operator
+            const mappedData = result.data.map((item: any) => ({
+              id: item.id,
+              name: item.name || item.nome || 'Sem Nome',
+              cpf: item.cpf,
+              status: item.status || 'Ativo',
+              initials: item.initials || item.sigla || (item.name || item.nome || '??').substring(0, 2).toUpperCase()
+            }));
+            setOperators(mappedData as Operator[]);
+          }
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error('Erro inesperado:', err);
+        if (isMounted) setLoading(false);
       }
     };
     loadOperators();
@@ -46,17 +69,37 @@ export default function OperadoresPage() {
   const fetchOperators = async () => {
     if (!isSupabaseConfigured) return;
     setLoading(true);
-    const { data, error } = await supabase
-      .from('operadores')
-      .select('*')
-      .order('nome');
-    
-    if (error) {
-      console.error('Error fetching operators:', error);
-    } else if (data) {
-      setOperators(data as Operator[]);
+    try {
+      let result = await supabase
+        .from('operadores')
+        .select('*')
+        .order('name', { ascending: true });
+      
+      if (result.error) {
+        result = await supabase
+          .from('operadores')
+          .select('*')
+          .order('nome', { ascending: true });
+      }
+
+      if (result.error) {
+        console.error('Erro ao buscar operadores:', result.error);
+        setError(`Erro ao carregar dados: ${result.error.message}`);
+      } else if (result.data) {
+        const mappedData = result.data.map((item: any) => ({
+          id: item.id,
+          name: item.name || item.nome || 'Sem Nome',
+          cpf: item.cpf,
+          status: item.status || 'Ativo',
+          initials: item.initials || item.sigla || (item.name || item.nome || '??').substring(0, 2).toUpperCase()
+        }));
+        setOperators(mappedData as Operator[]);
+      }
+    } catch (err) {
+      console.error('Erro inesperado:', err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const filteredOperators = operators.filter(op => {
@@ -67,26 +110,25 @@ export default function OperadoresPage() {
     const normalize = (str: string) => 
       str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
-    const nome = normalize(op.nome);
+    const name = normalize(op.name);
     const cpf = op.cpf.replace(/\D/g, '');
-    const sigla = normalize(op.sigla);
+    const initials = normalize(op.initials);
     
     const queryNormalizada = normalize(query);
     const queryNumeros = query.replace(/\D/g, '');
 
     return (
-      nome.includes(queryNormalizada) ||
-      sigla.includes(queryNormalizada) ||
+      name.includes(queryNormalizada) ||
+      initials.includes(queryNormalizada) ||
       (queryNumeros !== '' && cpf.includes(queryNumeros))
     );
   });
 
   const [formData, setFormData] = useState({
-    nome: '',
+    name: '',
     cpf: '',
-    senha: '',
-    status: 'Ativo' as 'Ativo' | 'Bloqueado',
-    nivel_acesso: 'Usuário' as 'Usuário' | 'Administrador'
+    password: '',
+    status: 'Ativo' as 'Ativo' | 'Bloqueado'
   });
 
   const [editingId, setEditingId] = useState<string | null>(null); // Now stores the CPF
@@ -126,7 +168,7 @@ export default function OperadoresPage() {
       return;
     }
 
-    if (!formData.nome.trim()) {
+    if (!formData.name.trim()) {
       setError('O nome é obrigatório.');
       return;
     }
@@ -136,62 +178,89 @@ export default function OperadoresPage() {
       return;
     }
 
-    if (!editingId && !formData.senha) {
+    if (!editingId && !formData.password) {
       setError('A senha é obrigatória para novos operadores.');
       return;
     }
 
-    const operatorData = {
-      nome: formData.nome,
+    const operatorData: any = {
       cpf: formData.cpf,
       status: formData.status,
-      nivel_acesso: formData.nivel_acesso,
-      sigla: getInitials(formData.nome),
-      ...(formData.senha ? { senha: formData.senha } : {})
+    };
+
+    // Tenta descobrir quais colunas usar baseado no que já carregamos ou tenta ambas
+    // Uma estratégia segura é tentar salvar com um conjunto e se falhar tentar o outro
+    const primaryData = {
+      ...operatorData,
+      name: formData.name,
+      initials: getInitials(formData.name),
+      ...(formData.password ? { password: formData.password } : {})
+    };
+
+    const secondaryData = {
+      ...operatorData,
+      nome: formData.name,
+      sigla: getInitials(formData.name),
+      ...(formData.password ? { senha: formData.password } : {})
     };
 
     if (editingId) {
-      const { error: updateError } = await supabase
+      let { error: updateError } = await supabase
         .from('operadores')
-        .update(operatorData)
+        .update(primaryData)
         .eq('cpf', editingId);
+
+      if (updateError && updateError.message.includes('column')) {
+        // Tenta com os nomes em português se falhar por coluna inexistente
+        const { error: retryError } = await supabase
+          .from('operadores')
+          .update(secondaryData)
+          .eq('cpf', editingId);
+        updateError = retryError;
+      }
 
       if (updateError) {
         console.error('Erro detalhado Supabase (Update):', updateError);
-        setError(`Erro ao atualizar: ${updateError.message} (Código: ${updateError.code})`);
+        setError(`Erro ao atualizar: ${updateError.message}`);
         return;
       }
       setEditingId(null);
     } else {
-      const { error: insertError } = await supabase
+      let { error: insertError } = await supabase
         .from('operadores')
-        .insert([operatorData]);
+        .insert([primaryData]);
+
+      if (insertError && insertError.message.includes('column')) {
+        const { error: retryError } = await supabase
+          .from('operadores')
+          .insert([secondaryData]);
+        insertError = retryError;
+      }
 
       if (insertError) {
         console.error('Erro detalhado Supabase (Insert):', insertError);
-        setError(`Erro ao salvar: ${insertError.message} (Código: ${insertError.code})`);
+        setError(`Erro ao salvar: ${insertError.message}`);
         return;
       }
     }
 
-    setFormData({ nome: '', cpf: '', senha: '', status: 'Ativo', nivel_acesso: 'Usuário' });
+    setFormData({ name: '', cpf: '', password: '', status: 'Ativo' });
     fetchOperators();
   };
 
   const handleEdit = (op: Operator) => {
     setEditingId(op.cpf);
     setFormData({
-      nome: op.nome,
+      name: op.name,
       cpf: op.cpf,
-      senha: '', // Password usually not shown
-      status: op.status,
-      nivel_acesso: op.nivel_acesso
+      password: '', // Password usually not shown
+      status: op.status
     });
   };
 
   const cancelEdit = () => {
     setEditingId(null);
-    setFormData({ nome: '', cpf: '', senha: '', status: 'Ativo', nivel_acesso: 'Usuário' });
+    setFormData({ name: '', cpf: '', password: '', status: 'Ativo' });
     setError(null);
   };
 
@@ -205,6 +274,16 @@ export default function OperadoresPage() {
         </header>
 
         {/* Layout Grid: Bento Style */}
+        {!isSupabaseConfigured && (
+          <div className="bg-error/10 border border-error/20 p-6 rounded-xl text-error mb-8">
+            <h4 className="font-bold flex items-center gap-2">
+              <span className="material-symbols-outlined">warning</span>
+              Supabase não configurado
+            </h4>
+            <p className="text-sm mt-2">As variáveis de ambiente NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY não foram encontradas ou são inválidas. O sistema não poderá carregar ou salvar dados.</p>
+          </div>
+        )}
+
         <div className="grid grid-cols-12 gap-8">
           {/* Form Section */}
           <section className="col-span-12 lg:col-span-4 space-y-6">
@@ -226,9 +305,9 @@ export default function OperadoresPage() {
                     className="w-full bg-surface-container-low border-b-2 border-transparent focus:border-primary focus:ring-0 rounded-t-lg px-4 py-3 transition-all font-body" 
                     placeholder="Ex: Jean Luc Picard" 
                     type="text" 
-                    value={formData.nome}
+                    value={formData.name}
                     onChange={(e) => {
-                      setFormData({ ...formData, nome: e.target.value });
+                      setFormData({ ...formData, name: e.target.value });
                       setError(null);
                     }}
                     required
@@ -247,17 +326,6 @@ export default function OperadoresPage() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant font-label">Nível de Acesso</label>
-                  <select 
-                    className="w-full bg-surface-container-low border-b-2 border-transparent focus:border-primary focus:ring-0 rounded-t-lg px-4 py-3 transition-all font-body appearance-none"
-                    value={formData.nivel_acesso}
-                    onChange={(e) => setFormData({ ...formData, nivel_acesso: e.target.value as 'Usuário' | 'Administrador' })}
-                  >
-                    <option value="Usuário">Usuário</option>
-                    <option value="Administrador">Administrador</option>
-                  </select>
-                </div>
-                <div className="space-y-1">
                   <label className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant font-label">Status</label>
                   <select 
                     className="w-full bg-surface-container-low border-b-2 border-transparent focus:border-primary focus:ring-0 rounded-t-lg px-4 py-3 transition-all font-body appearance-none"
@@ -274,9 +342,9 @@ export default function OperadoresPage() {
                     className="w-full bg-surface-container-low border-b-2 border-transparent focus:border-primary focus:ring-0 rounded-t-lg px-4 py-3 transition-all font-body" 
                     placeholder={editingId ? "Deixe em branco para manter" : "••••••••"} 
                     type="password" 
-                    value={formData.senha}
+                    value={formData.password}
                     onChange={(e) => {
-                      setFormData({ ...formData, senha: e.target.value });
+                      setFormData({ ...formData, password: e.target.value });
                       setError(null);
                     }}
                     required={!editingId}
@@ -287,7 +355,7 @@ export default function OperadoresPage() {
                     <span className="material-symbols-outlined text-sm">{editingId ? 'edit' : 'save'}</span>
                     {editingId ? 'Atualizar Operador' : 'Salvar Operador'}
                   </button>
-                  {(editingId || formData.nome || formData.cpf || formData.senha) && (
+                  {(editingId || formData.name || formData.cpf || formData.password) && (
                     <button 
                       type="button"
                       onClick={cancelEdit}
@@ -334,46 +402,40 @@ export default function OperadoresPage() {
                   <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-surface-container-low/50">
-                      <th className="px-8 py-4 text-[11px] font-black uppercase tracking-widest text-on-surface-variant font-label">Nome</th>
-                      <th className="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-on-surface-variant font-label">CPF</th>
-                      <th className="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-on-surface-variant font-label">Acesso</th>
-                      <th className="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-on-surface-variant font-label">Status</th>
-                      <th className="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-on-surface-variant font-label">Senha</th>
-                      <th className="px-8 py-4 text-[11px] font-black uppercase tracking-widest text-on-surface-variant font-label text-right">Ações</th>
+                      <th className="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-on-surface-variant font-label">Nome</th>
+                      <th className="px-4 py-4 text-[11px] font-black uppercase tracking-widest text-on-surface-variant font-label">CPF</th>
+                      <th className="px-4 py-4 text-[11px] font-black uppercase tracking-widest text-on-surface-variant font-label">Status</th>
+                      <th className="px-4 py-4 text-[11px] font-black uppercase tracking-widest text-on-surface-variant font-label">Senha</th>
+                      <th className="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-on-surface-variant font-label text-right">Ação</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-surface-container-low">
                     {filteredOperators.map((op) => (
                       <tr key={op.cpf} className="hover:bg-surface-container-low transition-colors group">
-                        <td className="px-8 py-5">
+                        <td className="px-6 py-5">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-500">{op.sigla}</div>
-                            <p className="font-semibold text-on-surface text-sm">{op.nome}</p>
+                            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-500">{op.initials}</div>
+                            <p className="font-semibold text-on-surface text-sm">{op.name}</p>
                           </div>
                         </td>
-                        <td className="px-6 py-5 text-sm font-body text-secondary">{op.cpf}</td>
-                        <td className="px-6 py-5">
-                          <span className="text-xs font-medium text-on-surface-variant bg-surface-container-high px-2 py-1 rounded">
-                            {op.nivel_acesso}
-                          </span>
-                        </td>
-                        <td className="px-6 py-5">
+                        <td className="px-4 py-5 text-sm font-body text-secondary">{op.cpf}</td>
+                        <td className="px-4 py-5">
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tighter ${
                             op.status === 'Ativo' ? 'bg-green-100 text-green-700' : 'bg-error-container text-on-error-container'
                           }`}>
                             {op.status}
                           </span>
                         </td>
-                        <td className="px-6 py-5">
+                        <td className="px-4 py-5">
                           <span className="text-slate-300 tracking-widest">••••••••</span>
                         </td>
-                        <td className="px-8 py-5 text-right">
+                        <td className="px-6 py-5 text-right">
                           <button 
                             onClick={() => handleEdit(op)}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all text-[10px] font-bold uppercase tracking-wider group-hover:scale-105"
+                            title="Editar Operador"
+                            className="w-8 h-8 inline-flex items-center justify-center rounded-full bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all group-hover:scale-110 shadow-sm"
                           >
-                            <span className="material-symbols-outlined text-sm">edit</span>
-                            Editar
+                            <span className="material-symbols-outlined text-lg">edit</span>
                           </button>
                         </td>
                       </tr>
