@@ -3,25 +3,32 @@
 import React from 'react';
 import Image from 'next/image';
 import { useSearch } from '@/context/SearchContext';
+import { usePathname } from 'next/navigation';
 
 export default function TopBar() {
   const { searchQuery, setSearchQuery } = useSearch();
+  const pathname = usePathname();
+  const isHomePage = pathname === '/';
 
   return (
     <header className="fixed top-0 right-0 w-[calc(100%-16rem)] h-16 z-40 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-100 dark:border-slate-800/50 flex justify-between items-center px-8">
       <div className="flex items-center gap-4">
-        <span className="text-lg font-black text-orange-600 dark:text-orange-500 font-headline">Nome ou CPF</span>
-        <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-2"></div>
-        <div className="flex items-center bg-surface-container rounded-full px-4 py-1.5 gap-2 w-64">
-          <span className="material-symbols-outlined text-slate-400 text-sm">search</span>
-          <input 
-            className="bg-transparent border-none text-sm focus:ring-0 placeholder-slate-400 w-full font-body" 
-            placeholder="Nome ou CPF..." 
-            type="text" 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
+        {!isHomePage && (
+          <>
+            <span className="text-lg font-black text-orange-600 dark:text-orange-500 font-headline">Nome ou CPF</span>
+            <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-2"></div>
+            <div className="flex items-center bg-surface-container rounded-full px-4 py-1.5 gap-2 w-64">
+              <span className="material-symbols-outlined text-slate-400 text-sm">search</span>
+              <input 
+                className="bg-transparent border-none text-sm focus:ring-0 placeholder-slate-400 w-full font-body" 
+                placeholder="Nome ou CPF..." 
+                type="text" 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+          </>
+        )}
       </div>
       <div className="flex items-center gap-6">
         <div className="flex items-center gap-4">

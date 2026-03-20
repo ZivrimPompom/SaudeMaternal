@@ -9,17 +9,17 @@ interface Operator {
   nome: string;
   cpf: string;
   status: 'Ativo' | 'Bloqueado';
+  nivel_acesso: 'Usuário' | 'Administrador';
   sigla: string;
 }
 
 export default function OperadoresPage() {
   const { searchQuery } = useSearch();
   const [operators, setOperators] = useState<Operator[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(isSupabaseConfigured);
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
-      setLoading(false);
       return;
     }
     let isMounted = true;
@@ -85,7 +85,8 @@ export default function OperadoresPage() {
     nome: '',
     cpf: '',
     senha: '',
-    status: 'Ativo' as 'Ativo' | 'Bloqueado'
+    status: 'Ativo' as 'Ativo' | 'Bloqueado',
+    nivel_acesso: 'Usuário' as 'Usuário' | 'Administrador'
   });
 
   const [editingId, setEditingId] = useState<string | null>(null); // Now stores the CPF
@@ -144,6 +145,7 @@ export default function OperadoresPage() {
       nome: formData.nome,
       cpf: formData.cpf,
       status: formData.status,
+      nivel_acesso: formData.nivel_acesso,
       sigla: getInitials(formData.nome),
       ...(formData.senha ? { senha: formData.senha } : {})
     };
@@ -172,7 +174,7 @@ export default function OperadoresPage() {
       }
     }
 
-    setFormData({ nome: '', cpf: '', senha: '', status: 'Ativo' });
+    setFormData({ nome: '', cpf: '', senha: '', status: 'Ativo', nivel_acesso: 'Usuário' });
     fetchOperators();
   };
 
@@ -182,13 +184,14 @@ export default function OperadoresPage() {
       nome: op.nome,
       cpf: op.cpf,
       senha: '', // Password usually not shown
-      status: op.status
+      status: op.status,
+      nivel_acesso: op.nivel_acesso
     });
   };
 
   const cancelEdit = () => {
     setEditingId(null);
-    setFormData({ nome: '', cpf: '', senha: '', status: 'Ativo' });
+    setFormData({ nome: '', cpf: '', senha: '', status: 'Ativo', nivel_acesso: 'Usuário' });
     setError(null);
   };
 
@@ -244,6 +247,28 @@ export default function OperadoresPage() {
                   />
                 </div>
                 <div className="space-y-1">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant font-label">Nível de Acesso</label>
+                  <select 
+                    className="w-full bg-surface-container-low border-b-2 border-transparent focus:border-primary focus:ring-0 rounded-t-lg px-4 py-3 transition-all font-body appearance-none"
+                    value={formData.nivel_acesso}
+                    onChange={(e) => setFormData({ ...formData, nivel_acesso: e.target.value as 'Usuário' | 'Administrador' })}
+                  >
+                    <option value="Usuário">Usuário</option>
+                    <option value="Administrador">Administrador</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant font-label">Status</label>
+                  <select 
+                    className="w-full bg-surface-container-low border-b-2 border-transparent focus:border-primary focus:ring-0 rounded-t-lg px-4 py-3 transition-all font-body appearance-none"
+                    value={formData.status}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value as 'Ativo' | 'Bloqueado' })}
+                  >
+                    <option value="Ativo">Ativo</option>
+                    <option value="Bloqueado">Bloqueado</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
                   <label className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant font-label">Senha</label>
                   <input 
                     className="w-full bg-surface-container-low border-b-2 border-transparent focus:border-primary focus:ring-0 rounded-t-lg px-4 py-3 transition-all font-body" 
@@ -256,17 +281,6 @@ export default function OperadoresPage() {
                     }}
                     required={!editingId}
                   />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant font-label">Status</label>
-                  <select 
-                    className="w-full bg-surface-container-low border-b-2 border-transparent focus:border-primary focus:ring-0 rounded-t-lg px-4 py-3 transition-all font-body appearance-none"
-                    value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value as 'Ativo' | 'Bloqueado' })}
-                  >
-                    <option value="Ativo">Ativo</option>
-                    <option value="Bloqueado">Bloqueado</option>
-                  </select>
                 </div>
                 <div className="pt-4 space-y-3">
                   <button className="w-full bg-gradient-to-r from-primary to-primary-container text-white font-bold py-4 rounded-lg shadow-lg shadow-primary/10 hover:opacity-90 transition-opacity flex items-center justify-center gap-2 font-headline uppercase tracking-wide text-sm" type="submit">
@@ -322,8 +336,9 @@ export default function OperadoresPage() {
                     <tr className="bg-surface-container-low/50">
                       <th className="px-8 py-4 text-[11px] font-black uppercase tracking-widest text-on-surface-variant font-label">Nome</th>
                       <th className="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-on-surface-variant font-label">CPF</th>
-                      <th className="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-on-surface-variant font-label">Senha</th>
+                      <th className="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-on-surface-variant font-label">Acesso</th>
                       <th className="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-on-surface-variant font-label">Status</th>
+                      <th className="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-on-surface-variant font-label">Senha</th>
                       <th className="px-8 py-4 text-[11px] font-black uppercase tracking-widest text-on-surface-variant font-label text-right">Ações</th>
                     </tr>
                   </thead>
@@ -338,7 +353,9 @@ export default function OperadoresPage() {
                         </td>
                         <td className="px-6 py-5 text-sm font-body text-secondary">{op.cpf}</td>
                         <td className="px-6 py-5">
-                          <span className="text-slate-300 tracking-widest">••••••••</span>
+                          <span className="text-xs font-medium text-on-surface-variant bg-surface-container-high px-2 py-1 rounded">
+                            {op.nivel_acesso}
+                          </span>
                         </td>
                         <td className="px-6 py-5">
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tighter ${
@@ -346,6 +363,9 @@ export default function OperadoresPage() {
                           }`}>
                             {op.status}
                           </span>
+                        </td>
+                        <td className="px-6 py-5">
+                          <span className="text-slate-300 tracking-widest">••••••••</span>
                         </td>
                         <td className="px-8 py-5 text-right">
                           <button 
