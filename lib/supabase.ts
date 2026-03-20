@@ -13,13 +13,21 @@ const getValidSupabaseUrl = (url: string | undefined): string => {
   return 'https://placeholder.supabase.co';
 };
 
-const supabaseUrl = getValidSupabaseUrl(process.env.NEXT_PUBLIC_SUPABASE_URL);
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder';
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-  if (process.env.NODE_ENV !== 'production') {
-    console.warn('Supabase credentials are missing or invalid. Check your .env file.');
-  }
+if (!supabaseUrl || supabaseUrl.includes('placeholder')) {
+  console.error('CRÍTICO: NEXT_PUBLIC_SUPABASE_URL não configurada ou inválida!');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(
+  supabaseUrl || 'https://placeholder.supabase.co', 
+  supabaseAnonKey || 'placeholder'
+);
+
+export const isSupabaseConfigured = Boolean(
+  supabaseUrl && 
+  !supabaseUrl.includes('placeholder') && 
+  supabaseAnonKey && 
+  supabaseAnonKey !== 'placeholder'
+);

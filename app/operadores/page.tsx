@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useSearch } from '@/context/SearchContext';
-import { supabase } from '@/lib/supabase';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
 interface Operator {
   nome: string;
@@ -18,6 +18,10 @@ export default function OperadoresPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!isSupabaseConfigured) {
+      setLoading(false);
+      return;
+    }
     let isMounted = true;
     const loadOperators = async () => {
       setLoading(true);
@@ -40,6 +44,7 @@ export default function OperadoresPage() {
   }, []);
 
   const fetchOperators = async () => {
+    if (!isSupabaseConfigured) return;
     setLoading(true);
     const { data, error } = await supabase
       .from('operadores')
@@ -114,6 +119,11 @@ export default function OperadoresPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    if (!isSupabaseConfigured) {
+      setError('Configuração do Supabase ausente na Vercel. Verifique as Environment Variables.');
+      return;
+    }
 
     if (!formData.nome.trim()) {
       setError('O nome é obrigatório.');
