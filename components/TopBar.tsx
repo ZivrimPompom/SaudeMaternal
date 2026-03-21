@@ -12,7 +12,23 @@ export default function TopBar() {
   const { user, signOut } = useAuth();
   const pathname = usePathname();
   const isHomePage = pathname === '/';
+  const isCategoriesPage = pathname === '/categorias';
+  const isProfessionalsPage = pathname === '/profissionais';
+  const isOperatorsPage = pathname === '/operadores';
+  
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+
+  const getSearchLabel = () => {
+    if (isCategoriesPage) return 'CBO ou Categoria';
+    if (isProfessionalsPage) return 'Nome, CPF ou CNS';
+    return 'Nome ou CPF';
+  };
+
+  const getSearchPlaceholder = () => {
+    if (isCategoriesPage) return 'CBO ou Categoria...';
+    if (isProfessionalsPage) return 'Nome, CPF ou CNS...';
+    return 'Nome ou CPF...';
+  };
 
   const userName = user?.nome || 'Usuário';
   const userRole = user?.nivel_acesso || 'Operador';
@@ -23,13 +39,13 @@ export default function TopBar() {
       <div className="flex items-center gap-4">
         {!isHomePage && (
           <>
-            <span className="text-lg font-black text-orange-600 dark:text-orange-500 font-headline">Nome ou CPF</span>
+            <span className="text-lg font-black text-orange-600 dark:text-orange-500 font-headline">{getSearchLabel()}</span>
             <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-2"></div>
             <div className="flex items-center bg-surface-container rounded-full px-4 py-1.5 gap-2 w-64">
               <span className="material-symbols-outlined text-slate-400 text-sm">search</span>
               <input 
                 className="bg-transparent border-none text-sm focus:ring-0 placeholder-slate-400 w-full font-body" 
-                placeholder="Nome ou CPF..." 
+                placeholder={getSearchPlaceholder()} 
                 type="text" 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}

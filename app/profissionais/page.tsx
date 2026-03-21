@@ -108,10 +108,12 @@ export default function ProfissionaisPage() {
     const queryNormalizada = normalize(query);
     const queryDigits = query.replace(/\D/g, '');
 
-    return nome.includes(queryNormalizada) || 
-           cpf.includes(queryDigits) || 
-           cns.includes(queryDigits) ||
-           categoria.includes(queryNormalizada);
+    const matchesNome = nome.includes(queryNormalizada);
+    const matchesCpf = queryDigits !== '' && cpf.includes(queryDigits);
+    const matchesCns = queryDigits !== '' && cns.includes(queryDigits);
+    const matchesCategoria = categoria.includes(queryNormalizada);
+
+    return matchesNome || matchesCpf || matchesCns || matchesCategoria;
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
