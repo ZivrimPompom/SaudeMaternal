@@ -1,31 +1,44 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
 import TopBar from '@/components/TopBar';
 import { useAuth } from '@/context/AuthContext';
-import { Loader2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { LucideLoader2 } from 'lucide-react';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { isLoading, operator } = useAuth();
+  const { user, loading } = useAuth();
+  const router = useRouter();
+  const [mounted, setMounted] = React.useState(false);
 
-  if (isLoading) {
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (mounted && !loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router, mounted]);
+
+  if (!mounted || loading) {
     return (
-      <div className="min-h-screen bg-surface flex items-center justify-center">
-        <Loader2 className="w-10 h-10 text-primary animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-surface">
+        <LucideLoader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
 
-  if (!operator) {
-    return <>{children}</>;
+  if (!user) {
+    return null; // Will redirect in useEffect
   }
 
   return (
     <div className="bg-surface text-on-surface min-h-screen font-body">
       <Sidebar />
       <TopBar />
-      <main className="pl-64 pt-20 min-h-screen">
+      <main className="pl-64 pt-16 min-h-screen pb-24 overflow-y-auto">
         {children}
       </main>
     </div>

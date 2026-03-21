@@ -4,11 +4,12 @@
 -- 1. Create the operators table (Operadores)
 CREATE TABLE IF NOT EXISTS public.operadores (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name TEXT NOT NULL,
+    nome TEXT NOT NULL,
     cpf TEXT UNIQUE NOT NULL,
-    password TEXT NOT NULL, -- In a real app, this would be hashed
+    senha TEXT NOT NULL, -- In a real app, this would be hashed
     status TEXT NOT NULL DEFAULT 'Ativo' CHECK (status IN ('Ativo', 'Bloqueado')),
-    initials TEXT,
+    nivel_acesso TEXT NOT NULL DEFAULT 'Usuário' CHECK (nivel_acesso IN ('Usuário', 'Administrador')),
+    sigla TEXT,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
 );

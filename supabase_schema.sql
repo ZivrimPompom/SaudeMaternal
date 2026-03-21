@@ -7,19 +7,12 @@ CREATE TABLE IF NOT EXISTS public.operadores (
     nome TEXT NOT NULL,
     cpf TEXT UNIQUE NOT NULL,
     senha TEXT NOT NULL, -- In a real app, this would be hashed
-    pin_seguranca TEXT, -- 6-digit security PIN
-    nivel_acesso TEXT NOT NULL DEFAULT 'Usuário' CHECK (nivel_acesso IN ('Usuário', 'Administrador')),
     status TEXT NOT NULL DEFAULT 'Ativo' CHECK (status IN ('Ativo', 'Bloqueado')),
+    nivel_acesso TEXT NOT NULL DEFAULT 'Usuário' CHECK (nivel_acesso IN ('Usuário', 'Administrador')),
     sigla TEXT,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
 );
-
--- Insert a sample user for testing (CPF: 123.456.789-00, Senha: password123, PIN: 1234)
--- Note: In production, passwords and PINs should be hashed.
-INSERT INTO public.operadores (nome, cpf, senha, pin_seguranca, nivel_acesso, status, sigla)
-VALUES ('Administrador Sistema', '123.456.789-00', 'password123', '1234', 'Administrador', 'Ativo', 'ADM')
-ON CONFLICT (cpf) DO NOTHING;
 
 -- 2. Create the patients table (Pacientes) - Essential for Maternal Health
 CREATE TABLE IF NOT EXISTS public.pacientes (

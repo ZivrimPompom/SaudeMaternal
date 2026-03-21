@@ -1,75 +1,91 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { useRouter } from 'next/navigation';
 
 interface Operator {
   id: string;
-  name: string;
+  nome: string;
   cpf: string;
   status: string;
-  initials?: string;
+  sigla: string;
+  nivel_acesso?: string;
 }
 
 interface AuthContextType {
-  operator: Operator | null;
-  login: (operator: Operator) => void;
-  logout: () => void;
-  isLoading: boolean;
+  user: Operator | null;
+  loading: boolean;
+  signInWithCpf: (cpf: string, password: string) => Promise<{ error: string | null }>;
+  signOut: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [operator, setOperator] = useState<Operator | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const router = useRouter();
-  const pathname = usePathname();
-
-  useEffect(() => {
-    // Check for session in localStorage
-    const savedOperator = localStorage.getItem('saude_maternal_operator');
-    let parsed = null;
-    if (savedOperator) {
-      try {
-        parsed = JSON.parse(savedOperator);
-      } catch (e) {
-        console.error('Erro ao ler sessão do operador', e);
-        localStorage.removeItem('saude_maternal_operator');
+  const [user, setUser] = useState<Operator | null>(() => {
+    if (typeof window !== 'undefined') {
+      const savedUser = localStorage.getItem('saude_maternal_user');
+      if (savedUser) {
+        try {
+          return JSON.parse(savedUser);
+        } catch (e) {
+          localStorage.removeItem('saude_maternal_user');
+        }
       }
     }
-    
-    // Update state asynchronously to avoid lint error and ensure consistency
-    setTimeout(() => {
-      if (parsed) setOperator(parsed);
-      setIsLoading(false);
-    }, 0);
+    return null;
+  });
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    // No longer need to set loading to false here
   }, []);
 
-  useEffect(() => {
-    if (!isLoading) {
-      if (!operator && pathname !== '/login') {
-        router.push('/login');
-      } else if (operator && pathname === '/login') {
-        router.push('/');
-      }
-    }
-  }, [operator, isLoading, pathname, router]);
+  const signInWithCpf = async (cpf: string, password: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('operadores')
+        .select('*')
+        .eq('cpf', cpf)
+        .eq('senha', password)
+        .single();
 
-  const login = (newOperator: Operator) => {
-    setOperator(newOperator);
-    localStorage.setItem('saude_maternal_operator', JSON.stringify(newOperator));
-    router.push('/');
+      if (error || !data) {
+        return { error: 'CPF ou senha inválidos.' };
+      }
+
+      if (data.status === 'Bloqueado') {
+        return { error: 'Este usuário está bloqueado.' };
+      }
+
+      const operator: Operator = {
+        id: data.id,
+        nome: data.nome,
+        cpf: data.cpf,
+        status: data.status,
+        sigla: data.sigla,
+        nivel_acesso: data.nivel_acesso
+      };
+
+      setUser(operator);
+      localStorage.setItem('saude_maternal_user', JSON.stringify(operator));
+      router.push('/');
+      return { error: null };
+    } catch (err) {
+      return { error: 'Erro ao conectar com o servidor.' };
+    }
   };
 
-  const logout = () => {
-    setOperator(null);
-    localStorage.removeItem('saude_maternal_operator');
+  const signOut = () => {
+    setUser(null);
+    localStorage.removeItem('saude_maternal_user');
     router.push('/login');
   };
 
   return (
-    <AuthContext.Provider value={{ operator, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, loading, signInWithCpf, signOut }}>
       {children}
     </AuthContext.Provider>
   );
@@ -78,7 +94,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth deve ser usado dentro de um AuthProvider');
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 }

@@ -1,68 +1,79 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
 import { useSearch } from '@/context/SearchContext';
 import { useAuth } from '@/context/AuthContext';
 import { usePathname } from 'next/navigation';
-import { LogOut, Bell, LayoutGrid, Search } from 'lucide-react';
+import { LucideLogOut, LucideUser, LucideChevronDown } from 'lucide-react';
 
 export default function TopBar() {
   const { searchQuery, setSearchQuery } = useSearch();
-  const { operator, logout } = useAuth();
+  const { user, signOut } = useAuth();
   const pathname = usePathname();
   const isHomePage = pathname === '/';
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
-  if (!operator) return null;
+  const userName = user?.nome || 'Usuário';
+  const userRole = user?.nivel_acesso || 'Operador';
+  const userInitials = user?.sigla || userName.substring(0, 2).toUpperCase();
 
   return (
-    <header className="fixed top-0 right-0 w-[calc(100%-16rem)] h-20 z-40 bg-surface-container-lowest/80 backdrop-blur-2xl border-b border-outline-variant/10 flex justify-between items-center px-10">
-      <div className="flex items-center gap-6">
+    <header className="fixed top-0 right-0 w-[calc(100%-16rem)] h-16 z-40 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-100 dark:border-slate-800/50 flex justify-between items-center px-8">
+      <div className="flex items-center gap-4">
         {!isHomePage && (
-          <div className="flex items-center gap-6">
-            <div className="flex flex-col">
-              <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em] leading-none mb-1">Busca Rápida</span>
-              <span className="text-lg font-bold text-on-surface font-headline leading-none">Operadores</span>
-            </div>
-            <div className="h-8 w-px bg-outline-variant/20 mx-2"></div>
-            <div className="flex items-center bg-surface-container-low rounded-2xl px-5 py-2.5 gap-3 w-80 border border-transparent focus-within:border-primary/20 focus-within:bg-white focus-within:ring-4 focus-within:ring-primary/5 transition-all group">
-              <Search className="text-on-surface-variant/40 group-focus-within:text-primary w-4 h-4 transition-colors" />
+          <>
+            <span className="text-lg font-black text-orange-600 dark:text-orange-500 font-headline">Nome ou CPF</span>
+            <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-2"></div>
+            <div className="flex items-center bg-surface-container rounded-full px-4 py-1.5 gap-2 w-64">
+              <span className="material-symbols-outlined text-slate-400 text-sm">search</span>
               <input 
-                className="bg-transparent border-none text-sm focus:ring-0 placeholder-on-surface-variant/30 w-full font-body outline-none" 
-                placeholder="Pesquisar por nome ou CPF..." 
+                className="bg-transparent border-none text-sm focus:ring-0 placeholder-slate-400 w-full font-body" 
+                placeholder="Nome ou CPF..." 
                 type="text" 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-          </div>
+          </>
         )}
       </div>
-      <div className="flex items-center gap-8">
-        <div className="flex items-center gap-3">
-          <button className="w-10 h-10 rounded-xl flex items-center justify-center text-on-surface-variant/60 hover:text-primary hover:bg-primary/5 transition-all relative group">
-            <Bell className="w-5 h-5 group-hover:rotate-12 transition-transform" />
-            <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-primary rounded-full border-2 border-surface-container-lowest"></span>
-          </button>
-          <button className="w-10 h-10 rounded-xl flex items-center justify-center text-on-surface-variant/60 hover:text-primary hover:bg-primary/5 transition-all group">
-            <LayoutGrid className="w-5 h-5 group-hover:scale-110 transition-transform" />
-          </button>
+      <div className="flex items-center gap-6">
+        <div className="flex items-center gap-4">
+          <button className="material-symbols-outlined text-slate-600 dark:text-slate-400 hover:text-orange-600 transition-colors">notifications</button>
+          <button className="material-symbols-outlined text-slate-600 dark:text-slate-400 hover:text-orange-600 transition-colors">apps</button>
         </div>
-        <div className="flex items-center gap-4 border-l border-outline-variant/10 pl-8">
-          <div className="flex flex-col items-end hidden lg:flex">
-            <p className="text-sm font-bold text-on-surface font-headline leading-none mb-1">{operator.name}</p>
-            <p className="text-[10px] text-primary font-black uppercase tracking-widest leading-none">Acesso Master</p>
-          </div>
-          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary to-primary-container flex items-center justify-center text-white font-black text-sm shadow-lg shadow-primary/20 border-2 border-white/20">
-            {operator.initials || operator.name.substring(0, 2).toUpperCase()}
-          </div>
+        
+        <div className="relative">
           <button 
-            onClick={logout}
-            className="p-2.5 rounded-xl hover:bg-error/10 text-on-surface-variant/40 hover:text-error transition-all group"
-            title="Sair do Sistema"
+            onClick={() => setIsProfileOpen(!isProfileOpen)}
+            className="flex items-center gap-3 hover:bg-slate-50 p-1.5 rounded-xl transition-colors"
           >
-            <LogOut className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+            <span className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold text-xs">
+              {userInitials}
+            </span>
+            <span className="hidden lg:block text-left">
+              <span className="block text-xs font-bold leading-none mb-1 capitalize">{userName}</span>
+              <span className="block text-[10px] text-slate-500 leading-none truncate max-w-[120px]">{userRole}</span>
+            </span>
+            <LucideChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`} />
           </button>
+
+          {isProfileOpen && (
+            <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="px-4 py-2 border-b border-slate-50 mb-1">
+                <p className="text-xs font-bold text-slate-900 truncate">{userName}</p>
+                <p className="text-[10px] text-slate-500 truncate">{user?.cpf}</p>
+              </div>
+              <button 
+                onClick={() => signOut()}
+                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+              >
+                <LucideLogOut className="w-4 h-4" />
+                <span>Sair do Sistema</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </header>

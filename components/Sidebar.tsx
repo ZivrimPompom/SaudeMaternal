@@ -3,18 +3,6 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useAuth } from '@/context/AuthContext';
-import { 
-  Home, 
-  UserPlus, 
-  Repeat, 
-  LayoutDashboard, 
-  BarChart3, 
-  ChevronDown, 
-  Settings, 
-  HelpCircle,
-  ShieldCheck
-} from 'lucide-react';
 
 interface SubItem {
   name: string;
@@ -23,17 +11,14 @@ interface SubItem {
 
 interface MenuItem {
   name: string;
-  icon: React.ElementType;
+  icon: string;
   href?: string;
   subItems?: SubItem[];
 }
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const { operator } = useAuth();
   const [openMenus, setOpenMenus] = useState<string[]>(['Cadastros']);
-
-  if (!operator) return null;
 
   const toggleMenu = (name: string) => {
     setOpenMenus((prev) =>
@@ -42,33 +27,32 @@ export default function Sidebar() {
   };
 
   const menuItems: MenuItem[] = [
-    { name: 'Home', icon: Home, href: '/' },
+    { name: 'Home', icon: 'home', href: '/' },
     {
       name: 'Cadastros',
-      icon: UserPlus,
+      icon: 'person_add',
       subItems: [
         { name: 'Operadores', href: '/operadores' },
       ],
     },
-    { name: 'Movimento', icon: Repeat, href: '#' },
-    { name: 'Dashboards', icon: LayoutDashboard, href: '#' },
-    { name: 'Relatórios', icon: BarChart3, href: '#' },
+    { name: 'Movimento', icon: 'sync_alt', href: '#' },
+    { name: 'Dashboards', icon: 'dashboard', href: '#' },
+    { name: 'Relatórios', icon: 'analytics', href: '#' },
   ];
 
   return (
-    <aside className="bg-surface-container-lowest/80 backdrop-blur-2xl h-screen w-64 fixed left-0 top-0 overflow-y-auto flex flex-col py-8 px-4 z-50 border-r border-outline-variant/10 shadow-2xl shadow-black/5">
-      <div className="mb-12 px-3 flex items-center gap-4 group cursor-pointer">
-        <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20 group-hover:rotate-12 transition-transform duration-500">
-          <ShieldCheck className="text-white w-7 h-7" />
+    <aside className="bg-slate-100 dark:bg-slate-900 h-screen w-64 fixed left-0 top-0 overflow-y-auto flex flex-col py-8 px-4 z-50">
+      <div className="mb-10 px-2 flex items-center gap-3">
+        <div className="w-10 h-10 rounded-lg bg-primary-container flex items-center justify-center">
+          <span className="material-symbols-outlined text-white" style={{ fontVariationSettings: '"FILL" 1' }}>health_and_safety</span>
         </div>
         <div>
-          <h1 className="text-xl font-black text-on-surface tracking-tight font-headline leading-none">Saúde Maternal</h1>
-          <p className="text-[9px] uppercase tracking-[0.2em] text-primary font-black mt-1">Curadoria Clínica</p>
+          <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tighter">Saúde Maternal</h1>
+          <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Curadoria Clínica</p>
         </div>
       </div>
-      <nav className="flex-1 space-y-2">
+      <nav className="flex-1 space-y-1">
         {menuItems.map((item) => {
-          const Icon = item.icon;
           const hasSubItems = item.subItems && item.subItems.length > 0;
           const isOpen = openMenus.includes(item.name);
           const isParentActive = hasSubItems && item.subItems?.some(sub => pathname === sub.href);
@@ -79,51 +63,53 @@ export default function Sidebar() {
               {item.href ? (
                 <Link
                   href={item.href}
-                  className={`flex items-center justify-between px-4 py-3.5 rounded-2xl transition-all duration-300 font-headline text-sm font-bold tracking-tight group ${
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 font-headline text-sm font-semibold tracking-tight ${
                     isActive
-                      ? 'text-primary bg-primary/5 shadow-inner'
-                      : 'text-on-surface-variant/60 hover:text-on-surface hover:bg-surface-container-high/50'
+                      ? 'text-slate-900 dark:text-white border-l-4 border-orange-700 bg-white/50 dark:bg-white/10 translate-x-1'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/50'
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <Icon className={`w-5 h-5 transition-transform group-hover:scale-110 ${isActive ? 'text-primary' : 'text-on-surface-variant/40'}`} />
-                    <span>{item.name}</span>
-                  </div>
-                  {isActive && <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-sm shadow-primary/50"></div>}
+                  <span className={`material-symbols-outlined ${isActive ? 'text-orange-600 dark:text-orange-400' : ''}`}>
+                    {item.icon}
+                  </span>
+                  <span>{item.name}</span>
                 </Link>
               ) : (
                 <button
                   onClick={() => toggleMenu(item.name)}
-                  className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl transition-all duration-300 font-headline text-sm font-bold tracking-tight group ${
+                  className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all duration-200 font-headline text-sm font-semibold tracking-tight ${
                     isActive
-                      ? 'text-primary bg-primary/5'
-                      : 'text-on-surface-variant/60 hover:text-on-surface hover:bg-surface-container-high/50'
+                      ? 'text-slate-900 dark:text-white border-l-4 border-orange-700 bg-white/50 dark:bg-white/10'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/50'
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <Icon className={`w-5 h-5 transition-transform group-hover:scale-110 ${isActive ? 'text-primary' : 'text-on-surface-variant/40'}`} />
+                  <span className="flex items-center gap-3">
+                    <span className={`material-symbols-outlined ${isActive ? 'text-orange-600 dark:text-orange-400' : ''}`}>
+                      {item.icon}
+                    </span>
                     <span>{item.name}</span>
-                  </div>
-                  <ChevronDown className={`w-5 h-5 transition-transform duration-300 ${isOpen ? 'rotate-180 text-primary' : 'text-on-surface-variant/30'}`} />
+                  </span>
+                  <span className={`material-symbols-outlined text-xs transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}>
+                    expand_more
+                  </span>
                 </button>
               )}
 
               {hasSubItems && isOpen && (
-                <div className="ml-6 pl-4 space-y-1 border-l-2 border-surface-container-high animate-in slide-in-from-left-2 duration-300">
+                <div className="ml-9 space-y-1 border-l border-slate-200 dark:border-slate-800">
                   {item.subItems?.map((sub) => {
                     const isSubActive = pathname === sub.href;
                     return (
                       <Link
                         key={sub.name}
                         href={sub.href}
-                        className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 font-headline text-xs font-bold tracking-tight ${
+                        className={`flex items-center gap-3 px-4 py-2 rounded-r-lg transition-all duration-200 font-headline text-xs font-medium tracking-tight ${
                           isSubActive
-                            ? 'text-primary bg-primary/5'
-                            : 'text-on-surface-variant/50 hover:text-on-surface hover:bg-surface-container-high/30'
+                            ? 'text-orange-700 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/10'
+                            : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/30'
                         }`}
                       >
                         <span>{sub.name}</span>
-                        {isSubActive && <div className="w-1 h-1 rounded-full bg-primary/50"></div>}
                       </Link>
                     );
                   })}
@@ -133,14 +119,14 @@ export default function Sidebar() {
           );
         })}
       </nav>
-      <div className="mt-auto pt-8 border-t border-outline-variant/10 space-y-2">
-        <Link href="#" className="flex items-center gap-3 px-4 py-3.5 rounded-2xl text-on-surface-variant/60 hover:text-on-surface hover:bg-surface-container-high/50 transition-all duration-300 font-headline text-sm font-bold tracking-tight group">
-          <Settings className="w-5 h-5 text-on-surface-variant/40 group-hover:rotate-45 transition-transform" />
-          <span>Configurações</span>
+      <div className="mt-auto pt-8 border-t border-slate-200/50 dark:border-slate-800 space-y-1">
+        <Link href="#" className="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors duration-200 font-headline text-sm font-semibold tracking-tight">
+          <span className="material-symbols-outlined">settings</span>
+          <span>Settings</span>
         </Link>
-        <Link href="#" className="flex items-center gap-3 px-4 py-3.5 rounded-2xl text-on-surface-variant/60 hover:text-on-surface hover:bg-surface-container-high/50 transition-all duration-300 font-headline text-sm font-bold tracking-tight group">
-          <HelpCircle className="w-5 h-5 text-on-surface-variant/40 group-hover:scale-110 transition-transform" />
-          <span>Suporte</span>
+        <Link href="#" className="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors duration-200 font-headline text-sm font-semibold tracking-tight">
+          <span className="material-symbols-outlined">help_outline</span>
+          <span>Support</span>
         </Link>
       </div>
     </aside>
