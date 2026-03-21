@@ -33,6 +33,8 @@ export default function Sidebar() {
       icon: 'person_add',
       subItems: [
         { name: 'Operadores', href: '/operadores' },
+        { name: 'Categorias Profissionais', href: '/categorias' },
+        { name: 'Profissionais', href: '/profissionais' },
       ],
     },
     { name: 'Movimento', icon: 'sync_alt', href: '#' },

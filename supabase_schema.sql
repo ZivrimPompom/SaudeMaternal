@@ -61,3 +61,57 @@ CREATE TRIGGER update_pacientes_updated_at
     BEFORE UPDATE ON public.pacientes
     FOR EACH ROW
     EXECUTE PROCEDURE update_updated_at_column();
+
+-- 7. Create the professional categories table (Categorias Profissionais)
+CREATE TABLE IF NOT EXISTS public.categorias_profissionais (
+    cbo TEXT PRIMARY KEY,
+    categoria TEXT NOT NULL,
+    -- vinculo TEXT NOT NULL DEFAULT 'INTERMEDIADO' CHECK (vinculo IN ('DIRETO', 'INTERMEDIADO')),
+    -- tipo_vinculo TEXT NOT NULL DEFAULT 'CLT' CHECK (tipo_vinculo IN ('CLT', 'ESTATUTARIO', 'AUTÔNOMO')),
+    -- chs INTEGER NOT NULL DEFAULT 20 CHECK (chs IN (20, 30, 40)),
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 8. Enable Row Level Security (RLS) for the new table
+ALTER TABLE public.categorias_profissionais ENABLE ROW LEVEL SECURITY;
+
+-- 9. Create basic policies for the new table
+CREATE POLICY "Allow all access for development" ON public.categorias_profissionais
+    FOR ALL
+    USING (true)
+    WITH CHECK (true);
+
+-- 10. Trigger for updated_at for the new table
+CREATE TRIGGER update_categorias_profissionais_updated_at
+    BEFORE UPDATE ON public.categorias_profissionais
+    FOR EACH ROW
+    EXECUTE PROCEDURE update_updated_at_column();
+
+-- 11. Create the professionals table (Profissionais)
+CREATE TABLE IF NOT EXISTS public.profissionais (
+    cpf TEXT PRIMARY KEY,
+    nome TEXT NOT NULL,
+    cns TEXT,
+    cbo TEXT REFERENCES public.categorias_profissionais(cbo),
+    vinculo TEXT NOT NULL DEFAULT 'INTERMEDIADO' CHECK (vinculo IN ('DIRETO', 'INTERMEDIADO')),
+    tipo_vinculo TEXT NOT NULL DEFAULT 'CLT' CHECK (tipo_vinculo IN ('CLT', 'ESTATUTARIO', 'AUTÔNOMO')),
+    chs INTEGER NOT NULL DEFAULT 20 CHECK (chs IN (20, 30, 40)),
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 12. Enable Row Level Security (RLS) for the new table
+ALTER TABLE public.profissionais ENABLE ROW LEVEL SECURITY;
+
+-- 13. Create basic policies for the new table
+CREATE POLICY "Allow all access for development" ON public.profissionais
+    FOR ALL
+    USING (true)
+    WITH CHECK (true);
+
+-- 14. Trigger for updated_at for the new table
+CREATE TRIGGER update_profissionais_updated_at
+    BEFORE UPDATE ON public.profissionais
+    FOR EACH ROW
+    EXECUTE PROCEDURE update_updated_at_column();
