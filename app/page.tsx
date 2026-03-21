@@ -24,48 +24,60 @@ export default function Page() {
 
   return (
     <DashboardLayout>
-      <div className="p-8 lg:p-12 pb-32 max-w-7xl mx-auto space-y-12">
-        <header className="space-y-2">
-          <h2 className="text-5xl font-black tracking-tight font-headline text-slate-900">Menu Inicial</h2>
-          <p className="text-lg text-slate-500 font-body">Bem-vindo ao sistema Saúde Maternal</p>
+      <div className="p-10 lg:p-16 pb-32 max-w-7xl mx-auto space-y-16">
+        <header className="space-y-4">
+          <div className="flex items-center gap-3">
+            <span className="w-12 h-1.5 bg-primary rounded-full"></span>
+            <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Dashboard Principal</span>
+          </div>
+          <h2 className="text-6xl font-black tracking-tight font-headline text-on-surface leading-tight">Painel de Controle</h2>
+          <p className="text-xl text-on-surface-variant/60 font-body max-w-2xl">Bem-vindo ao ecossistema Saúde Maternal. Gerencie as operações clínicas e administrativas com precisão e segurança.</p>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          <Link href="/operadores" className="bg-white p-8 rounded-[32px] shadow-sm border border-slate-100 hover:border-primary hover:shadow-xl hover:shadow-primary/5 transition-all group relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+          <Link href="/operadores" className="bg-surface-container-lowest p-10 rounded-[3rem] shadow-2xl shadow-black/5 border border-outline-variant/10 hover:border-primary/30 hover:shadow-primary/10 transition-all group relative overflow-hidden flex flex-col h-full">
+            <div className="absolute top-0 right-0 w-48 h-48 bg-primary/5 rounded-full -mr-24 -mt-24 group-hover:scale-125 transition-transform duration-700" />
             
-            <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-6 group-hover:bg-primary transition-colors">
-              <Users className="text-primary group-hover:text-white w-7 h-7" />
+            <div className="w-16 h-16 rounded-3xl bg-primary/10 flex items-center justify-center mb-8 group-hover:bg-primary group-hover:rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
+              <Users className="text-primary group-hover:text-white w-8 h-8 transition-colors" />
             </div>
             
-            <h3 className="text-2xl font-bold font-headline mb-2 text-slate-900">Operadores</h3>
-            <p className="text-sm text-slate-500 font-body mb-6 leading-relaxed">Gerencie os perfis de acesso e operadores do sistema.</p>
+            <h3 className="text-3xl font-black font-headline mb-3 text-on-surface tracking-tight">Operadores</h3>
+            <p className="text-sm text-on-surface-variant/60 font-body mb-10 leading-relaxed">Gestão centralizada de perfis, credenciais e níveis de acesso para profissionais de saúde.</p>
             
-            <div className="flex items-center justify-between pt-6 border-t border-slate-50">
+            <div className="mt-auto flex items-center justify-between pt-8 border-t border-outline-variant/10">
               <div className="flex flex-col">
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Cadastrados</span>
-                <span className="text-xl font-black text-primary">{stats.operators}</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/40 mb-1">Total Ativos</span>
+                <span className="text-3xl font-black text-primary font-headline">{stats.operators}</span>
               </div>
-              <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
-                <UserPlus className="w-5 h-5 text-slate-400 group-hover:text-primary" />
+              <div className="w-12 h-12 rounded-2xl bg-surface-container-low flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+                <UserPlus className="w-6 h-6 text-on-surface-variant/40 group-hover:text-primary transition-colors" />
               </div>
             </div>
           </Link>
 
-          <div className="bg-white p-8 rounded-[32px] shadow-sm border border-slate-100 opacity-50 cursor-not-allowed">
-            <div className="w-14 h-14 rounded-2xl bg-slate-100 flex-none flex items-center justify-center mb-6">
-              <Activity className="text-slate-400 w-7 h-7" />
+          <div className="bg-surface-container-lowest/50 p-10 rounded-[3rem] shadow-sm border border-outline-variant/5 opacity-60 flex flex-col h-full grayscale hover:grayscale-0 transition-all duration-500">
+            <div className="w-16 h-16 rounded-3xl bg-surface-container-high flex items-center justify-center mb-8">
+              <Activity className="text-on-surface-variant/30 w-8 h-8" />
             </div>
-            <h3 className="text-2xl font-bold font-headline mb-2 text-slate-900">Movimentação</h3>
-            <p className="text-sm text-slate-500 font-body">Módulo em desenvolvimento.</p>
+            <h3 className="text-3xl font-black font-headline mb-3 text-on-surface/40 tracking-tight">Movimentação</h3>
+            <p className="text-sm text-on-surface-variant/40 font-body mb-10 leading-relaxed">Módulo de fluxo clínico em desenvolvimento. Em breve, acompanhamento em tempo real.</p>
+            <div className="mt-auto pt-8 border-t border-outline-variant/5 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-on-surface-variant/20"></span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/20">Aguardando Lançamento</span>
+            </div>
           </div>
 
-          <div className="bg-white p-8 rounded-[32px] shadow-sm border border-slate-100 opacity-50 cursor-not-allowed">
-            <div className="w-14 h-14 rounded-2xl bg-slate-100 flex-none flex items-center justify-center mb-6">
-              <Shield className="text-slate-400 w-7 h-7" />
+          <div className="bg-surface-container-lowest/50 p-10 rounded-[3rem] shadow-sm border border-outline-variant/5 opacity-60 flex flex-col h-full grayscale hover:grayscale-0 transition-all duration-500">
+            <div className="w-16 h-16 rounded-3xl bg-surface-container-high flex items-center justify-center mb-8">
+              <Shield className="text-on-surface-variant/30 w-8 h-8" />
             </div>
-            <h3 className="text-2xl font-bold font-headline mb-2 text-slate-900">Segurança</h3>
-            <p className="text-sm text-slate-500 font-body">Auditoria e logs do sistema.</p>
+            <h3 className="text-3xl font-black font-headline mb-3 text-on-surface/40 tracking-tight">Segurança</h3>
+            <p className="text-sm text-on-surface-variant/40 font-body mb-10 leading-relaxed">Auditoria avançada e logs de conformidade. Rastreabilidade total de operações.</p>
+            <div className="mt-auto pt-8 border-t border-outline-variant/5 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-on-surface-variant/20"></span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/20">Em Homologação</span>
+            </div>
           </div>
         </div>
       </div>

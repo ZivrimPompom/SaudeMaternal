@@ -4,6 +4,27 @@ import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useSearch } from '@/context/SearchContext';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { 
+  AlertTriangle, 
+  Info, 
+  UserPlus, 
+  Fingerprint, 
+  Lock, 
+  Eye, 
+  EyeOff, 
+  Save, 
+  RefreshCw, 
+  Shield, 
+  Filter, 
+  Search, 
+  Edit2, 
+  MoreVertical, 
+  ChevronLeft, 
+  ChevronRight, 
+  ShieldCheck,
+  SearchX,
+  Users
+} from 'lucide-react';
 
 interface Operator {
   id: string;
@@ -266,102 +287,123 @@ export default function OperadoresPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-12 max-w-7xl mx-auto space-y-12">
+      <div className="p-6 md:p-10 lg:p-12 max-w-7xl mx-auto space-y-8 md:space-y-12">
         {/* Page Header */}
-        <header className="space-y-2">
-          <h2 className="text-5xl font-extrabold tracking-tight font-headline text-on-surface">Cadastro de Operadores</h2>
-          <p className="text-lg text-on-secondary-container font-body opacity-70">Gerencie os perfis de acesso</p>
+        <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div className="space-y-2">
+            <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight font-headline text-on-surface">Cadastro de Operadores</h2>
+            <p className="text-base md:text-lg text-on-secondary-container font-body opacity-70">Gerencie os perfis de acesso e permissões clínicas</p>
+          </div>
+          <div className="flex items-center gap-3 bg-surface-container-high px-4 py-2 rounded-full border border-outline-variant/20 shadow-sm">
+            <Users className="text-primary w-5 h-5" />
+            <span className="text-sm font-bold font-label uppercase tracking-widest text-on-surface-variant">{filteredOperators.length} Operadores</span>
+          </div>
         </header>
 
         {/* Layout Grid: Bento Style */}
         {!isSupabaseConfigured && (
-          <div className="bg-error/10 border border-error/20 p-6 rounded-xl text-error mb-8">
-            <h4 className="font-bold flex items-center gap-2">
-              <span className="material-symbols-outlined">warning</span>
-              Supabase não configurado
-            </h4>
-            <p className="text-sm mt-2">As variáveis de ambiente NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY não foram encontradas ou são inválidas. O sistema não poderá carregar ou salvar dados.</p>
+          <div className="bg-error/10 border border-error/20 p-6 rounded-2xl text-error mb-8 flex items-start gap-4 shadow-sm">
+            <AlertTriangle className="w-8 h-8 shrink-0" />
+            <div>
+              <h4 className="font-bold text-lg">Supabase não configurado</h4>
+              <p className="text-sm mt-1 opacity-80">As variáveis de ambiente NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY não foram encontradas ou são inválidas. O sistema não poderá carregar ou salvar dados na Vercel.</p>
+            </div>
           </div>
         )}
 
-        <div className="grid grid-cols-12 gap-8">
-          {/* Form Section */}
+        <div className="grid grid-cols-12 gap-6 md:gap-8">
+          {/* Form Section - Bento Card 1 */}
           <section className="col-span-12 lg:col-span-4 space-y-6">
-            <div className="bg-surface-container-lowest p-8 rounded-xl shadow-sm border border-outline-variant/15">
-              <h3 className="text-xl font-bold font-headline mb-6 flex items-center gap-2">
-                <span className="w-1.5 h-6 bg-primary rounded-full"></span>
+            <div className="bg-surface-container-lowest p-6 md:p-8 rounded-2xl shadow-md border border-outline-variant/10 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-primary-container"></div>
+              <h3 className="text-xl font-bold font-headline mb-8 flex items-center gap-3">
+                {editingId ? <Edit2 className="text-primary w-6 h-6" /> : <UserPlus className="text-primary w-6 h-6" />}
                 {editingId ? 'Editar Registro' : 'Novo Registro'}
               </h3>
-              <form className="space-y-5" onSubmit={handleSubmit}>
+              <form className="space-y-6" onSubmit={handleSubmit}>
                 {error && (
-                  <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-xs font-medium flex items-center gap-2 animate-pulse">
-                    <span className="material-symbols-outlined text-sm">error</span>
-                    {error}
+                  <div className="p-4 rounded-xl bg-error-container/30 border border-error/20 text-error text-xs font-semibold flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <AlertTriangle className="w-5 h-5 shrink-0" />
+                    <span className="flex-1">{error}</span>
                   </div>
                 )}
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant font-label">Nome Completo</label>
-                  <input 
-                    className="w-full bg-surface-container-low border-b-2 border-transparent focus:border-primary focus:ring-0 rounded-t-lg px-4 py-3 transition-all font-body" 
-                    placeholder="Ex: Jean Luc Picard" 
-                    type="text" 
-                    value={formData.name}
-                    onChange={(e) => {
-                      setFormData({ ...formData, name: e.target.value });
-                      setError(null);
-                    }}
-                    required
-                  />
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Nome Completo</label>
+                  <div className="relative group">
+                    <UserPlus className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-5 h-5" />
+                    <input 
+                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-12 pr-4 py-3.5 transition-all font-body outline-none text-sm" 
+                      placeholder="Ex: Jean Luc Picard" 
+                      type="text" 
+                      value={formData.name}
+                      onChange={(e) => {
+                        setFormData({ ...formData, name: e.target.value });
+                        setError(null);
+                      }}
+                      required
+                    />
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant font-label">CPF</label>
-                  <input 
-                    className="w-full bg-surface-container-low border-b-2 border-transparent focus:border-primary focus:ring-0 rounded-t-lg px-4 py-3 transition-all font-body" 
-                    placeholder="000.000.000-00" 
-                    type="text" 
-                    value={formData.cpf}
-                    onChange={handleCpfChange}
-                    maxLength={14}
-                    required
-                  />
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">CPF</label>
+                  <div className="relative group">
+                    <Fingerprint className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-5 h-5" />
+                    <input 
+                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-12 pr-4 py-3.5 transition-all font-body outline-none text-sm" 
+                      placeholder="000.000.000-00" 
+                      type="text" 
+                      value={formData.cpf}
+                      onChange={handleCpfChange}
+                      maxLength={14}
+                      required
+                    />
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant font-label">Status</label>
-                  <select 
-                    className="w-full bg-surface-container-low border-b-2 border-transparent focus:border-primary focus:ring-0 rounded-t-lg px-4 py-3 transition-all font-body appearance-none"
-                    value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value as 'Ativo' | 'Bloqueado' })}
-                  >
-                    <option value="Ativo">Ativo</option>
-                    <option value="Bloqueado">Bloqueado</option>
-                  </select>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Status</label>
+                    <div className="relative group">
+                      <Shield className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-5 h-5" />
+                      <select 
+                        className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-12 pr-4 py-3.5 transition-all font-body outline-none text-sm appearance-none"
+                        value={formData.status}
+                        onChange={(e) => setFormData({ ...formData, status: e.target.value as 'Ativo' | 'Bloqueado' })}
+                      >
+                        <option value="Ativo">Ativo</option>
+                        <option value="Bloqueado">Bloqueado</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Senha</label>
+                    <div className="relative group">
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-5 h-5" />
+                      <input 
+                        className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-12 pr-4 py-3.5 transition-all font-body outline-none text-sm" 
+                        placeholder={editingId ? "Manter" : "••••••••"} 
+                        type="password" 
+                        value={formData.password}
+                        onChange={(e) => {
+                          setFormData({ ...formData, password: e.target.value });
+                          setError(null);
+                        }}
+                        required={!editingId}
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant font-label">Senha</label>
-                  <input 
-                    className="w-full bg-surface-container-low border-b-2 border-transparent focus:border-primary focus:ring-0 rounded-t-lg px-4 py-3 transition-all font-body" 
-                    placeholder={editingId ? "Deixe em branco para manter" : "••••••••"} 
-                    type="password" 
-                    value={formData.password}
-                    onChange={(e) => {
-                      setFormData({ ...formData, password: e.target.value });
-                      setError(null);
-                    }}
-                    required={!editingId}
-                  />
-                </div>
-                <div className="pt-4 space-y-3">
-                  <button className="w-full bg-gradient-to-r from-primary to-primary-container text-white font-bold py-4 rounded-lg shadow-lg shadow-primary/10 hover:opacity-90 transition-opacity flex items-center justify-center gap-2 font-headline uppercase tracking-wide text-sm" type="submit">
-                    <span className="material-symbols-outlined text-sm">{editingId ? 'edit' : 'save'}</span>
-                    {editingId ? 'Atualizar Operador' : 'Salvar Operador'}
+                <div className="pt-6 space-y-3">
+                  <button className="w-full bg-primary text-white font-bold py-4 rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center justify-center gap-3 font-headline uppercase tracking-widest text-sm" type="submit">
+                    {editingId ? <ShieldCheck className="w-5 h-5" /> : <UserPlus className="w-5 h-5" />}
+                    {editingId ? 'Atualizar Operador' : 'Cadastrar Operador'}
                   </button>
                   {(editingId || formData.name || formData.cpf || formData.password) && (
                     <button 
                       type="button"
                       onClick={cancelEdit}
-                      className="w-full bg-slate-100 text-slate-500 font-bold py-3 rounded-lg hover:bg-slate-200 transition-colors font-headline uppercase tracking-wide text-[10px] flex items-center justify-center gap-2"
+                      className="w-full bg-surface-container text-on-surface-variant font-bold py-3.5 rounded-xl hover:bg-surface-container-high transition-colors font-headline uppercase tracking-widest text-[10px] flex items-center justify-center gap-2"
                     >
-                      <span className="material-symbols-outlined text-sm">close</span>
+                      <RefreshCw className="w-4 h-4" />
                       {editingId ? 'Cancelar Edição' : 'Limpar Formulário'}
                     </button>
                   )}
@@ -369,88 +411,145 @@ export default function OperadoresPage() {
               </form>
             </div>
 
-            {/* Informational Card */}
-            <div className="bg-secondary-container/30 p-6 rounded-xl border border-secondary-container/50">
+            {/* Informational Card - Bento Card 2 */}
+            <div className="bg-tertiary-container/10 p-6 rounded-2xl border border-tertiary-container/20 group hover:bg-tertiary-container/20 transition-colors duration-500">
               <div className="flex gap-4">
-                <span className="material-symbols-outlined text-secondary">info</span>
+                <div className="w-10 h-10 rounded-xl bg-tertiary-container/20 flex items-center justify-center text-tertiary shrink-0 group-hover:scale-110 transition-transform">
+                  <Shield className="w-5 h-5" />
+                </div>
                 <div>
-                  <h4 className="text-sm font-bold text-on-secondary-fixed-variant mb-1">Dica de Segurança</h4>
-                  <p className="text-xs text-on-secondary-container leading-relaxed">As senhas devem ser alfanuméricas e conter pelo menos 8 caracteres para garantir a integridade dos dados clínicos.</p>
+                  <h4 className="text-sm font-bold text-tertiary mb-1 uppercase tracking-wider">Diretriz de Segurança</h4>
+                  <p className="text-xs text-on-tertiary-container/70 leading-relaxed font-body">As senhas devem ser alfanuméricas e conter pelo menos 8 caracteres para garantir a integridade dos dados clínicos e conformidade com a LGPD.</p>
                 </div>
               </div>
             </div>
           </section>
 
-          {/* Table Section */}
+          {/* Table Section - Bento Card 3 */}
           <section className="col-span-12 lg:col-span-8">
-            <div className="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm border border-outline-variant/15">
-              <div className="p-6 border-b border-surface-container-low flex justify-between items-center">
-                <h3 className="text-xl font-bold font-headline">Operadores Ativos</h3>
-                <span className="bg-tertiary-container text-on-tertiary-container px-3 py-1 rounded-full text-[10px] font-bold font-label uppercase tracking-widest">{filteredOperators.length} Registros</span>
+            <div className="bg-surface-container-lowest rounded-2xl overflow-hidden shadow-md border border-outline-variant/10 flex flex-col h-full">
+              <div className="p-6 md:p-8 border-b border-surface-container-low flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-surface-container-lowest/50 backdrop-blur-sm sticky top-0 z-10">
+                <div>
+                  <h3 className="text-2xl font-bold font-headline text-on-surface">Operadores Ativos</h3>
+                  <p className="text-xs text-on-surface-variant font-body opacity-60 mt-1">Listagem completa de profissionais autorizados</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="relative">
+                    <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                    <input 
+                      type="text" 
+                      placeholder="Filtrar..."
+                      className="bg-surface-container-low border-none rounded-full pl-9 pr-4 py-2 text-xs font-body focus:ring-2 focus:ring-primary/20 outline-none w-40 md:w-64 transition-all"
+                    />
+                  </div>
+                </div>
               </div>
-              <div className="overflow-x-auto">
+              <div className="flex-1 overflow-x-auto">
                 {loading ? (
-                  <div className="p-12 text-center text-slate-400 font-body">
-                    <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-                    Carregando operadores...
+                  <div className="p-8 space-y-6">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <div key={i} className="flex items-center gap-6 animate-pulse">
+                        <div className="w-11 h-11 bg-surface-container-high rounded-2xl"></div>
+                        <div className="flex-1 space-y-2">
+                          <div className="h-4 bg-surface-container-high rounded w-1/3"></div>
+                          <div className="h-2 bg-surface-container-high rounded w-1/4"></div>
+                        </div>
+                        <div className="w-32 h-4 bg-surface-container-high rounded"></div>
+                        <div className="w-24 h-6 bg-surface-container-high rounded-full"></div>
+                        <div className="w-20 h-10 bg-surface-container-high rounded-xl"></div>
+                      </div>
+                    ))}
                   </div>
                 ) : filteredOperators.length === 0 ? (
-                  <div className="p-12 text-center text-slate-400 font-body">
-                    Nenhum operador encontrado.
+                  <div className="p-20 text-center text-slate-400 font-body flex flex-col items-center gap-4">
+                    <SearchX className="text-6xl opacity-20 w-16 h-16" />
+                    <p className="text-sm font-medium">Nenhum operador encontrado com os critérios atuais.</p>
                   </div>
                 ) : (
                   <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-surface-container-low/50">
-                      <th className="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-on-surface-variant font-label">Nome</th>
-                      <th className="px-4 py-4 text-[11px] font-black uppercase tracking-widest text-on-surface-variant font-label">CPF</th>
-                      <th className="px-4 py-4 text-[11px] font-black uppercase tracking-widest text-on-surface-variant font-label">Status</th>
-                      <th className="px-4 py-4 text-[11px] font-black uppercase tracking-widest text-on-surface-variant font-label">Senha</th>
-                      <th className="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-on-surface-variant font-label text-right">Ação</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-surface-container-low">
-                    {filteredOperators.map((op) => (
-                      <tr key={op.cpf} className="hover:bg-surface-container-low transition-colors group">
-                        <td className="px-6 py-5">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-500">{op.initials}</div>
-                            <p className="font-semibold text-on-surface text-sm">{op.name}</p>
-                          </div>
-                        </td>
-                        <td className="px-4 py-5 text-sm font-body text-secondary">{op.cpf}</td>
-                        <td className="px-4 py-5">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tighter ${
-                            op.status === 'Ativo' ? 'bg-green-100 text-green-700' : 'bg-error-container text-on-error-container'
-                          }`}>
-                            {op.status}
-                          </span>
-                        </td>
-                        <td className="px-4 py-5">
-                          <span className="text-slate-300 tracking-widest">••••••••</span>
-                        </td>
-                        <td className="px-6 py-5 text-right">
-                          <button 
-                            onClick={() => handleEdit(op)}
-                            title="Editar Operador"
-                            className="w-8 h-8 inline-flex items-center justify-center rounded-full bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all group-hover:scale-110 shadow-sm"
-                          >
-                            <span className="material-symbols-outlined text-lg">edit</span>
-                          </button>
-                        </td>
+                    <thead>
+                      <tr className="bg-surface-container-low/30">
+                        <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label">Profissional</th>
+                        <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label">Identificação</th>
+                        <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label">Status</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label text-right">Ações</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-surface-container-low/50">
+                      {filteredOperators.map((op) => (
+                        <tr key={op.cpf} className="hover:bg-surface-container-low/40 transition-all group">
+                          <td className="px-8 py-6">
+                            <div className="flex items-center gap-4">
+                              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-surface-container-high to-surface-container-highest flex items-center justify-center text-sm font-bold text-primary shadow-sm group-hover:scale-105 transition-transform">
+                                {op.initials}
+                              </div>
+                              <div>
+                                <p className="font-bold text-on-surface text-base font-headline leading-tight">{op.name}</p>
+                                <p className="text-[10px] text-on-surface-variant/60 font-body uppercase tracking-widest mt-1">Acesso Nível 1</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-6">
+                            <div className="flex flex-col">
+                              <span className="text-sm font-mono text-on-surface-variant font-medium">{op.cpf}</span>
+                              <span className="text-[9px] text-on-surface-variant/40 font-body uppercase tracking-tighter mt-1">CPF Verificado</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-6">
+                            <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                              op.status === 'Ativo' 
+                                ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' 
+                                : 'bg-error-container/50 text-on-error-container border border-error/10'
+                            }`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${op.status === 'Ativo' ? 'bg-emerald-500' : 'bg-error'} animate-pulse`}></span>
+                              {op.status}
+                            </div>
+                          </td>
+                          <td className="px-8 py-6 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <button 
+                                onClick={() => handleEdit(op)}
+                                title="Editar Operador"
+                                className="w-10 h-10 inline-flex items-center justify-center rounded-xl bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white transition-all shadow-sm active:scale-95"
+                              >
+                                <Edit2 className="w-5 h-5" />
+                              </button>
+                              <button 
+                                title="Mais Opções"
+                                className="w-10 h-10 inline-flex items-center justify-center rounded-xl bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest transition-all shadow-sm"
+                              >
+                                <MoreVertical className="w-5 h-5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 )}
+              </div>
+              <div className="p-6 bg-surface-container-low/20 border-t border-surface-container-low flex justify-between items-center">
+                <p className="text-[10px] text-on-surface-variant/50 font-body uppercase tracking-widest">Última sincronização: {new Date().toLocaleTimeString()}</p>
+                <div className="flex gap-2">
+                  <button className="p-2 rounded-lg bg-surface-container-high text-on-surface-variant disabled:opacity-30" disabled>
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <button className="p-2 rounded-lg bg-surface-container-high text-on-surface-variant disabled:opacity-30" disabled>
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
 
             {/* Asymmetric Decoration/Note */}
-            <div className="mt-8 flex justify-end">
+            <div className="mt-8 flex justify-between items-center px-4">
+              <div className="flex items-center gap-2 opacity-30">
+                <ShieldCheck className="w-4 h-4" />
+                <span className="text-[9px] font-bold uppercase tracking-widest">Dados Criptografados</span>
+              </div>
               <div className="max-w-xs text-right opacity-40">
-                <p className="text-[10px] font-headline font-bold uppercase tracking-[0.2em] mb-2">Internal Ledger Audit</p>
-                <p className="text-[11px] leading-relaxed">All changes are logged with timestamp and administrator signature for regulatory compliance.</p>
+                <p className="text-[9px] font-headline font-black uppercase tracking-[0.3em] mb-1">Internal Ledger Audit</p>
+                <p className="text-[10px] leading-relaxed font-body">Todas as alterações são registradas com timestamp e assinatura do administrador para conformidade regulatória.</p>
               </div>
             </div>
           </section>

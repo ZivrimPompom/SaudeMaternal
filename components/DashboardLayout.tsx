@@ -25,7 +25,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <div className="bg-surface text-on-surface min-h-screen font-body">
       <Sidebar />
       <TopBar />
-      <main className="pl-64 pt-16 min-h-screen">
+      <main className="pl-64 pt-20 min-h-screen">
         {children}
       </main>
     </div>
