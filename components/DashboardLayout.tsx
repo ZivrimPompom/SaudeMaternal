@@ -15,6 +15,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   React.useEffect(() => {
     setMounted(true);
+    // Inicia aberta no desktop, fechada no mobile
+    if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
+      setIsSidebarOpen(true);
+    }
   }, []);
 
   useEffect(() => {
@@ -41,8 +45,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="bg-surface text-on-surface min-h-screen font-body relative">
       <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} />
-      <TopBar onToggleSidebar={toggleSidebar} />
-      <main className={`transition-all duration-300 pt-16 min-h-screen pb-24 overflow-y-auto ${isSidebarOpen ? 'lg:pl-64' : 'pl-0 lg:pl-64'}`}>
+      <TopBar onToggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
+      <main className={`transition-all duration-300 pt-16 min-h-screen pb-24 overflow-y-auto ${isSidebarOpen ? 'lg:pl-64' : 'pl-0'}`}>
         <div className="p-4 md:p-8">
           {children}
         </div>

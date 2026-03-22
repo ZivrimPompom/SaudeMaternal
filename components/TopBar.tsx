@@ -7,7 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 import { usePathname } from 'next/navigation';
 import { LucideLogOut, LucideUser, LucideChevronDown } from 'lucide-react';
 
-export default function TopBar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
+export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSidebar: () => void; isSidebarOpen: boolean }) {
   const { searchQuery, setSearchQuery } = useSearch();
   const { user, signOut } = useAuth();
   const pathname = usePathname();
@@ -35,13 +35,14 @@ export default function TopBar({ onToggleSidebar }: { onToggleSidebar: () => voi
   const userInitials = user?.sigla || userName.substring(0, 2).toUpperCase();
 
   return (
-    <header className="fixed top-0 right-0 w-full lg:w-[calc(100%-16rem)] h-16 z-40 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-100 dark:border-slate-800/50 flex justify-between items-center px-4 md:px-8">
+    <header className={`fixed top-0 right-0 h-16 z-40 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-100 dark:border-slate-800/50 flex justify-between items-center px-4 md:px-8 transition-all duration-300 ${isSidebarOpen ? 'w-full lg:w-[calc(100%-16rem)]' : 'w-full'}`}>
       <div className="flex items-center gap-2 md:gap-4">
         <button 
           onClick={onToggleSidebar}
-          className="lg:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400"
+          className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-colors"
+          title={isSidebarOpen ? 'Recolher Menu' : 'Expandir Menu'}
         >
-          <span className="material-symbols-outlined">menu</span>
+          <span className="material-symbols-outlined">{isSidebarOpen ? 'menu_open' : 'menu'}</span>
         </button>
         
         {!isHomePage && (
@@ -83,14 +84,14 @@ export default function TopBar({ onToggleSidebar }: { onToggleSidebar: () => voi
           </button>
 
           {isProfileOpen && (
-            <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-              <div className="px-4 py-2 border-b border-slate-50 mb-1">
-                <p className="text-xs font-bold text-slate-900 truncate">{userName}</p>
-                <p className="text-[10px] text-slate-500 truncate">{user?.cpf}</p>
+            <div className="absolute top-full right-0 mt-2 w-48 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-100 dark:border-slate-800 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="px-4 py-2 border-b border-slate-50 dark:border-slate-800 mb-1">
+                <p className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">{userName}</p>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">{user?.cpf}</p>
               </div>
               <button 
                 onClick={() => signOut()}
-                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
               >
                 <LucideLogOut className="w-4 h-4" />
                 <span>Sair do Sistema</span>

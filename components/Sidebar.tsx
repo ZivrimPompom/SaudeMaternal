@@ -22,7 +22,9 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
 
   // Close sidebar on mobile when route changes
   useEffect(() => {
-    onClose();
+    if (window.innerWidth < 1024) {
+      onClose();
+    }
   }, [pathname, onClose]);
 
   const toggleMenu = (name: string) => {
@@ -55,7 +57,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
         onClick={onClose}
       />
 
-      <aside className={`bg-slate-100 dark:bg-slate-900 h-screen w-64 fixed left-0 top-0 overflow-y-auto flex flex-col py-8 px-4 z-50 transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+      <aside className={`bg-slate-100 dark:bg-slate-900 h-screen w-64 fixed left-0 top-0 overflow-y-auto flex flex-col py-8 px-4 z-50 transition-transform duration-300 shadow-2xl lg:shadow-none ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="mb-10 px-2 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-primary-container flex items-center justify-center">
@@ -68,15 +70,16 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
           </div>
           <button 
             onClick={onClose}
-            className="lg:hidden p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500"
+            className="p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 transition-colors"
+            title="Recolher Painel"
           >
-            <span className="material-symbols-outlined">close</span>
+            <span className="material-symbols-outlined">menu_open</span>
           </button>
         </div>
         <nav className="flex-1 space-y-1">
         {menuItems.map((item) => {
           const hasSubItems = item.subItems && item.subItems.length > 0;
-          const isOpen = openMenus.includes(item.name);
+          const isExpanded = openMenus.includes(item.name);
           const isParentActive = hasSubItems && item.subItems?.some(sub => pathname === sub.href);
           const isActive = pathname === item.href || isParentActive;
 
@@ -111,13 +114,13 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
                     </span>
                     <span>{item.name}</span>
                   </span>
-                  <span className={`material-symbols-outlined text-xs transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}>
+                  <span className={`material-symbols-outlined text-xs transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}>
                     expand_more
                   </span>
                 </button>
               )}
 
-              {hasSubItems && isOpen && (
+              {hasSubItems && isExpanded && (
                 <div className="ml-9 space-y-1 border-l border-slate-200 dark:border-slate-800">
                   {item.subItems?.map((sub) => {
                     const isSubActive = pathname === sub.href;
