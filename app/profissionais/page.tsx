@@ -4,8 +4,9 @@ import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useSearch } from '@/context/SearchContext';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
-import { UserCheck, Plus, Edit2, Trash2, Search, AlertCircle, CheckCircle2, X, IdCard } from 'lucide-react';
+import { UserCheck, Plus, Edit2, Trash2, Search, AlertCircle, CheckCircle2, X, IdCard, FileUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import CSVImporter from '@/components/CSVImporter';
 
 interface Categoria {
   cbo: string;
@@ -224,7 +225,16 @@ export default function ProfissionaisPage() {
             <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Gestão de Pessoas</span>
           </div>
           <h2 className="text-5xl font-black tracking-tight font-headline text-on-surface">Cadastro de Profissionais</h2>
-          <p className="text-lg text-on-surface-variant/60 font-body max-w-2xl">Administração completa do corpo clínico e técnico da unidade.</p>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <p className="text-lg text-on-surface-variant/60 font-body max-w-2xl">Administração completa do corpo clínico e técnico da unidade.</p>
+            <CSVImporter 
+              tableName="profissionais" 
+              expectedColumns={['cpf', 'nome', 'cns', 'cbo', 'equipe', 'vinculo', 'tipo_vinculo', 'chs']}
+              conflictColumn="cpf"
+              onSuccess={fetchData}
+              title="Importar Profissionais"
+            />
+          </div>
         </header>
 
         <div className="grid grid-cols-12 gap-10">

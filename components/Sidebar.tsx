@@ -42,6 +42,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
         { name: 'Operadores', href: '/operadores' },
         { name: 'Categorias Profissionais', href: '/categorias' },
         { name: 'Profissionais', href: '/profissionais' },
+        { name: 'Rotinas', href: '/rotinas' },
       ],
     },
     { name: 'Movimento', icon: 'sync_alt', href: '#' },
@@ -53,11 +54,11 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
     <>
       {/* Mobile Overlay */}
       <div 
-        className={`fixed inset-0 bg-black/60 z-[55] lg:hidden transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        className={`fixed inset-0 bg-black/50 z-40 lg:hidden transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         onClick={onClose}
       />
 
-      <aside className={`bg-slate-100 dark:bg-slate-900 h-screen w-64 fixed left-0 top-0 overflow-y-auto flex flex-col py-8 px-4 z-[60] transition-transform duration-300 shadow-2xl lg:shadow-none ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside className={`bg-slate-100 dark:bg-slate-900 h-screen w-64 fixed left-0 top-0 overflow-y-auto flex flex-col py-8 px-4 z-50 transition-transform duration-300 shadow-2xl lg:shadow-none ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="mb-10 px-2 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-primary-container flex items-center justify-center">

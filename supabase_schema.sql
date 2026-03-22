@@ -116,3 +116,29 @@ CREATE TRIGGER update_profissionais_updated_at
     BEFORE UPDATE ON public.profissionais
     FOR EACH ROW
     EXECUTE PROCEDURE update_updated_at_column();
+
+-- 15. Create the routines table (Rotinas)
+CREATE TABLE IF NOT EXISTS public.rotinas (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tipo TEXT NOT NULL CHECK (tipo IN ('EXAME', 'VACINA', 'MEDICACAO')),
+    descricao TEXT NOT NULL,
+    trimestre TEXT NOT NULL CHECK (trimestre IN ('PRIMEIRO', 'SEGUNDO', 'TERCEIRO')),
+    categoria TEXT NOT NULL DEFAULT 'OBRIGATORIO' CHECK (categoria IN ('OBRIGATORIO', 'OPCIONAL', 'EVENTUAL')),
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 16. Enable Row Level Security (RLS) for the new table
+ALTER TABLE public.rotinas ENABLE ROW LEVEL SECURITY;
+
+-- 17. Create basic policies for the new table
+CREATE POLICY "Allow all access for development" ON public.rotinas
+    FOR ALL
+    USING (true)
+    WITH CHECK (true);
+
+-- 18. Trigger for updated_at for the new table
+CREATE TRIGGER update_rotinas_updated_at
+    BEFORE UPDATE ON public.rotinas
+    FOR EACH ROW
+    EXECUTE PROCEDURE update_updated_at_column();

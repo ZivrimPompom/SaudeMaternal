@@ -4,8 +4,9 @@ import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useSearch } from '@/context/SearchContext';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
-import { Briefcase, Plus, Edit2, Trash2, Search, AlertCircle, CheckCircle2, X } from 'lucide-react';
+import { Briefcase, Plus, Edit2, Trash2, Search, AlertCircle, CheckCircle2, X, FileUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import CSVImporter from '@/components/CSVImporter';
 
 interface CategoriaProfissional {
   cbo: string;
@@ -180,7 +181,16 @@ export default function CategoriasPage() {
             <span className="text-[10px] font-black text-secondary uppercase tracking-[0.4em]">Recursos Humanos</span>
           </div>
           <h2 className="text-5xl font-black tracking-tight font-headline text-on-surface">Categorias Profissionais</h2>
-          <p className="text-lg text-on-surface-variant/60 font-body max-w-2xl">Gerenciamento de ocupações, vínculos e cargas horárias (CBO).</p>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <p className="text-lg text-on-surface-variant/60 font-body max-w-2xl">Gerenciamento de ocupações, vínculos e cargas horárias (CBO).</p>
+            <CSVImporter 
+              tableName="categorias_profissionais" 
+              expectedColumns={['cbo', 'categoria']}
+              conflictColumn="cbo"
+              onSuccess={fetchCategories}
+              title="Importar Categorias"
+            />
+          </div>
         </header>
 
         <div className="grid grid-cols-12 gap-10">

@@ -23,8 +23,10 @@ import {
   ChevronRight, 
   ShieldCheck,
   SearchX,
-  Users
+  Users,
+  FileUp
 } from 'lucide-react';
+import CSVImporter from '@/components/CSVImporter';
 
 interface Operator {
   id: string;
@@ -35,7 +37,7 @@ interface Operator {
 }
 
 export default function OperadoresPage() {
-  const { searchQuery } = useSearch();
+  const { searchQuery, setSearchQuery } = useSearch();
   const [operators, setOperators] = useState<Operator[]>([]);
   const [loading, setLoading] = useState(isSupabaseConfigured);
 
@@ -294,9 +296,22 @@ export default function OperadoresPage() {
             <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight font-headline text-on-surface">Cadastro de Operadores</h2>
             <p className="text-base md:text-lg text-on-secondary-container font-body opacity-70">Gerencie os perfis de acesso e permissões clínicas</p>
           </div>
-          <div className="flex items-center gap-3 bg-surface-container-high px-4 py-2 rounded-full border border-outline-variant/20 shadow-sm">
-            <Users className="text-primary w-5 h-5" />
-            <span className="text-sm font-bold font-label uppercase tracking-widest text-on-surface-variant">{filteredOperators.length} Operadores</span>
+          <div className="flex items-center gap-3">
+            <CSVImporter 
+              tableName="operadores" 
+              expectedColumns={['nome', 'cpf', 'senha', 'status', 'nivel_acesso', 'sigla']}
+              conflictColumn="cpf"
+              onSuccess={fetchOperators}
+              title="Importar Operadores"
+              transformData={(data) => data.map(item => ({
+                ...item,
+                sigla: item.sigla || getInitials(item.nome || '')
+              }))}
+            />
+            <div className="flex items-center gap-3 bg-surface-container-high px-4 py-2 rounded-full border border-outline-variant/20 shadow-sm">
+              <Users className="text-primary w-5 h-5" />
+              <span className="text-sm font-bold font-label uppercase tracking-widest text-on-surface-variant">{filteredOperators.length} Operadores</span>
+            </div>
           </div>
         </header>
 
@@ -435,11 +450,13 @@ export default function OperadoresPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="relative">
-                    <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
                     <input 
                       type="text" 
                       placeholder="Filtrar..."
                       className="bg-surface-container-low border-none rounded-full pl-9 pr-4 py-2 text-xs font-body focus:ring-2 focus:ring-primary/20 outline-none w-40 md:w-64 transition-all"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
                     />
                   </div>
                 </div>
