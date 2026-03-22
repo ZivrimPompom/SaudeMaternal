@@ -33,18 +33,18 @@ export default function Page() {
 
   return (
     <DashboardLayout>
-      <div className="p-10 lg:p-16 pb-32 max-w-7xl mx-auto space-y-16">
+      <div className="p-6 md:p-10 lg:p-16 pb-32 max-w-7xl mx-auto space-y-10 md:space-y-16">
         <header className="space-y-4">
           <div className="flex items-center gap-3">
             <span className="w-12 h-1.5 bg-primary rounded-full"></span>
             <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Dashboard Principal</span>
           </div>
-          <h2 className="text-6xl font-black tracking-tight font-headline text-on-surface leading-tight">Painel de Controle</h2>
-          <p className="text-xl text-on-surface-variant/60 font-body max-w-2xl">Bem-vindo ao ecossistema Saúde Maternal. Gerencie as operações clínicas e administrativas com precisão e segurança.</p>
+          <h2 className="text-4xl md:text-6xl font-black tracking-tight font-headline text-on-surface leading-tight">Painel de Controle</h2>
+          <p className="text-lg md:text-xl text-on-surface-variant/60 font-body max-w-2xl">Bem-vindo ao ecossistema Saúde Maternal. Gerencie as operações clínicas e administrativas com precisão e segurança.</p>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-          <Link href="/operadores" className="bg-surface-container-lowest p-10 rounded-[3rem] shadow-2xl shadow-black/5 border border-outline-variant/10 hover:border-primary/30 hover:shadow-primary/10 transition-all group relative overflow-hidden flex flex-col h-full">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-10">
+          <Link href="/operadores" className="bg-surface-container-lowest p-8 md:p-10 rounded-[2.5rem] md:rounded-[3rem] shadow-2xl shadow-black/5 border border-outline-variant/10 hover:border-primary/30 hover:shadow-primary/10 transition-all group relative overflow-hidden flex flex-col h-full">
             <div className="absolute top-0 right-0 w-48 h-48 bg-primary/5 rounded-full -mr-24 -mt-24 group-hover:scale-125 transition-transform duration-700" />
             
             <div className="w-16 h-16 rounded-3xl bg-primary/10 flex items-center justify-center mb-8 group-hover:bg-primary group-hover:rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
@@ -65,7 +65,7 @@ export default function Page() {
             </div>
           </Link>
 
-          <Link href="/categorias" className="bg-surface-container-lowest p-10 rounded-[3rem] shadow-2xl shadow-black/5 border border-outline-variant/10 hover:border-primary/30 hover:shadow-primary/10 transition-all group relative overflow-hidden flex flex-col h-full">
+          <Link href="/categorias" className="bg-surface-container-lowest p-8 md:p-10 rounded-[2.5rem] md:rounded-[3rem] shadow-2xl shadow-black/5 border border-outline-variant/10 hover:border-primary/30 hover:shadow-primary/10 transition-all group relative overflow-hidden flex flex-col h-full">
             <div className="absolute top-0 right-0 w-48 h-48 bg-secondary/5 rounded-full -mr-24 -mt-24 group-hover:scale-125 transition-transform duration-700" />
             
             <div className="w-16 h-16 rounded-3xl bg-secondary/10 flex items-center justify-center mb-8 group-hover:bg-secondary group-hover:-rotate-6 transition-all duration-500 shadow-lg shadow-secondary/5">
@@ -86,7 +86,7 @@ export default function Page() {
             </div>
           </Link>
 
-          <Link href="/profissionais" className="bg-surface-container-lowest p-10 rounded-[3rem] shadow-2xl shadow-black/5 border border-outline-variant/10 hover:border-primary/30 hover:shadow-primary/10 transition-all group relative overflow-hidden flex flex-col h-full">
+          <Link href="/profissionais" className="bg-surface-container-lowest p-8 md:p-10 rounded-[2.5rem] md:rounded-[3rem] shadow-2xl shadow-black/5 border border-outline-variant/10 hover:border-primary/30 hover:shadow-primary/10 transition-all group relative overflow-hidden flex flex-col h-full">
             <div className="absolute top-0 right-0 w-48 h-48 bg-primary/5 rounded-full -mr-24 -mt-24 group-hover:scale-125 transition-transform duration-700" />
             
             <div className="w-16 h-16 rounded-3xl bg-primary/10 flex items-center justify-center mb-8 group-hover:bg-primary group-hover:rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
@@ -107,7 +107,7 @@ export default function Page() {
             </div>
           </Link>
 
-          <div className="bg-surface-container-lowest/50 p-10 rounded-[3rem] shadow-sm border border-outline-variant/5 opacity-60 flex flex-col h-full grayscale hover:grayscale-0 transition-all duration-500">
+          <div className="bg-surface-container-lowest/50 p-8 md:p-10 rounded-[2.5rem] md:rounded-[3rem] shadow-sm border border-outline-variant/5 opacity-60 flex flex-col h-full grayscale hover:grayscale-0 transition-all duration-500">
             <div className="w-16 h-16 rounded-3xl bg-surface-container-high flex items-center justify-center mb-8">
               <Activity className="text-on-surface-variant/30 w-8 h-8" />
             </div>
@@ -119,7 +119,7 @@ export default function Page() {
             </div>
           </div>
 
-          <div className="bg-surface-container-lowest/50 p-10 rounded-[3rem] shadow-sm border border-outline-variant/5 opacity-60 flex flex-col h-full grayscale hover:grayscale-0 transition-all duration-500">
+          <div className="bg-surface-container-lowest/50 p-8 md:p-10 rounded-[2.5rem] md:rounded-[3rem] shadow-sm border border-outline-variant/5 opacity-60 flex flex-col h-full grayscale hover:grayscale-0 transition-all duration-500">
             <div className="w-16 h-16 rounded-3xl bg-surface-container-high flex items-center justify-center mb-8">
               <Shield className="text-on-surface-variant/30 w-8 h-8" />
             </div>

@@ -11,6 +11,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { user, loading } = useAuth();
   const router = useRouter();
   const [mounted, setMounted] = React.useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
 
   React.useEffect(() => {
     setMounted(true);
@@ -21,6 +22,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       router.push('/login');
     }
   }, [user, loading, router, mounted]);
+
+  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+  const closeSidebar = () => setIsSidebarOpen(false);
 
   if (!mounted || loading) {
     return (
@@ -35,11 +39,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="bg-surface text-on-surface min-h-screen font-body">
-      <Sidebar />
-      <TopBar />
-      <main className="pl-64 pt-16 min-h-screen pb-24 overflow-y-auto">
-        {children}
+    <div className="bg-surface text-on-surface min-h-screen font-body relative">
+      <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} />
+      <TopBar onToggleSidebar={toggleSidebar} />
+      <main className={`transition-all duration-300 pt-16 min-h-screen pb-24 overflow-y-auto ${isSidebarOpen ? 'lg:pl-64' : 'pl-0 lg:pl-64'}`}>
+        <div className="p-4 md:p-8">
+          {children}
+        </div>
       </main>
     </div>
   );

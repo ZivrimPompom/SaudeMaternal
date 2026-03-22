@@ -287,7 +287,7 @@ export default function OperadoresPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-6 md:p-10 lg:p-12 max-w-7xl mx-auto space-y-8 md:space-y-12">
+      <div className="p-4 md:p-8 lg:p-12 pb-32 max-w-7xl mx-auto space-y-8 md:space-y-12">
         {/* Page Header */}
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div className="space-y-2">

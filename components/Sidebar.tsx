@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -16,9 +16,14 @@ interface MenuItem {
   subItems?: SubItem[];
 }
 
-export default function Sidebar() {
+export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const pathname = usePathname();
   const [openMenus, setOpenMenus] = useState<string[]>(['Cadastros']);
+
+  // Close sidebar on mobile when route changes
+  useEffect(() => {
+    onClose();
+  }, [pathname, onClose]);
 
   const toggleMenu = (name: string) => {
     setOpenMenus((prev) =>
@@ -43,17 +48,32 @@ export default function Sidebar() {
   ];
 
   return (
-    <aside className="bg-slate-100 dark:bg-slate-900 h-screen w-64 fixed left-0 top-0 overflow-y-auto flex flex-col py-8 px-4 z-50">
-      <div className="mb-10 px-2 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-lg bg-primary-container flex items-center justify-center">
-          <span className="material-symbols-outlined text-white" style={{ fontVariationSettings: '"FILL" 1' }}>health_and_safety</span>
+    <>
+      {/* Mobile Overlay */}
+      <div 
+        className={`fixed inset-0 bg-black/50 z-40 lg:hidden transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        onClick={onClose}
+      />
+
+      <aside className={`bg-slate-100 dark:bg-slate-900 h-screen w-64 fixed left-0 top-0 overflow-y-auto flex flex-col py-8 px-4 z-50 transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+        <div className="mb-10 px-2 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-primary-container flex items-center justify-center">
+              <span className="material-symbols-outlined text-white" style={{ fontVariationSettings: '"FILL" 1' }}>health_and_safety</span>
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tighter">Saúde Maternal</h1>
+              <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Curadoria Clínica</p>
+            </div>
+          </div>
+          <button 
+            onClick={onClose}
+            className="lg:hidden p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500"
+          >
+            <span className="material-symbols-outlined">close</span>
+          </button>
         </div>
-        <div>
-          <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tighter">Saúde Maternal</h1>
-          <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Curadoria Clínica</p>
-        </div>
-      </div>
-      <nav className="flex-1 space-y-1">
+        <nav className="flex-1 space-y-1">
         {menuItems.map((item) => {
           const hasSubItems = item.subItems && item.subItems.length > 0;
           const isOpen = openMenus.includes(item.name);
@@ -132,5 +152,6 @@ export default function Sidebar() {
         </Link>
       </div>
     </aside>
+  </>
   );
 }

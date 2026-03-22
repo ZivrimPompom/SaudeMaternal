@@ -214,7 +214,7 @@ export default function ProfissionaisPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-8 lg:p-12 pb-32 max-w-7xl mx-auto space-y-12">
+      <div className="p-4 md:p-8 lg:p-12 pb-32 max-w-7xl mx-auto space-y-8 md:space-y-12">
         <header className="space-y-4">
           <div className="flex items-center gap-3">
             <span className="w-12 h-1.5 bg-primary rounded-full"></span>
@@ -227,7 +227,7 @@ export default function ProfissionaisPage() {
         <div className="grid grid-cols-12 gap-10">
           {/* Form Section */}
           <section className="col-span-12 lg:col-span-4 space-y-8">
-            <div className="bg-surface-container-lowest p-8 rounded-[2.5rem] shadow-2xl shadow-black/5 border border-outline-variant/10 relative overflow-hidden">
+            <div className="bg-surface-container-lowest p-6 md:p-8 rounded-[2.5rem] shadow-2xl shadow-black/5 border border-outline-variant/10 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16" />
               
               <h3 className="text-2xl font-black font-headline mb-8 flex items-center gap-3 relative z-10">
@@ -382,7 +382,7 @@ export default function ProfissionaisPage() {
           {/* List Section */}
           <section className="col-span-12 lg:col-span-8">
             <div className="bg-surface-container-lowest rounded-[3rem] overflow-hidden shadow-2xl shadow-black/5 border border-outline-variant/10">
-              <div className="p-10 border-b border-outline-variant/5 flex justify-between items-center bg-surface-container-lowest/50 backdrop-blur-sm sticky top-0 z-20">
+              <div className="p-6 md:p-10 border-b border-outline-variant/5 flex justify-between items-center bg-surface-container-lowest/50 backdrop-blur-sm sticky top-0 z-20">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
                     <UserCheck className="text-primary w-6 h-6" />

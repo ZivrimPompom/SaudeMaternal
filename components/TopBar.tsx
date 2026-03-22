@@ -7,7 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 import { usePathname } from 'next/navigation';
 import { LucideLogOut, LucideUser, LucideChevronDown } from 'lucide-react';
 
-export default function TopBar() {
+export default function TopBar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
   const { searchQuery, setSearchQuery } = useSearch();
   const { user, signOut } = useAuth();
   const pathname = usePathname();
@@ -35,13 +35,20 @@ export default function TopBar() {
   const userInitials = user?.sigla || userName.substring(0, 2).toUpperCase();
 
   return (
-    <header className="fixed top-0 right-0 w-[calc(100%-16rem)] h-16 z-40 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-100 dark:border-slate-800/50 flex justify-between items-center px-8">
-      <div className="flex items-center gap-4">
+    <header className="fixed top-0 right-0 w-full lg:w-[calc(100%-16rem)] h-16 z-40 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-100 dark:border-slate-800/50 flex justify-between items-center px-4 md:px-8">
+      <div className="flex items-center gap-2 md:gap-4">
+        <button 
+          onClick={onToggleSidebar}
+          className="lg:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400"
+        >
+          <span className="material-symbols-outlined">menu</span>
+        </button>
+        
         {!isHomePage && (
           <>
-            <span className="text-lg font-black text-orange-600 dark:text-orange-500 font-headline">{getSearchLabel()}</span>
-            <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-2"></div>
-            <div className="flex items-center bg-surface-container rounded-full px-4 py-1.5 gap-2 w-64">
+            <span className="hidden sm:block text-lg font-black text-orange-600 dark:text-orange-500 font-headline">{getSearchLabel()}</span>
+            <div className="hidden sm:block h-6 w-px bg-slate-200 dark:bg-slate-800 mx-2"></div>
+            <div className="flex items-center bg-surface-container rounded-full px-4 py-1.5 gap-2 w-40 md:w-64">
               <span className="material-symbols-outlined text-slate-400 text-sm">search</span>
               <input 
                 className="bg-transparent border-none text-sm focus:ring-0 placeholder-slate-400 w-full font-body" 
