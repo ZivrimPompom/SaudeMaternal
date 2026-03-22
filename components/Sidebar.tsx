@@ -153,6 +153,14 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
           <span className="material-symbols-outlined">help_outline</span>
           <span>Support</span>
         </Link>
+        <button 
+          onClick={onClose}
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-slate-500 dark:text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors duration-200 font-headline text-sm font-semibold tracking-tight mt-4"
+          title="Recolher Painel"
+        >
+          <span className="material-symbols-outlined">chevron_left</span>
+          <span>Recolher Painel</span>
+        </button>
       </div>
     </aside>
   </>

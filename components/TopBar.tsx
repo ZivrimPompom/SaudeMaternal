@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useSearch } from '@/context/SearchContext';
 import { useAuth } from '@/context/AuthContext';
 import { usePathname } from 'next/navigation';
@@ -44,6 +45,15 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
         >
           <span className="material-symbols-outlined">{isSidebarOpen ? 'menu_open' : 'menu'}</span>
         </button>
+
+        <Link 
+          href="/"
+          className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-colors flex items-center gap-2"
+          title="Ir para Home"
+        >
+          <span className="material-symbols-outlined">home</span>
+          <span className="hidden sm:inline text-sm font-semibold">Home</span>
+        </Link>
         
         {!isHomePage && (
           <>
