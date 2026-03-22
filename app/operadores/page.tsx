@@ -24,7 +24,8 @@ import {
   ShieldCheck,
   SearchX,
   Users,
-  FileUp
+  FileUp,
+  Building2
 } from 'lucide-react';
 import CSVImporter from '@/components/CSVImporter';
 
@@ -34,11 +35,19 @@ interface Operator {
   cpf: string;
   status: 'Ativo' | 'Bloqueado';
   initials: string;
+  unidade_cnes?: string;
+  unidades_saude?: { nome_fantasia: string };
+}
+
+interface HealthUnit {
+  cnes: string;
+  nome_fantasia: string;
 }
 
 export default function OperadoresPage() {
   const { searchQuery, setSearchQuery } = useSearch();
   const [operators, setOperators] = useState<Operator[]>([]);
+  const [units, setUnits] = useState<HealthUnit[]>([]);
   const [loading, setLoading] = useState(isSupabaseConfigured);
 
   useEffect(() => {
@@ -46,21 +55,46 @@ export default function OperadoresPage() {
       return;
     }
     let isMounted = true;
-    const loadOperators = async () => {
+    const loadData = async () => {
       setLoading(true);
       try {
-        // Tenta buscar ordenando por 'name' ou 'nome'
+        // Fetch Units
+        const unitsResult = await supabase
+          .from('unidades_saude')
+          .select('cnes, nome_fantasia')
+          .order('nome_fantasia');
+        
+        if (unitsResult.data) {
+          setUnits(unitsResult.data as HealthUnit[]);
+        }
+
+        // Tenta buscar com join
         let result = await supabase
           .from('operadores')
-          .select('*')
+          .select('*, unidades_saude(nome_fantasia)')
           .order('name', { ascending: true });
         
-        if (result.error) {
-          // Se falhar por causa da coluna 'name', tenta 'nome'
+        if (result.error && result.error.message.includes('relationship')) {
+          // Fallback if relationship doesn't exist yet
           result = await supabase
             .from('operadores')
             .select('*')
+            .order('name', { ascending: true });
+        }
+        
+        if (result.error && result.error.message.includes('column')) {
+          // Se falhar por causa da coluna 'name', tenta 'nome'
+          result = await supabase
+            .from('operadores')
+            .select('*, unidades_saude(nome_fantasia)')
             .order('nome', { ascending: true });
+            
+          if (result.error && result.error.message.includes('relationship')) {
+            result = await supabase
+              .from('operadores')
+              .select('*')
+              .order('nome', { ascending: true });
+          }
         }
 
         if (isMounted) {
@@ -74,7 +108,9 @@ export default function OperadoresPage() {
               name: item.name || item.nome || 'Sem Nome',
               cpf: item.cpf,
               status: item.status || 'Ativo',
-              initials: item.initials || item.sigla || (item.name || item.nome || '??').substring(0, 2).toUpperCase()
+              initials: item.initials || item.sigla || (item.name || item.nome || '??').substring(0, 2).toUpperCase(),
+              unidade_cnes: item.unidade_cnes,
+              unidades_saude: item.unidades_saude
             }));
             setOperators(mappedData as Operator[]);
           }
@@ -85,7 +121,7 @@ export default function OperadoresPage() {
         if (isMounted) setLoading(false);
       }
     };
-    loadOperators();
+    loadData();
     return () => { isMounted = false; };
   }, []);
 
@@ -93,16 +129,33 @@ export default function OperadoresPage() {
     if (!isSupabaseConfigured) return;
     setLoading(true);
     try {
+      // Tenta buscar com join
       let result = await supabase
         .from('operadores')
-        .select('*')
+        .select('*, unidades_saude(nome_fantasia)')
         .order('name', { ascending: true });
       
-      if (result.error) {
+      if (result.error && result.error.message.includes('relationship')) {
+        // Fallback if relationship doesn't exist yet
         result = await supabase
           .from('operadores')
           .select('*')
+          .order('name', { ascending: true });
+      }
+      
+      if (result.error && result.error.message.includes('column')) {
+        // Se falhar por causa da coluna 'name', tenta 'nome'
+        result = await supabase
+          .from('operadores')
+          .select('*, unidades_saude(nome_fantasia)')
           .order('nome', { ascending: true });
+          
+        if (result.error && result.error.message.includes('relationship')) {
+          result = await supabase
+            .from('operadores')
+            .select('*')
+            .order('nome', { ascending: true });
+        }
       }
 
       if (result.error) {
@@ -114,7 +167,9 @@ export default function OperadoresPage() {
           name: item.name || item.nome || 'Sem Nome',
           cpf: item.cpf,
           status: item.status || 'Ativo',
-          initials: item.initials || item.sigla || (item.name || item.nome || '??').substring(0, 2).toUpperCase()
+          initials: item.initials || item.sigla || (item.name || item.nome || '??').substring(0, 2).toUpperCase(),
+          unidade_cnes: item.unidade_cnes,
+          unidades_saude: item.unidades_saude
         }));
         setOperators(mappedData as Operator[]);
       }
@@ -151,7 +206,8 @@ export default function OperadoresPage() {
     name: '',
     cpf: '',
     password: '',
-    status: 'Ativo' as 'Ativo' | 'Bloqueado'
+    status: 'Ativo' as 'Ativo' | 'Bloqueado',
+    unidade_cnes: ''
   });
 
   const [editingId, setEditingId] = useState<string | null>(null); // Now stores the CPF
@@ -209,6 +265,7 @@ export default function OperadoresPage() {
     const operatorData: any = {
       cpf: formData.cpf,
       status: formData.status,
+      unidade_cnes: formData.unidade_cnes || null
     };
 
     // Tenta descobrir quais colunas usar baseado no que já carregamos ou tenta ambas
@@ -242,6 +299,26 @@ export default function OperadoresPage() {
         updateError = retryError;
       }
 
+      if (updateError && updateError.message.includes('unidade_cnes')) {
+        // Fallback if unidade_cnes column doesn't exist yet
+        const { unidade_cnes: _, ...primaryWithoutUnit } = primaryData;
+        const { unidade_cnes: __, ...secondaryWithoutUnit } = secondaryData;
+        
+        let { error: retryError } = await supabase
+          .from('operadores')
+          .update(primaryWithoutUnit)
+          .eq('cpf', editingId);
+          
+        if (retryError && retryError.message.includes('column')) {
+          const { error: retryError2 } = await supabase
+            .from('operadores')
+            .update(secondaryWithoutUnit)
+            .eq('cpf', editingId);
+          retryError = retryError2;
+        }
+        updateError = retryError;
+      }
+
       if (updateError) {
         console.error('Erro detalhado Supabase (Update):', updateError);
         setError(`Erro ao atualizar: ${updateError.message}`);
@@ -260,6 +337,24 @@ export default function OperadoresPage() {
         insertError = retryError;
       }
 
+      if (insertError && insertError.message.includes('unidade_cnes')) {
+        // Fallback if unidade_cnes column doesn't exist yet
+        const { unidade_cnes: _, ...primaryWithoutUnit } = primaryData;
+        const { unidade_cnes: __, ...secondaryWithoutUnit } = secondaryData;
+        
+        let { error: retryError } = await supabase
+          .from('operadores')
+          .insert([primaryWithoutUnit]);
+          
+        if (retryError && retryError.message.includes('column')) {
+          const { error: retryError2 } = await supabase
+            .from('operadores')
+            .insert([secondaryWithoutUnit]);
+          retryError = retryError2;
+        }
+        insertError = retryError;
+      }
+
       if (insertError) {
         console.error('Erro detalhado Supabase (Insert):', insertError);
         setError(`Erro ao salvar: ${insertError.message}`);
@@ -267,7 +362,7 @@ export default function OperadoresPage() {
       }
     }
 
-    setFormData({ name: '', cpf: '', password: '', status: 'Ativo' });
+    setFormData({ name: '', cpf: '', password: '', status: 'Ativo', unidade_cnes: '' });
     fetchOperators();
   };
 
@@ -277,13 +372,14 @@ export default function OperadoresPage() {
       name: op.name,
       cpf: op.cpf,
       password: '', // Password usually not shown
-      status: op.status
+      status: op.status,
+      unidade_cnes: op.unidade_cnes || ''
     });
   };
 
   const cancelEdit = () => {
     setEditingId(null);
-    setFormData({ name: '', cpf: '', password: '', status: 'Ativo' });
+    setFormData({ name: '', cpf: '', password: '', status: 'Ativo', unidade_cnes: '' });
     setError(null);
   };
 
@@ -299,13 +395,14 @@ export default function OperadoresPage() {
           <div className="flex items-center gap-3">
             <CSVImporter 
               tableName="operadores" 
-              expectedColumns={['nome', 'cpf', 'senha', 'status', 'nivel_acesso', 'sigla']}
+              expectedColumns={['nome', 'cpf', 'senha', 'status', 'nivel_acesso', 'sigla', 'unidade_cnes']}
               conflictColumn="cpf"
               onSuccess={fetchOperators}
               title="Importar Operadores"
               transformData={(data) => data.map(item => ({
                 ...item,
-                sigla: item.sigla || getInitials(item.nome || '')
+                sigla: item.sigla || getInitials(item.nome || ''),
+                unidade_cnes: item.unidade_cnes || null
               }))}
             />
             <div className="flex items-center gap-3 bg-surface-container-high px-4 py-2 rounded-full border border-outline-variant/20 shadow-sm">
@@ -372,6 +469,22 @@ export default function OperadoresPage() {
                       maxLength={14}
                       required
                     />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Unidade de Saúde</label>
+                  <div className="relative group">
+                    <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-5 h-5" />
+                    <select 
+                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-12 pr-4 py-3.5 transition-all font-body outline-none text-sm appearance-none"
+                      value={formData.unidade_cnes}
+                      onChange={(e) => setFormData({ ...formData, unidade_cnes: e.target.value })}
+                    >
+                      <option value="">Selecione uma unidade...</option>
+                      {units.map(unit => (
+                        <option key={unit.cnes} value={unit.cnes}>{unit.nome_fantasia}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -502,7 +615,9 @@ export default function OperadoresPage() {
                               </div>
                               <div>
                                 <p className="font-bold text-on-surface text-base font-headline leading-tight">{op.name}</p>
-                                <p className="text-[10px] text-on-surface-variant/60 font-body uppercase tracking-widest mt-1">Acesso Nível 1</p>
+                                <p className="text-[10px] text-on-surface-variant/60 font-body uppercase tracking-widest mt-1">
+                                  {op.unidades_saude?.nome_fantasia || 'Sem Unidade'}
+                                </p>
                               </div>
                             </div>
                           </td>

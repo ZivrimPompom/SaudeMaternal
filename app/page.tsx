@@ -3,11 +3,11 @@
 import React, { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import Link from 'next/link';
-import { Users, UserPlus, Shield, Activity, Briefcase, UserCheck, ClipboardList, Plus } from 'lucide-react';
+import { Users, UserPlus, Shield, Activity, Briefcase, UserCheck, ClipboardList, Plus, Building2 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
 export default function Page() {
-  const [stats, setStats] = useState({ operators: 0, categories: 0, professionals: 0, routines: 0, patients: 0 });
+  const [stats, setStats] = useState({ operators: 0, categories: 0, professionals: 0, routines: 0, patients: 0, units: 0 });
 
   useEffect(() => {
     if (isSupabaseConfigured) {
@@ -16,20 +16,22 @@ export default function Page() {
         supabase.from('categorias_profissionais').select('cbo', { count: 'exact', head: true }),
         supabase.from('profissionais').select('cpf', { count: 'exact', head: true }),
         supabase.from('rotinas').select('id', { count: 'exact', head: true }),
-        supabase.from('pacientes').select('id', { count: 'exact', head: true })
-      ]).then(([ops, cats, pros, rots, pacs]) => {
+        supabase.from('pacientes').select('id', { count: 'exact', head: true }),
+        supabase.from('unidades_saude').select('cnes', { count: 'exact', head: true })
+      ]).then(([ops, cats, pros, rots, pacs, units]) => {
         setStats({
           operators: ops.count || 0,
           categories: cats.count || 0,
           professionals: pros.count || 0,
           routines: rots.count || 0,
-          patients: pacs.count || 0
+          patients: pacs.count || 0,
+          units: units.count || 0
         });
       });
     } else {
       // Use a small delay to avoid synchronous state update in effect
       const timer = setTimeout(() => {
-        setStats({ operators: 3, categories: 12, professionals: 8, routines: 15, patients: 42 }); // Sample count
+        setStats({ operators: 3, categories: 12, professionals: 8, routines: 15, patients: 42, units: 5 }); // Sample count
       }, 0);
       return () => clearTimeout(timer);
     }
@@ -153,17 +155,26 @@ export default function Page() {
             </div>
           </Link>
 
-          <div className="bg-surface-container-lowest/50 p-8 md:p-10 rounded-[2.5rem] md:rounded-[3rem] shadow-sm border border-outline-variant/5 opacity-60 flex flex-col h-full grayscale hover:grayscale-0 transition-all duration-500">
-            <div className="w-16 h-16 rounded-3xl bg-surface-container-high flex items-center justify-center mb-8">
-              <Activity className="text-on-surface-variant/30 w-8 h-8" />
+          <Link href="/unidades" className="bg-surface-container-lowest p-8 md:p-10 rounded-[2.5rem] md:rounded-[3rem] shadow-2xl shadow-black/5 border border-outline-variant/10 hover:border-primary/30 hover:shadow-primary/10 transition-all group relative overflow-hidden flex flex-col h-full">
+            <div className="absolute top-0 right-0 w-48 h-48 bg-primary/5 rounded-full -mr-24 -mt-24 group-hover:scale-125 transition-transform duration-700" />
+            
+            <div className="w-16 h-16 rounded-3xl bg-primary/10 flex items-center justify-center mb-8 group-hover:bg-primary group-hover:rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
+              <Building2 className="text-primary group-hover:text-white w-8 h-8 transition-colors" />
             </div>
-            <h3 className="text-3xl font-black font-headline mb-3 text-on-surface/40 tracking-tight">Movimentação</h3>
-            <p className="text-sm text-on-surface-variant/40 font-body mb-10 leading-relaxed">Módulo de fluxo clínico em desenvolvimento. Em breve, acompanhamento em tempo real.</p>
-            <div className="mt-auto pt-8 border-t border-outline-variant/5 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-on-surface-variant/20"></span>
-              <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/20">Aguardando Lançamento</span>
+            
+            <h3 className="text-3xl font-black font-headline mb-3 text-on-surface tracking-tight">Unidades</h3>
+            <p className="text-sm text-on-surface-variant/60 font-body mb-10 leading-relaxed">Gestão de estabelecimentos de saúde, CNES e endereços da rede.</p>
+            
+            <div className="mt-auto flex items-center justify-between pt-8 border-t border-outline-variant/10">
+              <div className="flex flex-col">
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/40 mb-1">Total Unidades</span>
+                <span className="text-3xl font-black text-primary font-headline">{stats.units}</span>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-surface-container-low flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+                <Plus className="w-6 h-6 text-on-surface-variant/40 group-hover:text-primary transition-colors" />
+              </div>
             </div>
-          </div>
+          </Link>
 
           <div className="bg-surface-container-lowest/50 p-8 md:p-10 rounded-[2.5rem] md:rounded-[3rem] shadow-sm border border-outline-variant/5 opacity-60 flex flex-col h-full grayscale hover:grayscale-0 transition-all duration-500">
             <div className="w-16 h-16 rounded-3xl bg-surface-container-high flex items-center justify-center mb-8">

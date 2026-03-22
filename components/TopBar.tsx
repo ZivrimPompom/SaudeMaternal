@@ -18,6 +18,7 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
   const isOperatorsPage = pathname === '/operadores';
   const isRotinasPage = pathname === '/rotinas';
   const isPacientesPage = pathname === '/pacientes';
+  const isUnidadesPage = pathname === '/unidades';
   
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
@@ -26,6 +27,7 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
     if (isProfessionalsPage) return 'Nome, CPF ou CNS';
     if (isRotinasPage) return 'Descrição ou Tipo';
     if (isPacientesPage) return 'Nome ou CPF';
+    if (isUnidadesPage) return 'CNES ou Nome';
     return 'Busca';
   };
 
@@ -34,6 +36,7 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
     if (isProfessionalsPage) return 'Nome, CPF ou CNS...';
     if (isRotinasPage) return 'Descrição ou Tipo...';
     if (isPacientesPage) return 'Nome ou CPF...';
+    if (isUnidadesPage) return 'CNES ou Nome...';
     return 'Pesquisar...';
   };
 

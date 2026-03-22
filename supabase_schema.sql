@@ -142,3 +142,34 @@ CREATE TRIGGER update_rotinas_updated_at
     BEFORE UPDATE ON public.rotinas
     FOR EACH ROW
     EXECUTE PROCEDURE update_updated_at_column();
+
+-- 19. Create the health units table (Unidades de Saúde)
+CREATE TABLE IF NOT EXISTS public.unidades_saude (
+    cnes TEXT PRIMARY KEY,
+    nome_fantasia TEXT NOT NULL,
+    logradouro TEXT,
+    numero TEXT,
+    complemento TEXT,
+    bairro TEXT,
+    municipio TEXT NOT NULL DEFAULT 'SAO PAULO',
+    uf TEXT NOT NULL DEFAULT 'SP',
+    cep TEXT,
+    telefone TEXT,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 20. Enable Row Level Security (RLS) for the new table
+ALTER TABLE public.unidades_saude ENABLE ROW LEVEL SECURITY;
+
+-- 21. Create basic policies for the new table
+CREATE POLICY "Allow all access for development" ON public.unidades_saude
+    FOR ALL
+    USING (true)
+    WITH CHECK (true);
+
+-- 22. Trigger for updated_at for the new table
+CREATE TRIGGER update_unidades_saude_updated_at
+    BEFORE UPDATE ON public.unidades_saude
+    FOR EACH ROW
+    EXECUTE PROCEDURE update_updated_at_column();

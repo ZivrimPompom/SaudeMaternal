@@ -41,6 +41,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
       icon: 'person_add',
       subItems: [
         { name: 'Pacientes', href: '/pacientes' },
+        { name: 'Unidades de Saúde', href: '/unidades' },
         { name: 'Operadores', href: '/operadores' },
         { name: 'Categorias Profissionais', href: '/categorias' },
         { name: 'Profissionais', href: '/profissionais' },

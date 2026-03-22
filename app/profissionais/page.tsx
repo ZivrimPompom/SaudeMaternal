@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useSearch } from '@/context/SearchContext';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
-import { UserCheck, Plus, Edit2, Trash2, Search, AlertCircle, CheckCircle2, X, IdCard, FileUp } from 'lucide-react';
+import { UserCheck, Plus, Edit2, Trash2, Search, AlertCircle, CheckCircle2, X, IdCard, FileUp, Building2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import CSVImporter from '@/components/CSVImporter';
 
@@ -22,13 +22,21 @@ interface Profissional {
   vinculo: 'DIRETO' | 'INTERMEDIADO';
   tipo_vinculo: 'CLT' | 'ESTATUTARIO' | 'AUTÔNOMO';
   chs: 20 | 30 | 40;
+  unidade_cnes?: string;
   categorias_profissionais?: Categoria;
+  unidades_saude?: { nome_fantasia: string };
+}
+
+interface HealthUnit {
+  cnes: string;
+  nome_fantasia: string;
 }
 
 export default function ProfissionaisPage() {
   const { searchQuery } = useSearch();
   const [professionals, setProfessionals] = useState<Profissional[]>([]);
   const [categories, setCategories] = useState<Categoria[]>([]);
+  const [units, setUnits] = useState<HealthUnit[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -42,7 +50,8 @@ export default function ProfissionaisPage() {
     equipe: 'SEM EQUIPE',
     vinculo: 'INTERMEDIADO',
     tipo_vinculo: 'CLT',
-    chs: 20
+    chs: 20,
+    unidade_cnes: ''
   });
 
   const [editingCpf, setEditingCpf] = useState<string | null>(null);
@@ -58,22 +67,42 @@ export default function ProfissionaisPage() {
     }
     setLoading(true);
     
-    const [prosResponse, catsResponse] = await Promise.all([
-      supabase
+    let prosResponse = await supabase
+      .from('profissionais')
+      .select('*, categorias_profissionais(cbo, categoria), unidades_saude(nome_fantasia)')
+      .order('nome');
+    
+    if (prosResponse.error && prosResponse.error.message.includes('relationship')) {
+      // Fallback if relationship doesn't exist yet
+      prosResponse = await supabase
         .from('profissionais')
         .select('*, categorias_profissionais(cbo, categoria)')
-        .order('nome'),
+        .order('nome');
+    }
+
+    const [catsResponse, unitsResponse] = await Promise.all([
       supabase
         .from('categorias_profissionais')
         .select('cbo, categoria')
-        .order('categoria')
+        .order('categoria'),
+      supabase
+        .from('unidades_saude')
+        .select('cnes, nome_fantasia')
+        .order('nome_fantasia')
     ]);
 
-    if (prosResponse.error) setError('Erro ao carregar profissionais.');
-    else setProfessionals(prosResponse.data as Profissional[]);
+    if (prosResponse.error) {
+      console.error('Erro ao carregar profissionais:', prosResponse.error);
+      setError(`Erro ao carregar profissionais: ${prosResponse.error.message}`);
+    } else {
+      setProfessionals(prosResponse.data as Profissional[]);
+    }
 
     if (catsResponse.error) console.error('Error fetching categories:', catsResponse.error);
     else setCategories(catsResponse.data as Categoria[]);
+
+    if (unitsResponse.error) console.error('Error fetching units:', unitsResponse.error);
+    else setUnits(unitsResponse.data as HealthUnit[]);
 
     setLoading(false);
   };
@@ -138,28 +167,50 @@ export default function ProfissionaisPage() {
     }
 
     try {
-      const payload = {
-        ...formData,
+      // Create a clean payload with only the fields that exist in the table
+      const payload: any = {
         cpf: cleanCpf,
-        nome: formData.nome.toUpperCase(),
-        cns: formData.cns?.replace(/\D/g, '') || ''
+        nome: formData.nome?.toUpperCase(),
+        cns: formData.cns?.replace(/\D/g, '') || '',
+        cbo: formData.cbo,
+        equipe: formData.equipe,
+        vinculo: formData.vinculo,
+        tipo_vinculo: formData.tipo_vinculo,
+        chs: formData.chs,
+        unidade_cnes: formData.unidade_cnes || null
       };
 
-      // Remove the joined object before sending to Supabase
-      delete (payload as any).categorias_profissionais;
-
       if (editingCpf) {
-        const { error: updateError } = await supabase
+        let { error: updateError } = await supabase
           .from('profissionais')
           .update(payload)
           .eq('cpf', editingCpf);
 
+        if (updateError && updateError.message.includes('unidade_cnes')) {
+          // Fallback if column doesn't exist yet
+          const { unidade_cnes, ...fallbackPayload } = payload;
+          const { error: retryError } = await supabase
+            .from('profissionais')
+            .update(fallbackPayload)
+            .eq('cpf', editingCpf);
+          updateError = retryError;
+        }
+
         if (updateError) throw updateError;
         setSuccess('Profissional atualizado com sucesso!');
       } else {
-        const { error: insertError } = await supabase
+        let { error: insertError } = await supabase
           .from('profissionais')
           .insert([payload]);
+
+        if (insertError && insertError.message.includes('unidade_cnes')) {
+          // Fallback if column doesn't exist yet
+          const { unidade_cnes, ...fallbackPayload } = payload;
+          const { error: retryError } = await supabase
+            .from('profissionais')
+            .insert([fallbackPayload]);
+          insertError = retryError;
+        }
 
         if (insertError) {
           if (insertError.code === '23505') {
@@ -179,7 +230,8 @@ export default function ProfissionaisPage() {
         equipe: 'SEM EQUIPE',
         vinculo: 'INTERMEDIADO',
         tipo_vinculo: 'CLT',
-        chs: 20
+        chs: 20,
+        unidade_cnes: ''
       });
       setEditingCpf(null);
       fetchData();
@@ -229,7 +281,7 @@ export default function ProfissionaisPage() {
             <p className="text-lg text-on-surface-variant/60 font-body max-w-2xl">Administração completa do corpo clínico e técnico da unidade.</p>
             <CSVImporter 
               tableName="profissionais" 
-              expectedColumns={['cpf', 'nome', 'cns', 'cbo', 'equipe', 'vinculo', 'tipo_vinculo', 'chs']}
+              expectedColumns={['cpf', 'nome', 'cns', 'cbo', 'equipe', 'vinculo', 'tipo_vinculo', 'chs', 'unidade_cnes']}
               conflictColumn="cpf"
               onSuccess={fetchData}
               title="Importar Profissionais"
@@ -320,6 +372,20 @@ export default function ProfissionaisPage() {
                     <option value="">Selecione uma categoria...</option>
                     {categories.map(cat => (
                       <option key={cat.cbo} value={cat.cbo}>{cat.categoria} ({cat.cbo})</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Unidade de Saúde</label>
+                  <select 
+                    className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none appearance-none"
+                    value={formData.unidade_cnes}
+                    onChange={(e) => setFormData({ ...formData, unidade_cnes: e.target.value })}
+                  >
+                    <option value="">Selecione uma unidade...</option>
+                    {units.map(unit => (
+                      <option key={unit.cnes} value={unit.cnes}>{unit.nome_fantasia}</option>
                     ))}
                   </select>
                 </div>
@@ -463,6 +529,9 @@ export default function ProfissionaisPage() {
                             <div className="flex flex-col gap-1">
                               <span className="text-[10px] font-black text-primary tracking-widest">{formatCpf(pro.cpf)}</span>
                               <p className="font-black text-on-surface font-headline text-base group-hover:text-primary transition-colors uppercase">{pro.nome}</p>
+                              <span className="text-[9px] font-bold text-on-surface-variant/40 uppercase tracking-widest">
+                                {pro.unidades_saude?.nome_fantasia || 'Sem Unidade'}
+                              </span>
                             </div>
                           </td>
                           <td className="px-6 py-8">
