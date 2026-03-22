@@ -35,10 +35,12 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
 
   const menuItems: MenuItem[] = [
     { name: 'Home', icon: 'home', href: '/' },
+    { name: 'Pacientes', icon: 'group', href: '/pacientes' },
     {
       name: 'Cadastros',
       icon: 'person_add',
       subItems: [
+        { name: 'Pacientes', href: '/pacientes' },
         { name: 'Operadores', href: '/operadores' },
         { name: 'Categorias Profissionais', href: '/categorias' },
         { name: 'Profissionais', href: '/profissionais' },

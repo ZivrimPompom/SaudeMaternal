@@ -27,8 +27,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   }, [user, loading, router, mounted]);
 
-  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
-  const closeSidebar = () => setIsSidebarOpen(false);
+  const toggleSidebar = React.useCallback(() => setIsSidebarOpen(prev => !prev), []);
+  const closeSidebar = React.useCallback(() => setIsSidebarOpen(false), []);
 
   if (!mounted || loading) {
     return (
@@ -45,25 +45,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="bg-surface text-on-surface min-h-screen font-body relative">
       <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} />
-      
-      <main className={`transition-all duration-300 pt-16 min-h-screen pb-24 overflow-y-auto ${isSidebarOpen ? 'lg:pl-64' : 'pl-0'}`}>
-        <div className="p-4 md:p-8">
-          {children}
-        </div>
-      </main>
-
       <TopBar onToggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
       
       {/* Botão para reabrir Sidebar no Desktop quando recolhida */}
       {!isSidebarOpen && (
         <button
           onClick={toggleSidebar}
-          className="hidden lg:flex fixed bottom-6 left-6 z-[70] w-10 h-10 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full items-center justify-center shadow-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-all duration-300 text-slate-600 dark:text-slate-400 hover:text-orange-600"
+          className="hidden lg:flex fixed bottom-6 left-6 z-50 w-10 h-10 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full items-center justify-center shadow-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-all duration-300 text-slate-600 dark:text-slate-400 hover:text-orange-600"
           title="Expandir Painel"
         >
           <span className="material-symbols-outlined">chevron_right</span>
         </button>
       )}
+
+      <main className={`transition-all duration-300 pt-16 min-h-screen pb-24 overflow-y-auto ${isSidebarOpen ? 'lg:pl-64' : 'pl-0'}`}>
+        <div className="p-4 md:p-8">
+          {children}
+        </div>
+      </main>
     </div>
   );
 }
