@@ -28,7 +28,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const savedUser = localStorage.getItem('saude_maternal_user');
       if (savedUser) {
         try {
-          return JSON.parse(savedUser);
+          const parsed = JSON.parse(savedUser);
+          // Fallback for older versions that might have 'name' instead of 'nome'
+          if (parsed && !parsed.nome && parsed.name) {
+            parsed.nome = parsed.name;
+          }
+          return parsed;
         } catch (e) {
           localStorage.removeItem('saude_maternal_user');
         }

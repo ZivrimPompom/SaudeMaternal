@@ -17,12 +17,21 @@ CREATE TABLE IF NOT EXISTS public.operadores (
 -- 2. Create the patients table (Pacientes) - Essential for Maternal Health
 CREATE TABLE IF NOT EXISTS public.pacientes (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name TEXT NOT NULL,
-    cpf TEXT UNIQUE,
-    birth_date DATE,
-    phone TEXT,
+    gestante TEXT NOT NULL,
+    cpf TEXT UNIQUE NOT NULL,
+    nome_mae TEXT DEFAULT 'NÃO INFORMADO',
+    prontuario TEXT,
+    cns TEXT,
+    data_nascimento DATE,
+    logradouro TEXT,
+    numero TEXT,
+    complemento TEXT,
+    bairro TEXT,
+    contato TEXT,
     email TEXT,
-    address TEXT,
+    cidade TEXT DEFAULT 'SÃO PAULO',
+    uf TEXT DEFAULT 'SP',
+    operador_responsavel TEXT,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
 );
@@ -32,11 +41,15 @@ ALTER TABLE public.operadores ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.pacientes ENABLE ROW LEVEL SECURITY;
 
 -- 4. Create basic policies (Allow all for development, should be hardened for production)
+-- NOTE: Using "IF NOT EXISTS" style for policies is not directly supported in standard SQL, 
+-- so we drop and recreate to ensure they are applied correctly.
+DROP POLICY IF EXISTS "Allow all access for development" ON public.operadores;
 CREATE POLICY "Allow all access for development" ON public.operadores
     FOR ALL
     USING (true)
     WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Allow all access for development" ON public.pacientes;
 CREATE POLICY "Allow all access for development" ON public.pacientes
     FOR ALL
     USING (true)

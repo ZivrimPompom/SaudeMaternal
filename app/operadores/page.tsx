@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useSearch } from '@/context/SearchContext';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   AlertTriangle, 
   Info, 
@@ -19,6 +20,9 @@ import {
   Search, 
   Edit2, 
   MoreVertical, 
+  Trash2,
+  CheckCircle2,
+  X,
   ChevronLeft, 
   ChevronRight, 
   ShieldCheck,
@@ -212,6 +216,8 @@ export default function OperadoresPage() {
 
   const [editingId, setEditingId] = useState<string | null>(null); // Now stores the CPF
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const formatCPF = (value: string) => {
     const digits = value.replace(/\D/g, '');
@@ -383,6 +389,25 @@ export default function OperadoresPage() {
     setError(null);
   };
 
+  const handleDelete = async (cpf: string) => {
+    setDeleteConfirmId(null);
+    setError(null);
+    setSuccess(null);
+
+    const { error: deleteError } = await supabase
+      .from('operadores')
+      .delete()
+      .eq('cpf', cpf);
+
+    if (deleteError) {
+      console.error('Erro ao excluir operador:', deleteError);
+      setError(`Erro ao excluir operador: ${deleteError.message}`);
+    } else {
+      setSuccess('Operador excluído com sucesso!');
+      fetchOperators();
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="p-4 md:p-8 lg:p-12 pb-32 max-w-7xl mx-auto space-y-8 md:space-y-12">
@@ -399,11 +424,19 @@ export default function OperadoresPage() {
               conflictColumn="cpf"
               onSuccess={fetchOperators}
               title="Importar Operadores"
-              transformData={(data) => data.map(item => ({
-                ...item,
-                sigla: item.sigla || getInitials(item.nome || ''),
-                unidade_cnes: item.unidade_cnes || null
-              }))}
+              transformData={(data) => data.map(item => {
+                const nome = item.nome || item.name || '';
+                const sigla = item.sigla || item.initials || getInitials(nome);
+                const senha = item.senha || item.password || item.senha_acesso || '123456';
+                
+                return {
+                  ...item,
+                  nome: nome,
+                  sigla: sigla,
+                  senha: senha,
+                  unidade_cnes: item.unidade_cnes || null
+                };
+              })}
             />
             <div className="flex items-center gap-3 bg-surface-container-high px-4 py-2 rounded-full border border-outline-variant/20 shadow-sm">
               <Users className="text-primary w-5 h-5" />
@@ -425,7 +458,7 @@ export default function OperadoresPage() {
 
         <div className="grid grid-cols-12 gap-6 md:gap-8">
           {/* Form Section - Bento Card 1 */}
-          <section className="col-span-12 lg:col-span-4 space-y-6">
+          <section className="col-span-12 lg:col-span-3 space-y-6">
             <div className="bg-surface-container-lowest p-6 md:p-8 rounded-2xl shadow-md border border-outline-variant/10 relative overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-primary-container"></div>
               <h3 className="text-xl font-bold font-headline mb-8 flex items-center gap-3">
@@ -447,7 +480,7 @@ export default function OperadoresPage() {
                       className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-12 pr-4 py-3.5 transition-all font-body outline-none text-sm" 
                       placeholder="Ex: Jean Luc Picard" 
                       type="text" 
-                      value={formData.name}
+                      value={formData.name || ''}
                       onChange={(e) => {
                         setFormData({ ...formData, name: e.target.value });
                         setError(null);
@@ -464,7 +497,7 @@ export default function OperadoresPage() {
                       className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-12 pr-4 py-3.5 transition-all font-body outline-none text-sm" 
                       placeholder="000.000.000-00" 
                       type="text" 
-                      value={formData.cpf}
+                      value={formData.cpf || ''}
                       onChange={handleCpfChange}
                       maxLength={14}
                       required
@@ -477,7 +510,7 @@ export default function OperadoresPage() {
                     <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-5 h-5" />
                     <select 
                       className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-12 pr-4 py-3.5 transition-all font-body outline-none text-sm appearance-none"
-                      value={formData.unidade_cnes}
+                      value={formData.unidade_cnes || ''}
                       onChange={(e) => setFormData({ ...formData, unidade_cnes: e.target.value })}
                     >
                       <option value="">Selecione uma unidade...</option>
@@ -494,7 +527,7 @@ export default function OperadoresPage() {
                       <Shield className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-5 h-5" />
                       <select 
                         className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-12 pr-4 py-3.5 transition-all font-body outline-none text-sm appearance-none"
-                        value={formData.status}
+                        value={formData.status || 'Ativo'}
                         onChange={(e) => setFormData({ ...formData, status: e.target.value as 'Ativo' | 'Bloqueado' })}
                       >
                         <option value="Ativo">Ativo</option>
@@ -510,7 +543,7 @@ export default function OperadoresPage() {
                         className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-12 pr-4 py-3.5 transition-all font-body outline-none text-sm" 
                         placeholder={editingId ? "Manter" : "••••••••"} 
                         type="password" 
-                        value={formData.password}
+                        value={formData.password || ''}
                         onChange={(e) => {
                           setFormData({ ...formData, password: e.target.value });
                           setError(null);
@@ -525,14 +558,34 @@ export default function OperadoresPage() {
                     {editingId ? <ShieldCheck className="w-5 h-5" /> : <UserPlus className="w-5 h-5" />}
                     {editingId ? 'Atualizar Operador' : 'Cadastrar Operador'}
                   </button>
-                  {(editingId || formData.name || formData.cpf || formData.password) && (
+                  {editingId && (
+                    <div className="grid grid-cols-2 gap-3">
+                      <button 
+                        type="button"
+                        onClick={() => setDeleteConfirmId(editingId)}
+                        className="bg-red-50 text-red-600 font-black py-4 rounded-xl hover:bg-red-100 transition-all flex items-center justify-center gap-2 font-headline uppercase tracking-widest text-[10px]"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        Excluir
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={cancelEdit}
+                        className="bg-surface-container-high text-on-surface-variant font-black py-4 rounded-xl hover:bg-surface-container-highest transition-all flex items-center justify-center gap-2 font-headline uppercase tracking-widest text-[10px]"
+                      >
+                        <X className="w-3 h-3" />
+                        Cancelar
+                      </button>
+                    </div>
+                  )}
+                  {!editingId && (formData.name || formData.cpf || formData.password) && (
                     <button 
                       type="button"
                       onClick={cancelEdit}
                       className="w-full bg-surface-container text-on-surface-variant font-bold py-3.5 rounded-xl hover:bg-surface-container-high transition-colors font-headline uppercase tracking-widest text-[10px] flex items-center justify-center gap-2"
                     >
                       <RefreshCw className="w-4 h-4" />
-                      {editingId ? 'Cancelar Edição' : 'Limpar Formulário'}
+                      Limpar Formulário
                     </button>
                   )}
                 </div>
@@ -554,7 +607,7 @@ export default function OperadoresPage() {
           </section>
 
           {/* Table Section - Bento Card 3 */}
-          <section className="col-span-12 lg:col-span-8">
+          <section className="col-span-12 lg:col-span-9">
             <div className="bg-surface-container-lowest rounded-2xl overflow-hidden shadow-md border border-outline-variant/10 flex flex-col h-full">
               <div className="p-6 md:p-8 border-b border-surface-container-low flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-surface-container-lowest/50 backdrop-blur-sm sticky top-0 z-10">
                 <div>
@@ -574,7 +627,7 @@ export default function OperadoresPage() {
                   </div>
                 </div>
               </div>
-              <div className="flex-1 overflow-x-auto">
+              <div className="max-h-[700px] overflow-auto scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent">
                 {loading ? (
                   <div className="p-8 space-y-6">
                     {[1, 2, 3, 4, 5].map((i) => (
@@ -596,61 +649,64 @@ export default function OperadoresPage() {
                     <p className="text-sm font-medium">Nenhum operador encontrado com os critérios atuais.</p>
                   </div>
                 ) : (
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="bg-surface-container-low/30">
-                        <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label">Profissional</th>
-                        <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label">Identificação</th>
-                        <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label">Status</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label text-right">Ações</th>
+                  <table className="w-full text-left border-separate border-spacing-0 min-w-[1200px]">
+                    <thead className="sticky top-0 z-30 bg-surface-container-low">
+                      <tr>
+                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5 w-[300px]">Profissional</th>
+                        <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5 w-[200px]">Identificação</th>
+                        <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5 w-[150px]">Status</th>
+                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label text-center border-b border-outline-variant/5 sticky right-0 bg-surface-container-low z-40 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] w-[200px]">Ações de Gerenciamento</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-surface-container-low/50">
                       {filteredOperators.map((op) => (
                         <tr key={op.cpf} className="hover:bg-surface-container-low/40 transition-all group">
-                          <td className="px-8 py-6">
-                            <div className="flex items-center gap-4">
-                              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-surface-container-high to-surface-container-highest flex items-center justify-center text-sm font-bold text-primary shadow-sm group-hover:scale-105 transition-transform">
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-surface-container-high to-surface-container-highest flex items-center justify-center text-sm font-bold text-primary shadow-sm group-hover:scale-105 transition-transform">
                                 {op.initials}
                               </div>
                               <div>
-                                <p className="font-bold text-on-surface text-base font-headline leading-tight">{op.name}</p>
-                                <p className="text-[10px] text-on-surface-variant/60 font-body uppercase tracking-widest mt-1">
+                                <p className="font-bold text-on-surface text-sm font-headline leading-tight uppercase">{op.name}</p>
+                                <p className="text-[9px] text-on-surface-variant/60 font-body uppercase tracking-widest mt-0.5">
                                   {op.unidades_saude?.nome_fantasia || 'Sem Unidade'}
                                 </p>
                               </div>
                             </div>
                           </td>
-                          <td className="px-6 py-6">
+                          <td className="px-4 py-4">
                             <div className="flex flex-col">
-                              <span className="text-sm font-mono text-on-surface-variant font-medium">{op.cpf}</span>
-                              <span className="text-[9px] text-on-surface-variant/40 font-body uppercase tracking-tighter mt-1">CPF Verificado</span>
+                              <span className="text-xs font-mono text-on-surface-variant font-medium">{op.cpf}</span>
+                              <span className="text-[8px] text-on-surface-variant/40 font-body uppercase tracking-tighter mt-0.5 whitespace-nowrap">CPF Verificado</span>
                             </div>
                           </td>
-                          <td className="px-6 py-6">
-                            <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                          <td className="px-4 py-4">
+                            <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest ${
                               op.status === 'Ativo' 
                                 ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' 
                                 : 'bg-error-container/50 text-on-error-container border border-error/10'
                             }`}>
-                              <span className={`w-1.5 h-1.5 rounded-full ${op.status === 'Ativo' ? 'bg-emerald-500' : 'bg-error'} animate-pulse`}></span>
+                              <span className={`w-1 h-1 rounded-full ${op.status === 'Ativo' ? 'bg-emerald-500' : 'bg-error'} animate-pulse`}></span>
                               {op.status}
                             </div>
                           </td>
-                          <td className="px-8 py-6 text-right">
-                            <div className="flex items-center justify-end gap-2">
+                          <td className="px-6 py-4 sticky right-0 bg-surface-container-lowest group-hover:bg-surface-container-low transition-colors z-30 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">
+                            <div className="flex items-center justify-center gap-2">
                               <button 
                                 onClick={() => handleEdit(op)}
+                                className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary/5 text-primary hover:bg-primary hover:text-white transition-all shadow-sm group/btn"
                                 title="Editar Operador"
-                                className="w-10 h-10 inline-flex items-center justify-center rounded-xl bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white transition-all shadow-sm active:scale-95"
                               >
-                                <Edit2 className="w-5 h-5" />
+                                <Edit2 className="w-3.5 h-3.5" />
+                                <span className="text-[9px] font-black uppercase tracking-widest hidden group-hover/btn:inline">Editar</span>
                               </button>
                               <button 
-                                title="Mais Opções"
-                                className="w-10 h-10 inline-flex items-center justify-center rounded-xl bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest transition-all shadow-sm"
+                                onClick={() => setDeleteConfirmId(op.cpf)}
+                                className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all shadow-sm group/btn"
+                                title="Excluir Operador"
                               >
-                                <MoreVertical className="w-5 h-5" />
+                                <Trash2 className="w-3.5 h-3.5" />
+                                <span className="text-[9px] font-black uppercase tracking-widest hidden group-hover/btn:inline">Excluir</span>
                               </button>
                             </div>
                           </td>
@@ -687,6 +743,44 @@ export default function OperadoresPage() {
           </section>
         </div>
       </div>
+
+      {/* Custom Confirmation Modal */}
+      <AnimatePresence>
+        {deleteConfirmId && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="bg-white rounded-[2.5rem] p-10 max-w-md w-full shadow-2xl border border-outline-variant/10 space-y-8"
+            >
+              <div className="w-20 h-20 bg-red-50 rounded-[2rem] flex items-center justify-center mx-auto">
+                <Trash2 className="text-red-600 w-10 h-10" />
+              </div>
+              <div className="text-center space-y-2">
+                <h3 className="text-2xl font-black font-headline text-on-surface">Confirmar Exclusão</h3>
+                <p className="text-sm text-on-surface-variant/60 font-body">
+                  Você está prestes a excluir o operador com CPF <span className="font-black text-primary">{deleteConfirmId}</span>. Esta ação não pode ser desfeita.
+                </p>
+              </div>
+              <div className="flex flex-col gap-3">
+                <button 
+                  onClick={() => handleDelete(deleteConfirmId)}
+                  className="w-full bg-red-600 text-white font-black py-5 rounded-2xl shadow-xl shadow-red-600/20 hover:scale-[1.02] active:scale-[0.98] transition-all font-headline uppercase tracking-widest text-xs"
+                >
+                  Sim, Excluir Registro
+                </button>
+                <button 
+                  onClick={() => setDeleteConfirmId(null)}
+                  className="w-full bg-surface-container-high text-on-surface-variant font-black py-4 rounded-2xl hover:bg-surface-container-highest transition-all font-headline uppercase tracking-widest text-[10px]"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </DashboardLayout>
   );
 }

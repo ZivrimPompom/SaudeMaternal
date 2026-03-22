@@ -18,7 +18,7 @@ interface MenuItem {
 
 export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const pathname = usePathname();
-  const [openMenus, setOpenMenus] = useState<string[]>(['Cadastros']);
+  const [openMenus, setOpenMenus] = useState<string[]>(['Cadastros', 'Pacientes']);
 
   // Close sidebar on mobile when route changes
   useEffect(() => {
@@ -35,12 +35,17 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
 
   const menuItems: MenuItem[] = [
     { name: 'Home', icon: 'home', href: '/' },
-    { name: 'Pacientes', icon: 'group', href: '/pacientes' },
+    { 
+      name: 'Pacientes', 
+      icon: 'group', 
+      subItems: [
+        { name: 'Pacientes', href: '/pacientes' },
+      ] 
+    },
     {
       name: 'Cadastros',
       icon: 'person_add',
       subItems: [
-        { name: 'Pacientes', href: '/pacientes' },
         { name: 'Unidades de Saúde', href: '/unidades' },
         { name: 'Operadores', href: '/operadores' },
         { name: 'Categorias Profissionais', href: '/categorias' },

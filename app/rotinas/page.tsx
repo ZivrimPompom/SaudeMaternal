@@ -148,7 +148,8 @@ export default function RotinasPage() {
       .eq('id', id);
 
     if (deleteError) {
-      setError('Erro ao excluir rotina.');
+      console.error('Erro ao excluir rotina:', deleteError);
+      setError(`Erro ao excluir rotina: ${deleteError.message}`);
     } else {
       setSuccess('Rotina excluída com sucesso!');
       fetchData();
@@ -249,7 +250,7 @@ export default function RotinasPage() {
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Tipo de Rotina</label>
                   <select 
                     className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none appearance-none"
-                    value={formData.tipo}
+                    value={formData.tipo || 'EXAME'}
                     onChange={(e) => setFormData({ ...formData, tipo: e.target.value as any })}
                   >
                     <option value="EXAME">EXAME</option>
@@ -263,7 +264,7 @@ export default function RotinasPage() {
                   <textarea 
                     className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none uppercase min-h-[100px]"
                     placeholder="DESCREVA O EXAME, VACINA OU MEDICAÇÃO"
-                    value={formData.descricao}
+                    value={formData.descricao || ''}
                     onChange={(e) => setFormData({ ...formData, descricao: e.target.value.toUpperCase() })}
                   />
                 </div>
@@ -272,7 +273,7 @@ export default function RotinasPage() {
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Trimestre</label>
                   <select 
                     className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none appearance-none"
-                    value={formData.trimestre}
+                    value={formData.trimestre || 'PRIMEIRO'}
                     onChange={(e) => setFormData({ ...formData, trimestre: e.target.value as any })}
                   >
                     <option value="PRIMEIRO">PRIMEIRO TRIMESTRE</option>
@@ -285,7 +286,7 @@ export default function RotinasPage() {
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Categoria</label>
                   <select 
                     className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none appearance-none"
-                    value={formData.categoria}
+                    value={formData.categoria || 'OBRIGATORIO'}
                     onChange={(e) => setFormData({ ...formData, categoria: e.target.value as any })}
                   >
                     <option value="OBRIGATORIO">OBRIGATORIO</option>
@@ -303,22 +304,32 @@ export default function RotinasPage() {
                     {editingId ? 'Atualizar Rotina' : 'Cadastrar Rotina'}
                   </button>
                   {editingId && (
-                    <button 
-                      type="button"
-                      onClick={() => {
-                        setEditingId(null);
-                        setFormData({
-                          tipo: 'EXAME',
-                          descricao: '',
-                          trimestre: 'PRIMEIRO',
-                          categoria: 'OBRIGATORIO'
-                        });
-                      }}
-                      className="w-full bg-surface-container-high text-on-surface-variant font-black py-4 rounded-2xl hover:bg-surface-container-highest transition-all flex items-center justify-center gap-3 font-headline uppercase tracking-widest text-[10px]"
-                    >
-                      <X className="w-3 h-3" />
-                      Cancelar Edição
-                    </button>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button 
+                        type="button"
+                        onClick={() => setDeleteConfirmId(editingId)}
+                        className="bg-red-50 text-red-600 font-black py-4 rounded-2xl hover:bg-red-100 transition-all flex items-center justify-center gap-2 font-headline uppercase tracking-widest text-[10px]"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        Excluir
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          setEditingId(null);
+                          setFormData({
+                            tipo: 'EXAME',
+                            descricao: '',
+                            trimestre: 'PRIMEIRO',
+                            categoria: 'OBRIGATORIO'
+                          });
+                        }}
+                        className="bg-surface-container-high text-on-surface-variant font-black py-4 rounded-2xl hover:bg-surface-container-highest transition-all flex items-center justify-center gap-2 font-headline uppercase tracking-widest text-[10px]"
+                      >
+                        <X className="w-3 h-3" />
+                        Cancelar
+                      </button>
+                    </div>
                   )}
                 </div>
               </form>
@@ -352,7 +363,7 @@ export default function RotinasPage() {
                 </div>
               </div>
 
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent">
                 {loading ? (
                   <div className="p-24 text-center space-y-4">
                     <div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
@@ -366,13 +377,13 @@ export default function RotinasPage() {
                     <p className="text-sm font-body text-on-surface-variant/40">Nenhuma rotina encontrada.</p>
                   </div>
                 ) : (
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="bg-surface-container-low/30">
-                        <th className="px-10 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline">Descrição / Tipo</th>
-                        <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline">Trimestre</th>
-                        <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline">Categoria</th>
-                        <th className="px-10 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline text-right">Ações</th>
+                  <table className="w-full text-left border-separate border-spacing-0 min-w-[1100px]">
+                    <thead className="sticky top-0 z-30 bg-surface-container-low">
+                      <tr>
+                        <th className="px-10 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5">Descrição / Tipo</th>
+                        <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5">Trimestre</th>
+                        <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5">Categoria</th>
+                        <th className="px-10 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline text-center border-b border-outline-variant/5 sticky right-0 bg-surface-container-low z-40 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] w-[200px]">Ações de Gerenciamento</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-outline-variant/5">
@@ -391,7 +402,7 @@ export default function RotinasPage() {
                               }`}>
                                 {rot.tipo}
                               </span>
-                              <p className="font-black text-on-surface font-headline text-base group-hover:text-primary transition-colors uppercase line-clamp-2">{rot.descricao}</p>
+                              <p className="font-black text-on-surface font-headline text-base group-hover:text-primary transition-colors uppercase">{rot.descricao}</p>
                             </div>
                           </td>
                           <td className="px-6 py-8">
@@ -408,19 +419,23 @@ export default function RotinasPage() {
                               {rot.categoria}
                             </span>
                           </td>
-                          <td className="px-10 py-8 text-right">
-                            <div className="flex items-center justify-end gap-3">
+                          <td className="px-10 py-8 sticky right-0 bg-surface-container-lowest group-hover:bg-surface-container-low transition-colors z-30 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">
+                            <div className="flex items-center justify-center gap-3">
                               <button 
                                 onClick={() => handleEdit(rot)}
-                                className="w-10 h-10 inline-flex items-center justify-center rounded-2xl bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white transition-all shadow-sm"
+                                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/5 text-primary hover:bg-primary hover:text-white transition-all shadow-sm group/btn"
+                                title="Editar Rotina"
                               >
                                 <Edit2 className="w-4 h-4" />
+                                <span className="text-[10px] font-black uppercase tracking-widest hidden group-hover/btn:inline">Editar</span>
                               </button>
                               <button 
                                 onClick={() => setDeleteConfirmId(rot.id)}
-                                className="w-10 h-10 inline-flex items-center justify-center rounded-2xl bg-surface-container-high text-on-surface-variant hover:bg-red-600 hover:text-white transition-all shadow-sm"
+                                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all shadow-sm group/btn"
+                                title="Excluir Rotina"
                               >
                                 <Trash2 className="w-4 h-4" />
+                                <span className="text-[10px] font-black uppercase tracking-widest hidden group-hover/btn:inline">Excluir</span>
                               </button>
                             </div>
                           </td>

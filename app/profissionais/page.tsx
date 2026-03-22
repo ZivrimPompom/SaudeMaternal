@@ -261,7 +261,8 @@ export default function ProfissionaisPage() {
       .eq('cpf', cpf);
 
     if (deleteError) {
-      setError('Erro ao excluir profissional.');
+      console.error('Erro ao excluir profissional:', deleteError);
+      setError(`Erro ao excluir profissional: ${deleteError.message}`);
     } else {
       setSuccess('Profissional excluído com sucesso!');
       fetchData();
@@ -285,13 +286,24 @@ export default function ProfissionaisPage() {
               conflictColumn="cpf"
               onSuccess={fetchData}
               title="Importar Profissionais"
+              transformData={(data) => data.map(item => ({
+                ...item,
+                nome: (item.nome || '').toUpperCase(),
+                cpf: (item.cpf || '').replace(/\D/g, ''),
+                cns: (item.cns || '').replace(/\D/g, ''),
+                equipe: (item.equipe || '').toUpperCase(),
+                vinculo: (item.vinculo || 'INTERMEDIADO').toUpperCase(),
+                tipo_vinculo: (item.tipo_vinculo || 'CLT').toUpperCase(),
+                chs: parseInt(item.chs) || 20,
+                unidade_cnes: item.unidade_cnes || null
+              }))}
             />
           </div>
         </header>
 
         <div className="grid grid-cols-12 gap-10">
           {/* Form Section */}
-          <section className="col-span-12 lg:col-span-4 space-y-8">
+          <section className="col-span-12 lg:col-span-3 space-y-8">
             <div className="bg-surface-container-lowest p-6 md:p-8 rounded-[2.5rem] shadow-2xl shadow-black/5 border border-outline-variant/10 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16" />
               
@@ -335,7 +347,7 @@ export default function ProfissionaisPage() {
                     disabled={!!editingCpf}
                     className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none disabled:opacity-50"
                     placeholder="000.000.000-00"
-                    value={formData.cpf}
+                    value={formData.cpf || ''}
                     onChange={(e) => setFormData({ ...formData, cpf: formatCpf(e.target.value) })}
                   />
                 </div>
@@ -346,7 +358,7 @@ export default function ProfissionaisPage() {
                     type="text"
                     className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none uppercase"
                     placeholder="NOME DO PROFISSIONAL"
-                    value={formData.nome}
+                    value={formData.nome || ''}
                     onChange={(e) => setFormData({ ...formData, nome: e.target.value.toUpperCase() })}
                   />
                 </div>
@@ -357,7 +369,7 @@ export default function ProfissionaisPage() {
                     type="text"
                     className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none"
                     placeholder="0000.0000.0000.000"
-                    value={formData.cns}
+                    value={formData.cns || ''}
                     onChange={(e) => setFormData({ ...formData, cns: formatCns(e.target.value) })}
                   />
                 </div>
@@ -366,7 +378,7 @@ export default function ProfissionaisPage() {
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Categoria (CBO)</label>
                   <select 
                     className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none appearance-none"
-                    value={formData.cbo}
+                    value={formData.cbo || ''}
                     onChange={(e) => setFormData({ ...formData, cbo: e.target.value })}
                   >
                     <option value="">Selecione uma categoria...</option>
@@ -380,7 +392,7 @@ export default function ProfissionaisPage() {
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Unidade de Saúde</label>
                   <select 
                     className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none appearance-none"
-                    value={formData.unidade_cnes}
+                    value={formData.unidade_cnes || ''}
                     onChange={(e) => setFormData({ ...formData, unidade_cnes: e.target.value })}
                   >
                     <option value="">Selecione uma unidade...</option>
@@ -394,7 +406,7 @@ export default function ProfissionaisPage() {
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Equipe</label>
                   <select 
                     className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none appearance-none"
-                    value={formData.equipe}
+                    value={formData.equipe || ''}
                     onChange={(e) => setFormData({ ...formData, equipe: e.target.value })}
                   >
                     <option value="SEM EQUIPE">SEM EQUIPE</option>
@@ -413,7 +425,7 @@ export default function ProfissionaisPage() {
                     <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Vínculo</label>
                     <select 
                       className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none appearance-none"
-                      value={formData.vinculo}
+                      value={formData.vinculo || 'INTERMEDIADO'}
                       onChange={(e) => setFormData({ ...formData, vinculo: e.target.value as any })}
                     >
                       <option value="DIRETO">DIRETO</option>
@@ -424,7 +436,7 @@ export default function ProfissionaisPage() {
                     <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">CHS</label>
                     <select 
                       className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none appearance-none"
-                      value={formData.chs}
+                      value={formData.chs || 20}
                       onChange={(e) => setFormData({ ...formData, chs: parseInt(e.target.value) as any })}
                     >
                       <option value={20}>20 HORAS</option>
@@ -438,7 +450,7 @@ export default function ProfissionaisPage() {
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Tipo de Vínculo</label>
                   <select 
                     className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none appearance-none"
-                    value={formData.tipo_vinculo}
+                    value={formData.tipo_vinculo || 'CLT'}
                     onChange={(e) => setFormData({ ...formData, tipo_vinculo: e.target.value as any })}
                   >
                     <option value="CLT">CLT</option>
@@ -456,20 +468,30 @@ export default function ProfissionaisPage() {
                     {editingCpf ? 'Atualizar Profissional' : 'Cadastrar Profissional'}
                   </button>
                   {editingCpf && (
-                    <button 
-                      type="button"
-                      onClick={() => {
-                        setEditingCpf(null);
-                        setFormData({
-                          cpf: '', nome: '', cns: '', cbo: '', equipe: 'SEM EQUIPE',
-                          vinculo: 'INTERMEDIADO', tipo_vinculo: 'CLT', chs: 20
-                        });
-                      }}
-                      className="w-full bg-surface-container-high text-on-surface-variant font-black py-4 rounded-2xl hover:bg-surface-container-highest transition-all flex items-center justify-center gap-3 font-headline uppercase tracking-widest text-[10px]"
-                    >
-                      <X className="w-3 h-3" />
-                      Cancelar Edição
-                    </button>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button 
+                        type="button"
+                        onClick={() => setDeleteConfirmCpf(editingCpf)}
+                        className="bg-red-50 text-red-600 font-black py-4 rounded-2xl hover:bg-red-100 transition-all flex items-center justify-center gap-2 font-headline uppercase tracking-widest text-[10px]"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        Excluir
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          setEditingCpf(null);
+                          setFormData({
+                            cpf: '', nome: '', cns: '', cbo: '', equipe: 'SEM EQUIPE',
+                            vinculo: 'INTERMEDIADO', tipo_vinculo: 'CLT', chs: 20
+                          });
+                        }}
+                        className="bg-surface-container-high text-on-surface-variant font-black py-4 rounded-2xl hover:bg-surface-container-highest transition-all flex items-center justify-center gap-2 font-headline uppercase tracking-widest text-[10px]"
+                      >
+                        <X className="w-3 h-3" />
+                        Cancelar
+                      </button>
+                    </div>
                   )}
                 </div>
               </form>
@@ -477,7 +499,7 @@ export default function ProfissionaisPage() {
           </section>
 
           {/* List Section */}
-          <section className="col-span-12 lg:col-span-8">
+          <section className="col-span-12 lg:col-span-9">
             <div className="bg-surface-container-lowest rounded-[3rem] overflow-hidden shadow-2xl shadow-black/5 border border-outline-variant/10">
               <div className="p-6 md:p-10 border-b border-outline-variant/5 flex justify-between items-center bg-surface-container-lowest/50 backdrop-blur-sm sticky top-0 z-20">
                 <div className="flex items-center gap-4">
@@ -494,7 +516,7 @@ export default function ProfissionaisPage() {
                 </div>
               </div>
 
-              <div className="overflow-x-auto">
+              <div className="max-h-[700px] overflow-auto scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent">
                 {loading ? (
                   <div className="p-24 text-center space-y-4">
                     <div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
@@ -508,14 +530,14 @@ export default function ProfissionaisPage() {
                     <p className="text-sm font-body text-on-surface-variant/40">Nenhum profissional encontrado.</p>
                   </div>
                 ) : (
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="bg-surface-container-low/30">
-                        <th className="px-10 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline">Profissional / CPF</th>
-                        <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline">CNS / CBO</th>
-                        <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline">Equipe</th>
-                        <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline">Vínculo</th>
-                        <th className="px-10 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline text-right">Ações</th>
+                  <table className="w-full text-left border-separate border-spacing-0 min-w-[1400px]">
+                    <thead className="sticky top-0 z-30 bg-surface-container-low">
+                      <tr>
+                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5 w-[300px]">Profissional / CPF</th>
+                        <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5 w-[250px]">CNS / CBO</th>
+                        <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5 w-[150px]">Equipe</th>
+                        <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5">Vínculo</th>
+                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline text-center border-b border-outline-variant/5 sticky right-0 bg-surface-container-low z-40 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] w-[200px]">Ações de Gerenciamento</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-outline-variant/5">
@@ -525,62 +547,66 @@ export default function ProfissionaisPage() {
                           key={pro.cpf} 
                           className="hover:bg-surface-container-low/50 transition-all group"
                         >
-                          <td className="px-10 py-8">
-                            <div className="flex flex-col gap-1">
+                          <td className="px-6 py-4">
+                            <div className="flex flex-col gap-0.5">
                               <span className="text-[10px] font-black text-primary tracking-widest">{formatCpf(pro.cpf)}</span>
-                              <p className="font-black text-on-surface font-headline text-base group-hover:text-primary transition-colors uppercase">{pro.nome}</p>
+                              <p className="font-black text-on-surface font-headline text-sm group-hover:text-primary transition-colors uppercase">{pro.nome}</p>
                               <span className="text-[9px] font-bold text-on-surface-variant/40 uppercase tracking-widest">
                                 {pro.unidades_saude?.nome_fantasia || 'Sem Unidade'}
                               </span>
                             </div>
                           </td>
-                          <td className="px-6 py-8">
-                            <div className="flex flex-col gap-1">
+                          <td className="px-4 py-4">
+                            <div className="flex flex-col gap-0.5">
                               <div className="flex items-center gap-1.5">
                                 <IdCard className="w-3 h-3 text-on-surface-variant/30" />
-                                <span className="text-[10px] font-bold text-on-surface-variant/60">{formatCns(pro.cns) || '---'}</span>
+                                <span className="text-[10px] font-bold text-on-surface-variant/60 whitespace-nowrap">{formatCns(pro.cns) || '---'}</span>
                               </div>
                               <span className="text-[10px] font-black text-secondary uppercase tracking-tighter">
                                 {pro.categorias_profissionais?.categoria || '---'}
                               </span>
                             </div>
                           </td>
-                          <td className="px-6 py-8">
-                            <span className="text-[10px] font-black text-primary uppercase tracking-widest bg-primary/5 px-3 py-1 rounded-full">
+                          <td className="px-4 py-4">
+                            <span className="text-[9px] font-black text-primary uppercase tracking-widest bg-primary/5 px-2 py-0.5 rounded-full">
                               {pro.equipe || 'SEM EQUIPE'}
                             </span>
                           </td>
-                          <td className="px-6 py-8">
-                            <div className="flex flex-col gap-2">
-                              <span className={`inline-flex px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest w-fit ${
+                          <td className="px-4 py-4">
+                            <div className="flex flex-col gap-1">
+                              <span className={`inline-flex px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest w-fit ${
                                 pro.vinculo === 'DIRETO' ? 'bg-blue-50 text-blue-600' : 'bg-purple-50 text-purple-600'
                               }`}>
                                 {pro.vinculo}
                               </span>
-                              <div className="flex items-center gap-2">
-                                <span className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-tighter">
+                              <div className="flex items-center gap-1">
+                                <span className="text-[9px] font-bold text-on-surface-variant/40 uppercase tracking-tighter">
                                   {pro.tipo_vinculo}
                                 </span>
                                 <span className="w-1 h-1 rounded-full bg-on-surface-variant/20"></span>
-                                <span className="text-[10px] font-black text-on-surface-variant/60">
+                                <span className="text-[9px] font-black text-on-surface-variant/60">
                                   {pro.chs}H
                                 </span>
                               </div>
                             </div>
                           </td>
-                          <td className="px-10 py-8 text-right">
-                            <div className="flex items-center justify-end gap-3">
+                          <td className="px-6 py-4 sticky right-0 bg-surface-container-lowest group-hover:bg-surface-container-low transition-colors z-30 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">
+                            <div className="flex items-center justify-center gap-2">
                               <button 
                                 onClick={() => handleEdit(pro)}
-                                className="w-10 h-10 inline-flex items-center justify-center rounded-2xl bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white transition-all shadow-sm"
+                                className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary/5 text-primary hover:bg-primary hover:text-white transition-all shadow-sm group/btn"
+                                title="Editar Profissional"
                               >
-                                <Edit2 className="w-4 h-4" />
+                                <Edit2 className="w-3.5 h-3.5" />
+                                <span className="text-[9px] font-black uppercase tracking-widest hidden group-hover/btn:inline">Editar</span>
                               </button>
                               <button 
                                 onClick={() => setDeleteConfirmCpf(pro.cpf)}
-                                className="w-10 h-10 inline-flex items-center justify-center rounded-2xl bg-surface-container-high text-on-surface-variant hover:bg-red-600 hover:text-white transition-all shadow-sm"
+                                className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all shadow-sm group/btn"
+                                title="Excluir Profissional"
                               >
-                                <Trash2 className="w-4 h-4" />
+                                <Trash2 className="w-3.5 h-3.5" />
+                                <span className="text-[9px] font-black uppercase tracking-widest hidden group-hover/btn:inline">Excluir</span>
                               </button>
                             </div>
                           </td>

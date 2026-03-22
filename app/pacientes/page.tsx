@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useSearch } from '@/context/SearchContext';
+import { useAuth } from '@/context/AuthContext';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { 
   Users, 
@@ -17,24 +18,34 @@ import {
   Phone, 
   Mail, 
   MapPin,
-  Fingerprint
+  Fingerprint,
+  Shield
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import CSVImporter from '@/components/CSVImporter';
 
 interface Paciente {
-  id: string;
-  name: string;
   cpf: string;
-  birth_date: string;
-  phone: string;
+  gestante: string;
+  nome_mae: string;
+  prontuario: string;
+  cns: string;
+  data_nascimento: string;
+  logradouro: string;
+  numero: string;
+  complemento: string;
+  bairro: string;
+  contato: string;
   email: string;
-  address: string;
+  cidade: string;
+  uf: string;
+  operador_responsavel?: string;
   created_at?: string;
 }
 
 export default function PacientesPage() {
   const { searchQuery, setSearchQuery } = useSearch();
+  const { user: authUser } = useAuth();
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,15 +53,23 @@ export default function PacientesPage() {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState<Partial<Paciente>>({
-    name: '',
     cpf: '',
-    birth_date: '',
-    phone: '',
+    gestante: '',
+    nome_mae: '',
+    prontuario: '',
+    cns: '',
+    data_nascimento: '',
+    logradouro: '',
+    numero: '',
+    complemento: '',
+    bairro: '',
+    contato: '',
     email: '',
-    address: ''
+    cidade: 'SÃO PAULO',
+    uf: 'SP'
   });
 
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null); // Now stores the CPF
 
   useEffect(() => {
     fetchData();
@@ -66,10 +85,14 @@ export default function PacientesPage() {
     const { data, error: fetchError } = await supabase
       .from('pacientes')
       .select('*')
-      .order('name');
+      .order('gestante');
 
-    if (fetchError) setError('Erro ao carregar pacientes.');
-    else setPacientes(data as Paciente[]);
+    if (fetchError) {
+      console.error('Erro ao carregar pacientes:', fetchError);
+      setError(`Erro ao carregar pacientes: ${fetchError.message}`);
+    } else {
+      setPacientes(data as Paciente[]);
+    }
 
     setLoading(false);
   };
@@ -97,23 +120,73 @@ export default function PacientesPage() {
       .replace(/(-\d{4})\d+?$/, '$1');
   };
 
+  const formatCns = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 15);
+    let formatted = digits;
+    if (digits.length > 4) formatted = `${digits.slice(0, 4)}.${digits.slice(4)}`;
+    if (digits.length > 8) formatted = `${formatted.slice(0, 9)}.${digits.slice(8)}`;
+    if (digits.length > 12) formatted = `${formatted.slice(0, 14)}.${digits.slice(12)}`;
+    return formatted.slice(0, 18); // 0000.0000.0000.000
+  };
+
+  const formatProntuario = (value: string) => {
+    // Exemplo: 13-423
+    const clean = value.replace(/[^a-zA-Z0-9]/g, '');
+    if (clean.length > 2) {
+      return `${clean.slice(0, 2)}-${clean.slice(2, 7)}`;
+    }
+    return clean;
+  };
+
+  const calculateAge = (birthDate: string) => {
+    if (!birthDate) return { ageText: '---', lifeStage: '---' };
+    
+    const birth = new Date(birthDate);
+    const today = new Date();
+    
+    let years = today.getFullYear() - birth.getFullYear();
+    let months = today.getMonth() - birth.getMonth();
+    
+    if (months < 0 || (months === 0 && today.getDate() < birth.getDate())) {
+      years--;
+      months += 12;
+    }
+    
+    if (today.getDate() < birth.getDate()) {
+      months--;
+      if (months < 0) {
+        years--;
+        months += 12;
+      }
+    }
+
+    const ageText = `${years} ANOS, ${months} MESES`;
+    
+    let lifeStage = 'ADULTO';
+    if (years < 12) lifeStage = 'CRIANÇA';
+    else if (years < 18) lifeStage = 'ADOLESCENTE';
+    else if (years >= 60) lifeStage = 'IDOSO';
+    
+    return { ageText, lifeStage };
+  };
+
   const filteredPacientes = pacientes.filter(pac => {
     const query = searchQuery.toLowerCase().trim();
     if (!query) return true;
 
     const normalize = (str: string) => 
-      str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+      str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : "";
 
-    const name = normalize(pac.name);
+    const gestante = normalize(pac.gestante);
     const cpf = pac.cpf?.replace(/\D/g, '') || '';
-    const email = pac.email?.toLowerCase() || '';
+    const prontuario = pac.prontuario?.toLowerCase() || '';
     
     const queryNormalizada = normalize(query);
     const queryDigits = query.replace(/\D/g, '');
 
-    return name.includes(queryNormalizada) || 
+    return gestante.includes(queryNormalizada) || 
            (queryDigits !== '' && cpf.includes(queryDigits)) ||
-           email.includes(queryNormalizada);
+           prontuario.includes(queryNormalizada);
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -123,24 +196,32 @@ export default function PacientesPage() {
 
     if (!isSupabaseConfigured) return;
 
-    if (!formData.name || !formData.cpf) {
-      setError('Nome e CPF são obrigatórios.');
+    if (!formData.gestante || !formData.cpf) {
+      setError('Nome da Gestante e CPF são obrigatórios.');
       return;
     }
 
     try {
       const payload = {
         ...formData,
-        name: formData.name.toUpperCase(),
+        gestante: formData.gestante.toUpperCase(),
+        nome_mae: formData.nome_mae?.toUpperCase() || 'NÃO INFORMADO',
         cpf: formData.cpf.replace(/\D/g, ''),
-        phone: formData.phone?.replace(/\D/g, '') || ''
+        contato: formData.contato?.replace(/\D/g, '') || '',
+        cns: formData.cns?.replace(/\D/g, '') || '',
+        logradouro: formData.logradouro?.toUpperCase() || '',
+        complemento: formData.complemento?.toUpperCase() || '',
+        bairro: formData.bairro?.toUpperCase() || '',
+        cidade: 'SÃO PAULO',
+        uf: 'SP',
+        operador_responsavel: authUser?.nome || 'SISTEMA'
       };
 
       if (editingId) {
         const { error: updateError } = await supabase
           .from('pacientes')
           .update(payload)
-          .eq('id', editingId);
+          .eq('cpf', editingId);
 
         if (updateError) throw updateError;
         setSuccess('Paciente atualizado com sucesso!');
@@ -160,42 +241,57 @@ export default function PacientesPage() {
       }
 
       setFormData({
-        name: '',
         cpf: '',
-        birth_date: '',
-        phone: '',
+        gestante: '',
+        nome_mae: '',
+        prontuario: '',
+        cns: '',
+        data_nascimento: '',
+        logradouro: '',
+        numero: '',
+        complemento: '',
+        bairro: '',
+        contato: '',
         email: '',
-        address: ''
+        cidade: 'SÃO PAULO',
+        uf: 'SP'
       });
       setEditingId(null);
       fetchData();
     } catch (err: any) {
       console.error('Error saving patient:', err);
-      setError(err.message || 'Erro ao salvar paciente.');
+      if (err.message?.includes('row-level security policy')) {
+        setError('Erro de permissão no banco de dados. Por favor, verifique se as políticas de RLS estão configuradas corretamente no Supabase.');
+      } else {
+        setError(err.message || 'Erro ao salvar paciente.');
+      }
     }
   };
 
   const handleEdit = (pac: Paciente) => {
-    setEditingId(pac.id);
+    setEditingId(pac.cpf);
     setFormData({
       ...pac,
       cpf: formatCpf(pac.cpf || ''),
-      phone: formatPhone(pac.phone || '')
+      contato: formatPhone(pac.contato || ''),
+      cns: formatCns(pac.cns || ''),
+      prontuario: formatProntuario(pac.prontuario || '')
     });
     setError(null);
     setSuccess(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (cpf: string) => {
     setDeleteConfirmId(null);
     const { error: deleteError } = await supabase
       .from('pacientes')
       .delete()
-      .eq('id', id);
+      .eq('cpf', cpf);
 
     if (deleteError) {
-      setError('Erro ao excluir paciente.');
+      console.error('Erro ao excluir:', deleteError);
+      setError(`Erro ao excluir paciente: ${deleteError.message}`);
     } else {
       setSuccess('Paciente excluído com sucesso!');
       fetchData();
@@ -211,16 +307,41 @@ export default function PacientesPage() {
               <span className="w-12 h-1.5 bg-primary rounded-full"></span>
               <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Gestão Clínica</span>
             </div>
-            <h2 className="text-5xl font-black tracking-tight font-headline text-on-surface">Cadastro de Pacientes</h2>
+            <h2 className="text-5xl font-black tracking-tight font-headline text-on-surface uppercase text-primary">Pacientes</h2>
             <p className="text-lg text-on-surface-variant/60 font-body max-w-2xl">Gerenciamento de gestantes e prontuários do sistema.</p>
           </div>
           <div className="flex flex-col md:flex-row items-center gap-3">
             <CSVImporter 
               tableName="pacientes" 
-              expectedColumns={['name', 'cpf', 'birth_date', 'phone', 'email', 'address']}
+              expectedColumns={['gestante', 'cpf', 'nome_mae', 'prontuario', 'cns', 'data_nascimento', 'logradouro', 'numero', 'complemento', 'bairro', 'contato', 'email']}
               conflictColumn="cpf"
               onSuccess={fetchData}
               title="Importar Pacientes"
+              transformData={(data) => data.map(item => {
+                // Convert DD/MM/YYYY to YYYY-MM-DD for Supabase
+                let dataNascimento = item.data_nascimento;
+                if (dataNascimento && typeof dataNascimento === 'string') {
+                  const ddmmyyyy = dataNascimento.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+                  if (ddmmyyyy) {
+                    const [_, day, month, year] = ddmmyyyy;
+                    dataNascimento = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+                  }
+                }
+
+                return {
+                  ...item,
+                  gestante: (item.gestante || '').toUpperCase(),
+                  nome_mae: (item.nome_mae || 'NÃO INFORMADO').toUpperCase(),
+                  cpf: (item.cpf || '').replace(/\D/g, ''),
+                  data_nascimento: dataNascimento,
+                  logradouro: (item.logradouro || '').toUpperCase(),
+                  complemento: (item.complemento || '').toUpperCase(),
+                  bairro: (item.bairro || '').toUpperCase(),
+                  cidade: 'SÃO PAULO',
+                  uf: 'SP',
+                  operador_responsavel: authUser?.nome || 'SISTEMA'
+                };
+              })}
             />
             <div className="flex items-center gap-3 bg-surface-container-high px-4 py-2 rounded-full border border-outline-variant/20 shadow-sm">
               <Users className="text-primary w-5 h-5" />
@@ -231,7 +352,7 @@ export default function PacientesPage() {
 
         <div className="grid grid-cols-12 gap-10">
           {/* Form Section */}
-          <section className="col-span-12 lg:col-span-4 space-y-8">
+          <section className="col-span-12 lg:col-span-3 space-y-8">
             <div className="bg-surface-container-lowest p-6 md:p-8 rounded-[2.5rem] shadow-2xl shadow-black/5 border border-outline-variant/10 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16" />
               
@@ -268,50 +389,98 @@ export default function PacientesPage() {
                   )}
                 </AnimatePresence>
 
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Nome Completo</label>
-                  <input 
-                    type="text"
-                    className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none uppercase"
-                    placeholder="NOME DA PACIENTE"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value.toUpperCase() })}
-                    required
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">CPF</label>
                     <input 
                       type="text"
                       className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none"
                       placeholder="000.000.000-00"
-                      value={formData.cpf}
+                      value={formData.cpf || ''}
                       onChange={(e) => setFormData({ ...formData, cpf: formatCpf(e.target.value) })}
                       required
+                      disabled={!!editingId}
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Nascimento</label>
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Prontuário</label>
                     <input 
-                      type="date"
+                      type="text"
                       className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none"
-                      value={formData.birth_date}
-                      onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
+                      placeholder="00-000"
+                      value={formData.prontuario || ''}
+                      onChange={(e) => setFormData({ ...formData, prontuario: formatProntuario(e.target.value) })}
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Nome da Gestante</label>
+                  <input 
+                    type="text"
+                    className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none uppercase"
+                    placeholder="NOME DA GESTANTE"
+                    value={formData.gestante || ''}
+                    onChange={(e) => setFormData({ ...formData, gestante: e.target.value.toUpperCase() })}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Nome da Mãe</label>
+                  <input 
+                    type="text"
+                    className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none uppercase"
+                    placeholder="NOME DA MÃE"
+                    value={formData.nome_mae || ''}
+                    onChange={(e) => setFormData({ ...formData, nome_mae: e.target.value.toUpperCase() })}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Telefone</label>
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">CNS</label>
+                    <input 
+                      type="text"
+                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none"
+                      placeholder="0000.0000.0000.000"
+                      value={formData.cns || ''}
+                      onChange={(e) => setFormData({ ...formData, cns: formatCns(e.target.value) })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Data Nascimento</label>
+                    <input 
+                      type="date"
+                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none"
+                      value={formData.data_nascimento || ''}
+                      onChange={(e) => setFormData({ ...formData, data_nascimento: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                {formData.data_nascimento && (
+                  <div className="p-4 rounded-2xl bg-primary/5 border border-primary/10 flex justify-between items-center">
+                    <div className="space-y-1">
+                      <p className="text-[9px] font-black uppercase tracking-widest text-primary/60">Idade Calculada</p>
+                      <p className="text-sm font-black text-primary">{calculateAge(formData.data_nascimento).ageText}</p>
+                    </div>
+                    <div className="text-right space-y-1">
+                      <p className="text-[9px] font-black uppercase tracking-widest text-primary/60">Fase da Vida</p>
+                      <p className="text-sm font-black text-primary">{calculateAge(formData.data_nascimento).lifeStage}</p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Contato</label>
                     <input 
                       type="text"
                       className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none"
                       placeholder="(00) 00000-0000"
-                      value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: formatPhone(e.target.value) })}
+                      value={formData.contato || ''}
+                      onChange={(e) => setFormData({ ...formData, contato: formatPhone(e.target.value) })}
                     />
                   </div>
                   <div className="space-y-2">
@@ -320,21 +489,77 @@ export default function PacientesPage() {
                       type="email"
                       className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none"
                       placeholder="email@exemplo.com"
-                      value={formData.email}
+                      value={formData.email || ''}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     />
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Endereço</label>
-                  <input 
-                    type="text"
-                    className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none"
-                    placeholder="Rua, Número, Bairro, Cidade"
-                    value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  />
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="col-span-2 space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Logradouro</label>
+                    <input 
+                      type="text"
+                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none uppercase"
+                      placeholder="RUA / AVENIDA / PRAÇA"
+                      value={formData.logradouro || ''}
+                      onChange={(e) => setFormData({ ...formData, logradouro: e.target.value.toUpperCase() })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Nº</label>
+                    <input 
+                      type="text"
+                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none uppercase"
+                      placeholder="99A"
+                      value={formData.numero || ''}
+                      onChange={(e) => setFormData({ ...formData, numero: e.target.value.toUpperCase() })}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Complemento</label>
+                    <input 
+                      type="text"
+                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none uppercase"
+                      placeholder="PRÓXIMO / TRAVESSA / VIELA"
+                      value={formData.complemento || ''}
+                      onChange={(e) => setFormData({ ...formData, complemento: e.target.value.toUpperCase() })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Bairro</label>
+                    <input 
+                      type="text"
+                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none uppercase"
+                      placeholder="BAIRRO"
+                      value={formData.bairro || ''}
+                      onChange={(e) => setFormData({ ...formData, bairro: e.target.value.toUpperCase() })}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Cidade</label>
+                    <input 
+                      type="text"
+                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none uppercase opacity-60 cursor-not-allowed"
+                      value="SÃO PAULO"
+                      readOnly
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">UF</label>
+                    <input 
+                      type="text"
+                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none uppercase opacity-60 cursor-not-allowed"
+                      value="SP"
+                      readOnly
+                    />
+                  </div>
                 </div>
 
                 <div className="pt-4 flex flex-col gap-3">
@@ -346,19 +571,29 @@ export default function PacientesPage() {
                     {editingId ? 'Atualizar Paciente' : 'Cadastrar Paciente'}
                   </button>
                   {editingId && (
-                    <button 
-                      type="button"
-                      onClick={() => {
-                        setEditingId(null);
-                        setFormData({
-                          name: '', cpf: '', birth_date: '', phone: '', email: '', address: ''
-                        });
-                      }}
-                      className="w-full bg-surface-container-high text-on-surface-variant font-black py-4 rounded-2xl hover:bg-surface-container-highest transition-all flex items-center justify-center gap-3 font-headline uppercase tracking-widest text-[10px]"
-                    >
-                      <X className="w-3 h-3" />
-                      Cancelar Edição
-                    </button>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button 
+                        type="button"
+                        onClick={() => setDeleteConfirmId(editingId)}
+                        className="bg-red-50 text-red-600 font-black py-4 rounded-2xl hover:bg-red-100 transition-all flex items-center justify-center gap-2 font-headline uppercase tracking-widest text-[10px]"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        Excluir
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          setEditingId(null);
+                          setFormData({
+                            cpf: '', gestante: '', nome_mae: '', prontuario: '', cns: '', data_nascimento: '', logradouro: '', numero: '', complemento: '', bairro: '', contato: '', email: '', cidade: 'SÃO PAULO', uf: 'SP'
+                          });
+                        }}
+                        className="bg-surface-container-high text-on-surface-variant font-black py-4 rounded-2xl hover:bg-surface-container-highest transition-all flex items-center justify-center gap-2 font-headline uppercase tracking-widest text-[10px]"
+                      >
+                        <X className="w-3 h-3" />
+                        Cancelar
+                      </button>
+                    </div>
                   )}
                 </div>
               </form>
@@ -366,7 +601,7 @@ export default function PacientesPage() {
           </section>
 
           {/* List Section */}
-          <section className="col-span-12 lg:col-span-8">
+          <section className="col-span-12 lg:col-span-9">
             <div className="bg-surface-container-lowest rounded-[3rem] overflow-hidden shadow-2xl shadow-black/5 border border-outline-variant/10">
               <div className="p-6 md:p-10 border-b border-outline-variant/5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-surface-container-lowest/50 backdrop-blur-sm sticky top-0 z-20">
                 <div className="flex items-center gap-4">
@@ -392,7 +627,7 @@ export default function PacientesPage() {
                 </div>
               </div>
 
-              <div className="overflow-x-auto">
+              <div className="max-h-[700px] overflow-auto scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent">
                 {loading ? (
                   <div className="p-24 text-center space-y-4">
                     <div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
@@ -406,66 +641,94 @@ export default function PacientesPage() {
                     <p className="text-sm font-body text-on-surface-variant/40">Nenhuma paciente encontrada.</p>
                   </div>
                 ) : (
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="bg-surface-container-low/30">
-                        <th className="px-10 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline">Paciente / CPF</th>
-                        <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline">Contato</th>
-                        <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline">Nascimento</th>
-                        <th className="px-10 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline text-right">Ações</th>
+                  <table className="w-full text-left border-separate border-spacing-0 min-w-[1400px]">
+                    <thead className="sticky top-0 z-30 bg-surface-container-low">
+                      <tr>
+                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5 w-[300px]">Gestante / CPF</th>
+                        <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5 w-[200px]">Prontuário / CNS</th>
+                        <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5 w-[150px]">Fase / Idade</th>
+                        <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5">Endereço / Contato</th>
+                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline text-center border-b border-outline-variant/5 sticky right-0 bg-surface-container-low z-40 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] w-[200px]">Ações de Gerenciamento</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-outline-variant/5">
-                      {filteredPacientes.map((pac) => (
-                        <motion.tr 
-                          layout
-                          key={pac.id} 
-                          className="hover:bg-surface-container-low/50 transition-all group"
-                        >
-                          <td className="px-10 py-8">
-                            <div className="flex flex-col gap-1">
-                              <span className="text-[10px] font-black text-primary tracking-widest">{formatCpf(pac.cpf || '')}</span>
-                              <p className="font-black text-on-surface font-headline text-base group-hover:text-primary transition-colors uppercase">{pac.name}</p>
-                            </div>
-                          </td>
-                          <td className="px-6 py-8">
-                            <div className="flex flex-col gap-1">
-                              <div className="flex items-center gap-1.5">
-                                <Phone className="w-3 h-3 text-on-surface-variant/30" />
-                                <span className="text-[10px] font-bold text-on-surface-variant/60">{formatPhone(pac.phone || '') || '---'}</span>
+                      {filteredPacientes.map((pac) => {
+                        const { ageText, lifeStage } = calculateAge(pac.data_nascimento);
+                        return (
+                          <motion.tr 
+                            layout
+                            key={pac.cpf} 
+                            className="hover:bg-surface-container-low/50 transition-all group"
+                          >
+                            <td className="px-6 py-4">
+                              <div className="flex flex-col gap-0.5">
+                                <span className="text-[10px] font-black text-primary tracking-widest">{formatCpf(pac.cpf || '')}</span>
+                                <p className="font-black text-on-surface font-headline text-sm group-hover:text-primary transition-colors uppercase">{pac.gestante}</p>
+                                <span className="text-[9px] font-bold text-on-surface-variant/40 uppercase">Mãe: {pac.nome_mae || 'NÃO INFORMADO'}</span>
                               </div>
-                              <div className="flex items-center gap-1.5">
-                                <Mail className="w-3 h-3 text-on-surface-variant/30" />
-                                <span className="text-[10px] font-bold text-on-surface-variant/60 truncate max-w-[150px]">{pac.email || '---'}</span>
+                            </td>
+                            <td className="px-4 py-4">
+                              <div className="flex flex-col gap-0.5">
+                                <div className="flex items-center gap-1.5">
+                                  <Fingerprint className="w-3 h-3 text-primary/40" />
+                                  <span className="text-[10px] font-black text-on-surface uppercase tracking-wider">P: {pac.prontuario || '---'}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  <AlertCircle className="w-3 h-3 text-on-surface-variant/30" />
+                                  <span className="text-[10px] font-bold text-on-surface-variant/60 whitespace-nowrap">CNS: {formatCns(pac.cns || '') || '---'}</span>
+                                </div>
                               </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-8">
-                            <div className="flex items-center gap-2">
-                              <Calendar className="w-4 h-4 text-primary/40" />
-                              <span className="text-sm font-black text-on-surface-variant/60">
-                                {pac.birth_date ? new Date(pac.birth_date).toLocaleDateString('pt-BR') : '---'}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-10 py-8 text-right">
-                            <div className="flex items-center justify-end gap-3">
-                              <button 
-                                onClick={() => handleEdit(pac)}
-                                className="w-10 h-10 inline-flex items-center justify-center rounded-2xl bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white transition-all shadow-sm"
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </button>
-                              <button 
-                                onClick={() => setDeleteConfirmId(pac.id)}
-                                className="w-10 h-10 inline-flex items-center justify-center rounded-2xl bg-surface-container-high text-on-surface-variant hover:bg-red-600 hover:text-white transition-all shadow-sm"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </td>
-                        </motion.tr>
-                      ))}
+                            </td>
+                            <td className="px-4 py-4">
+                              <div className="flex flex-col gap-1">
+                                <span className={`text-[9px] font-black px-2 py-0.5 rounded-full w-fit uppercase tracking-widest ${
+                                  lifeStage === 'CRIANÇA' ? 'bg-blue-100 text-blue-700' :
+                                  lifeStage === 'ADOLESCENTE' ? 'bg-purple-100 text-purple-700' :
+                                  lifeStage === 'IDOSO' ? 'bg-orange-100 text-orange-700' :
+                                  'bg-green-100 text-green-700'
+                                }`}>
+                                  {lifeStage}
+                                </span>
+                                <span className="text-[10px] font-bold text-on-surface-variant/60">{ageText}</span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-4">
+                              <div className="flex flex-col gap-0.5">
+                                <div className="flex items-start gap-1.5">
+                                  <MapPin className="w-3 h-3 text-on-surface-variant/30 mt-0.5 shrink-0" />
+                                  <span className="text-[10px] font-bold text-on-surface-variant/60 leading-tight uppercase">
+                                    {pac.logradouro}, {pac.numero} {pac.bairro}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  <Phone className="w-3 h-3 text-on-surface-variant/30" />
+                                  <span className="text-[10px] font-bold text-on-surface-variant/60">{formatPhone(pac.contato || '') || '---'}</span>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 sticky right-0 bg-surface-container-lowest group-hover:bg-surface-container-low transition-colors z-30 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">
+                              <div className="flex items-center justify-center gap-2">
+                                <button 
+                                  onClick={() => handleEdit(pac)}
+                                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary/5 text-primary hover:bg-primary hover:text-white transition-all shadow-sm group/btn"
+                                  title="Editar Paciente"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5" />
+                                  <span className="text-[9px] font-black uppercase tracking-widest hidden group-hover/btn:inline">Editar</span>
+                                </button>
+                                <button 
+                                  onClick={() => setDeleteConfirmId(pac.cpf)}
+                                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all shadow-sm group/btn"
+                                  title="Excluir Paciente"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                  <span className="text-[9px] font-black uppercase tracking-widest hidden group-hover/btn:inline">Excluir</span>
+                                </button>
+                              </div>
+                            </td>
+                          </motion.tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 )}

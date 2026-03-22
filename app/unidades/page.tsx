@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useSearch } from '@/context/SearchContext';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   AlertTriangle, 
   Plus, 
@@ -19,8 +20,10 @@ import {
   MapPin,
   Phone,
   Hash,
-  FileUp,
-  CheckCircle2
+  FileUp, 
+  CheckCircle2,
+  Trash2,
+  X
 } from 'lucide-react';
 import CSVImporter from '@/components/CSVImporter';
 
@@ -42,6 +45,8 @@ export default function UnidadesSaudePage() {
   const [units, setUnits] = useState<HealthUnit[]>([]);
   const [loading, setLoading] = useState(isSupabaseConfigured);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState<HealthUnit>({
@@ -200,6 +205,25 @@ export default function UnidadesSaudePage() {
     setError(null);
   };
 
+  const handleDelete = async (cnes: string) => {
+    setDeleteConfirmId(null);
+    setError(null);
+    setSuccess(null);
+
+    const { error: deleteError } = await supabase
+      .from('unidades_saude')
+      .delete()
+      .eq('cnes', cnes);
+
+    if (deleteError) {
+      console.error('Erro ao excluir unidade:', deleteError);
+      setError(`Erro ao excluir unidade: ${deleteError.message}`);
+    } else {
+      setSuccess('Unidade excluída com sucesso!');
+      fetchUnits();
+    }
+  };
+
   const filteredUnits = units.filter(unit => {
     const query = searchQuery.toLowerCase().trim();
     if (!query) return true;
@@ -255,7 +279,7 @@ export default function UnidadesSaudePage() {
 
         <div className="grid grid-cols-12 gap-6 md:gap-8">
           {/* Form Section */}
-          <section className="col-span-12 lg:col-span-5 space-y-6">
+          <section className="col-span-12 lg:col-span-3 space-y-6">
             <div className="bg-surface-container-lowest p-6 md:p-8 rounded-2xl shadow-md border border-outline-variant/10 relative overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-primary-container"></div>
               <h3 className="text-xl font-bold font-headline mb-8 flex items-center gap-3">
@@ -269,6 +293,12 @@ export default function UnidadesSaudePage() {
                     <span className="flex-1">{error}</span>
                   </div>
                 )}
+                {success && (
+                  <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-semibold flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <CheckCircle2 className="w-5 h-5 shrink-0" />
+                    <span className="flex-1">{success}</span>
+                  </div>
+                )}
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -280,7 +310,7 @@ export default function UnidadesSaudePage() {
                         className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-10 pr-4 py-3 transition-all font-body outline-none text-sm" 
                         placeholder="Ex: 2787741" 
                         type="text" 
-                        value={formData.cnes}
+                        value={formData.cnes || ''}
                         onChange={handleInputChange}
                         disabled={!!editingId}
                         required
@@ -296,7 +326,7 @@ export default function UnidadesSaudePage() {
                         className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-10 pr-4 py-3 transition-all font-body outline-none text-sm" 
                         placeholder="(00)0000-0000" 
                         type="text" 
-                        value={formData.telefone}
+                        value={formData.telefone || ''}
                         onChange={handleInputChange}
                       />
                     </div>
@@ -312,7 +342,7 @@ export default function UnidadesSaudePage() {
                       className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-10 pr-4 py-3 transition-all font-body outline-none text-sm" 
                       placeholder="UBS JARDIM ROSELI" 
                       type="text" 
-                      value={formData.nome_fantasia}
+                      value={formData.nome_fantasia || ''}
                       onChange={handleInputChange}
                       required
                     />
@@ -329,7 +359,7 @@ export default function UnidadesSaudePage() {
                         className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-10 pr-4 py-3 transition-all font-body outline-none text-sm" 
                         placeholder="RUA SIMAO NUNES" 
                         type="text" 
-                        value={formData.logradouro}
+                        value={formData.logradouro || ''}
                         onChange={handleInputChange}
                       />
                     </div>
@@ -341,7 +371,7 @@ export default function UnidadesSaudePage() {
                       className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl px-4 py-3 transition-all font-body outline-none text-sm" 
                       placeholder="31A" 
                       type="text" 
-                      value={formData.numero}
+                      value={formData.numero || ''}
                       onChange={handleInputChange}
                     />
                   </div>
@@ -355,7 +385,7 @@ export default function UnidadesSaudePage() {
                       className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl px-4 py-3 transition-all font-body outline-none text-sm" 
                       placeholder="Térreo" 
                       type="text" 
-                      value={formData.complemento}
+                      value={formData.complemento || ''}
                       onChange={handleInputChange}
                     />
                   </div>
@@ -366,7 +396,7 @@ export default function UnidadesSaudePage() {
                       className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl px-4 py-3 transition-all font-body outline-none text-sm" 
                       placeholder="JARDIM ROSELI" 
                       type="text" 
-                      value={formData.bairro}
+                      value={formData.bairro || ''}
                       onChange={handleInputChange}
                     />
                   </div>
@@ -380,7 +410,7 @@ export default function UnidadesSaudePage() {
                       className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl px-4 py-3 transition-all font-body outline-none text-sm" 
                       placeholder="SAO PAULO" 
                       type="text" 
-                      value={formData.municipio}
+                      value={formData.municipio || ''}
                       onChange={handleInputChange}
                     />
                   </div>
@@ -391,7 +421,7 @@ export default function UnidadesSaudePage() {
                       className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl px-4 py-3 transition-all font-body outline-none text-sm" 
                       placeholder="SP" 
                       type="text" 
-                      value={formData.uf}
+                      value={formData.uf || ''}
                       onChange={handleInputChange}
                       maxLength={2}
                     />
@@ -405,7 +435,7 @@ export default function UnidadesSaudePage() {
                     className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl px-4 py-3 transition-all font-body outline-none text-sm" 
                     placeholder="08380-039" 
                     type="text" 
-                    value={formData.cep}
+                    value={formData.cep || ''}
                     onChange={handleInputChange}
                   />
                 </div>
@@ -415,14 +445,34 @@ export default function UnidadesSaudePage() {
                     {editingId ? <CheckCircle2 className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
                     {editingId ? 'Atualizar Unidade' : 'Cadastrar Unidade'}
                   </button>
-                  {(editingId || formData.cnes || formData.nome_fantasia) && (
+                  {editingId && (
+                    <div className="grid grid-cols-2 gap-3">
+                      <button 
+                        type="button"
+                        onClick={() => setDeleteConfirmId(editingId)}
+                        className="bg-red-50 text-red-600 font-black py-4 rounded-xl hover:bg-red-100 transition-all flex items-center justify-center gap-2 font-headline uppercase tracking-widest text-[10px]"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        Excluir
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={cancelEdit}
+                        className="bg-surface-container-high text-on-surface-variant font-black py-4 rounded-xl hover:bg-surface-container-highest transition-all flex items-center justify-center gap-2 font-headline uppercase tracking-widest text-[10px]"
+                      >
+                        <X className="w-3 h-3" />
+                        Cancelar
+                      </button>
+                    </div>
+                  )}
+                  {!editingId && (formData.cnes || formData.nome_fantasia) && (
                     <button 
                       type="button"
                       onClick={cancelEdit}
                       className="w-full bg-surface-container text-on-surface-variant font-bold py-3.5 rounded-xl hover:bg-surface-container-high transition-colors font-headline uppercase tracking-widest text-[10px] flex items-center justify-center gap-2"
                     >
                       <RefreshCw className="w-4 h-4" />
-                      {editingId ? 'Cancelar Edição' : 'Limpar Formulário'}
+                      Limpar Formulário
                     </button>
                   )}
                 </div>
@@ -431,7 +481,7 @@ export default function UnidadesSaudePage() {
           </section>
 
           {/* Table Section */}
-          <section className="col-span-12 lg:col-span-7">
+          <section className="col-span-12 lg:col-span-9">
             <div className="bg-surface-container-lowest rounded-2xl overflow-hidden shadow-md border border-outline-variant/10 flex flex-col h-full">
               <div className="p-6 md:p-8 border-b border-surface-container-low flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-surface-container-lowest/50 backdrop-blur-sm sticky top-0 z-10">
                 <div>
@@ -451,7 +501,7 @@ export default function UnidadesSaudePage() {
                   </div>
                 </div>
               </div>
-              <div className="flex-1 overflow-x-auto">
+              <div className="max-h-[700px] overflow-auto scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent">
                 {loading ? (
                   <div className="p-8 space-y-6">
                     {[1, 2, 3].map((i) => (
@@ -471,52 +521,55 @@ export default function UnidadesSaudePage() {
                     <p className="text-sm font-medium">Nenhuma unidade encontrada.</p>
                   </div>
                 ) : (
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="bg-surface-container-low/30">
-                        <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label">Unidade</th>
-                        <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label">CNES</th>
-                        <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label">Localização</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label text-right">Ações</th>
+                  <table className="w-full text-left border-separate border-spacing-0 min-w-[1200px]">
+                    <thead className="sticky top-0 z-30 bg-surface-container-low">
+                      <tr>
+                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5 w-[400px]">Unidade</th>
+                        <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5 w-[200px]">CNES</th>
+                        <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5">Localização</th>
+                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label text-center border-b border-outline-variant/5 sticky right-0 bg-surface-container-low z-40 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] w-[200px]">Ações de Gerenciamento</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-surface-container-low/50">
                       {filteredUnits.map((unit) => (
                         <tr key={unit.cnes} className="hover:bg-surface-container-low/40 transition-all group">
-                          <td className="px-8 py-6">
-                            <div className="flex items-center gap-4">
-                              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-surface-container-high to-surface-container-highest flex items-center justify-center text-sm font-bold text-primary shadow-sm group-hover:scale-105 transition-transform">
-                                <Building2 className="w-5 h-5" />
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-surface-container-high to-surface-container-highest flex items-center justify-center text-sm font-bold text-primary shadow-sm group-hover:scale-105 transition-transform">
+                                <Building2 className="w-4 h-4" />
                               </div>
                               <div>
-                                <p className="font-bold text-on-surface text-base font-headline leading-tight">{unit.nome_fantasia}</p>
-                                <p className="text-[10px] text-on-surface-variant/60 font-body uppercase tracking-widest mt-1">{unit.telefone || 'Sem telefone'}</p>
+                                <p className="font-bold text-on-surface text-sm font-headline leading-tight uppercase">{unit.nome_fantasia}</p>
+                                <p className="text-[9px] text-on-surface-variant/60 font-body uppercase tracking-widest mt-0.5">{unit.telefone || 'Sem telefone'}</p>
                               </div>
                             </div>
                           </td>
-                          <td className="px-6 py-6">
-                            <span className="text-sm font-mono text-on-surface-variant font-medium">{unit.cnes}</span>
+                          <td className="px-4 py-4">
+                            <span className="text-xs font-mono text-on-surface-variant font-medium">{unit.cnes}</span>
                           </td>
-                          <td className="px-6 py-6">
+                          <td className="px-4 py-4">
                             <div className="flex flex-col">
-                              <span className="text-xs text-on-surface font-medium">{unit.bairro}</span>
-                              <span className="text-[10px] text-on-surface-variant/60 font-body">{unit.municipio} - {unit.uf}</span>
+                              <span className="text-[11px] text-on-surface font-medium">{unit.bairro}</span>
+                              <span className="text-[9px] text-on-surface-variant/60 font-body">{unit.municipio} - {unit.uf}</span>
                             </div>
                           </td>
-                          <td className="px-8 py-6 text-right">
-                            <div className="flex items-center justify-end gap-2">
+                          <td className="px-6 py-4 sticky right-0 bg-surface-container-lowest group-hover:bg-surface-container-low transition-colors z-30 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">
+                            <div className="flex items-center justify-center gap-2">
                               <button 
                                 onClick={() => handleEdit(unit)}
+                                className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary/5 text-primary hover:bg-primary hover:text-white transition-all shadow-sm group/btn"
                                 title="Editar Unidade"
-                                className="w-10 h-10 inline-flex items-center justify-center rounded-xl bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white transition-all shadow-sm active:scale-95"
                               >
-                                <Edit2 className="w-5 h-5" />
+                                <Edit2 className="w-3.5 h-3.5" />
+                                <span className="text-[9px] font-black uppercase tracking-widest hidden group-hover/btn:inline">Editar</span>
                               </button>
                               <button 
-                                title="Mais Opções"
-                                className="w-10 h-10 inline-flex items-center justify-center rounded-xl bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest transition-all shadow-sm"
+                                onClick={() => setDeleteConfirmId(unit.cnes)}
+                                className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all shadow-sm group/btn"
+                                title="Excluir Unidade"
                               >
-                                <MoreVertical className="w-5 h-5" />
+                                <Trash2 className="w-3.5 h-3.5" />
+                                <span className="text-[9px] font-black uppercase tracking-widest hidden group-hover/btn:inline">Excluir</span>
                               </button>
                             </div>
                           </td>
@@ -541,6 +594,44 @@ export default function UnidadesSaudePage() {
           </section>
         </div>
       </div>
+
+      {/* Custom Confirmation Modal */}
+      <AnimatePresence>
+        {deleteConfirmId && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="bg-white rounded-[2.5rem] p-10 max-w-md w-full shadow-2xl border border-outline-variant/10 space-y-8"
+            >
+              <div className="w-20 h-20 bg-red-50 rounded-[2rem] flex items-center justify-center mx-auto">
+                <Trash2 className="text-red-600 w-10 h-10" />
+              </div>
+              <div className="text-center space-y-2">
+                <h3 className="text-2xl font-black font-headline text-on-surface">Confirmar Exclusão</h3>
+                <p className="text-sm text-on-surface-variant/60 font-body">
+                  Você está prestes a excluir a unidade com CNES <span className="font-black text-primary">{deleteConfirmId}</span>. Esta ação não pode ser desfeita.
+                </p>
+              </div>
+              <div className="flex flex-col gap-3">
+                <button 
+                  onClick={() => handleDelete(deleteConfirmId)}
+                  className="w-full bg-red-600 text-white font-black py-5 rounded-2xl shadow-xl shadow-red-600/20 hover:scale-[1.02] active:scale-[0.98] transition-all font-headline uppercase tracking-widest text-xs"
+                >
+                  Sim, Excluir Registro
+                </button>
+                <button 
+                  onClick={() => setDeleteConfirmId(null)}
+                  className="w-full bg-surface-container-high text-on-surface-variant font-black py-4 rounded-2xl hover:bg-surface-container-highest transition-all font-headline uppercase tracking-widest text-[10px]"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </DashboardLayout>
   );
 }

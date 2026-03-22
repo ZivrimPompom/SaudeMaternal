@@ -99,6 +99,29 @@ export default function CSVImporter({
         dataToInsert = transformData(dataToInsert);
       }
 
+      // Deduplicate data based on conflictColumn to prevent "ON CONFLICT DO UPDATE command cannot affect row a second time"
+      if (conflictColumn) {
+        const seen = new Set();
+        dataToInsert = dataToInsert.filter(item => {
+          const val = item[conflictColumn];
+          if (val === null || val === undefined || seen.has(val)) {
+            return false;
+          }
+          seen.add(val);
+          return true;
+        });
+      }
+
+      if (dataToInsert.length === 0) {
+        setSuccess('Nenhum novo registro para importar.');
+        onSuccess();
+        setTimeout(() => {
+          setShowModal(false);
+          setPreviewData([]);
+        }, 2000);
+        return;
+      }
+
       let result;
       if (conflictColumn) {
         result = await query.upsert(dataToInsert, { onConflict: conflictColumn });
@@ -116,7 +139,11 @@ export default function CSVImporter({
       }, 2000);
     } catch (err: any) {
       console.error('Import error:', err);
-      setError(err.message || 'Erro ao importar dados para o banco.');
+      if (err.message?.includes('row-level security policy')) {
+        setError('Erro de permissão no banco de dados. Por favor, verifique se as políticas de RLS estão configuradas corretamente no Supabase.');
+      } else {
+        setError(err.message || 'Erro ao importar dados para o banco.');
+      }
     } finally {
       setIsImporting(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
