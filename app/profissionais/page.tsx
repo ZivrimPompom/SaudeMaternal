@@ -17,6 +17,7 @@ interface Profissional {
   nome: string;
   cns: string;
   cbo: string;
+  equipe: string;
   vinculo: 'DIRETO' | 'INTERMEDIADO';
   tipo_vinculo: 'CLT' | 'ESTATUTARIO' | 'AUTÔNOMO';
   chs: 20 | 30 | 40;
@@ -37,6 +38,7 @@ export default function ProfissionaisPage() {
     nome: '',
     cns: '',
     cbo: '',
+    equipe: 'SEM EQUIPE',
     vinculo: 'INTERMEDIADO',
     tipo_vinculo: 'CLT',
     chs: 20
@@ -173,6 +175,7 @@ export default function ProfissionaisPage() {
         nome: '',
         cns: '',
         cbo: '',
+        equipe: 'SEM EQUIPE',
         vinculo: 'INTERMEDIADO',
         tipo_vinculo: 'CLT',
         chs: 20
@@ -311,6 +314,24 @@ export default function ProfissionaisPage() {
                   </select>
                 </div>
 
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Equipe</label>
+                  <select 
+                    className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none appearance-none"
+                    value={formData.equipe}
+                    onChange={(e) => setFormData({ ...formData, equipe: e.target.value })}
+                  >
+                    <option value="SEM EQUIPE">SEM EQUIPE</option>
+                    <option value="FORA DE AREA">FORA DE AREA</option>
+                    {Array.from({ length: 99 }, (_, i) => {
+                      const num = (i + 1).toString().padStart(3, '0');
+                      return (
+                        <option key={num} value={`Equipe ${num}`}>Equipe {num}</option>
+                      );
+                    })}
+                  </select>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Vínculo</label>
@@ -364,7 +385,7 @@ export default function ProfissionaisPage() {
                       onClick={() => {
                         setEditingCpf(null);
                         setFormData({
-                          cpf: '', nome: '', cns: '', cbo: '',
+                          cpf: '', nome: '', cns: '', cbo: '', equipe: 'SEM EQUIPE',
                           vinculo: 'INTERMEDIADO', tipo_vinculo: 'CLT', chs: 20
                         });
                       }}
@@ -416,6 +437,7 @@ export default function ProfissionaisPage() {
                       <tr className="bg-surface-container-low/30">
                         <th className="px-10 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline">Profissional / CPF</th>
                         <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline">CNS / CBO</th>
+                        <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline">Equipe</th>
                         <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline">Vínculo</th>
                         <th className="px-10 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline text-right">Ações</th>
                       </tr>
@@ -443,6 +465,11 @@ export default function ProfissionaisPage() {
                                 {pro.categorias_profissionais?.categoria || '---'}
                               </span>
                             </div>
+                          </td>
+                          <td className="px-6 py-8">
+                            <span className="text-[10px] font-black text-primary uppercase tracking-widest bg-primary/5 px-3 py-1 rounded-full">
+                              {pro.equipe || 'SEM EQUIPE'}
+                            </span>
                           </td>
                           <td className="px-6 py-8">
                             <div className="flex flex-col gap-2">

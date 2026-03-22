@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useSearch } from '@/context/SearchContext';
 import { useAuth } from '@/context/AuthContext';
 import { usePathname } from 'next/navigation';
-import { LucideLogOut, LucideUser, LucideChevronDown } from 'lucide-react';
+import { LucideLogOut, LucideUser, LucideChevronDown, Menu, X } from 'lucide-react';
 
 export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSidebar: () => void; isSidebarOpen: boolean }) {
   const { searchQuery, setSearchQuery } = useSearch();
@@ -36,14 +36,17 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
   const userInitials = user?.sigla || userName.substring(0, 2).toUpperCase();
 
   return (
-    <header className={`fixed top-0 right-0 h-16 z-40 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-100 dark:border-slate-800/50 flex justify-between items-center px-4 md:px-8 transition-all duration-300 ${isSidebarOpen ? 'w-full lg:w-[calc(100%-16rem)]' : 'w-full'}`}>
+    <header className={`fixed top-0 left-0 h-16 z-[50] bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-100 dark:border-slate-800/50 flex justify-between items-center px-4 md:px-8 transition-all duration-300 ${isSidebarOpen ? 'w-full lg:ml-64 lg:w-[calc(100%-16rem)]' : 'w-full'}`}>
       <div className="flex items-center gap-2 md:gap-4">
         <button 
-          onClick={onToggleSidebar}
-          className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-colors"
+          onClick={(e) => {
+            e.preventDefault();
+            onToggleSidebar();
+          }}
+          className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-colors cursor-pointer z-[60]"
           title={isSidebarOpen ? 'Recolher Menu' : 'Expandir Menu'}
         >
-          <span className="material-symbols-outlined">{isSidebarOpen ? 'menu_open' : 'menu'}</span>
+          {isSidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
 
         <Link 

@@ -94,6 +94,7 @@ CREATE TABLE IF NOT EXISTS public.profissionais (
     nome TEXT NOT NULL,
     cns TEXT,
     cbo TEXT REFERENCES public.categorias_profissionais(cbo),
+    equipe TEXT NOT NULL DEFAULT 'SEM EQUIPE',
     vinculo TEXT NOT NULL DEFAULT 'INTERMEDIADO' CHECK (vinculo IN ('DIRETO', 'INTERMEDIADO')),
     tipo_vinculo TEXT NOT NULL DEFAULT 'CLT' CHECK (tipo_vinculo IN ('CLT', 'ESTATUTARIO', 'AUTÔNOMO')),
     chs INTEGER NOT NULL DEFAULT 20 CHECK (chs IN (20, 30, 40)),
