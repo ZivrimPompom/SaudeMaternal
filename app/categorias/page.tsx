@@ -7,6 +7,7 @@ import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { Briefcase, Plus, Edit2, Trash2, Search, AlertCircle, CheckCircle2, X, FileUp, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import CSVImporter from '@/components/CSVImporter';
+import Pagination from '@/components/Pagination';
 
 interface CategoriaProfissional {
   cbo: string;
@@ -367,69 +368,81 @@ export default function CategoriasPage() {
                     <p className="text-sm font-body text-on-surface-variant/40">Nenhuma categoria profissional encontrada.</p>
                   </div>
                 ) : (
-                  <table className="w-full text-left border-separate border-spacing-0 min-w-[1000px]">
-                    <thead className="sticky top-0 z-30 bg-surface-container-low">
-                      <tr>
-                        <th className="px-10 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5">CBO / Categoria</th>
-                        <th className="px-10 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline text-center border-b border-outline-variant/5 sticky right-0 bg-surface-container-low z-40 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] w-[200px]">Ações de Gerenciamento</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-outline-variant/5">
-                      {filteredCategories.map((cat) => (
-                        <motion.tr 
-                          layout
-                          key={cat.cbo} 
-                          className="hover:bg-surface-container-low/50 transition-all group"
-                        >
-                          <td className="px-10 py-8">
-                            <div className="flex flex-col gap-1">
-                              <span className="text-[10px] font-black text-secondary tracking-widest">{cat.cbo}</span>
-                              <p className="font-black text-on-surface font-headline text-base group-hover:text-secondary transition-colors uppercase">{cat.categoria}</p>
-                            </div>
-                          </td>
-                          {/* 
-                          <td className="px-6 py-8">
-                            <div className="flex flex-col gap-2">
-                              <span className={`inline-flex px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest w-fit ${
-                                cat.vinculo === 'DIRETO' ? 'bg-blue-50 text-blue-600' : 'bg-purple-50 text-purple-600'
-                              }`}>
-                                {cat.vinculo}
-                              </span>
-                              <span className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-tighter">
-                                {cat.tipo_vinculo}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-8 text-center">
-                            <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-surface-container-high text-on-surface font-black font-headline text-sm group-hover:bg-secondary group-hover:text-white transition-all">
-                              {cat.chs}
-                            </div>
-                          </td>
-                          */}
-                          <td className="px-10 py-8 sticky right-0 bg-surface-container-lowest group-hover:bg-surface-container-low transition-colors z-30 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">
-                            <div className="flex items-center justify-center gap-3">
-                              <button 
-                                onClick={() => handleEdit(cat)}
-                                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-secondary/5 text-secondary hover:bg-secondary hover:text-white transition-all shadow-sm group/btn"
-                                title="Editar Categoria"
-                              >
-                                <Edit2 className="w-4 h-4" />
-                                <span className="text-[10px] font-black uppercase tracking-widest hidden group-hover/btn:inline">Editar</span>
-                              </button>
-                              <button 
-                                onClick={() => setDeleteConfirmCbo(cat.cbo)}
-                                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all shadow-sm group/btn"
-                                title="Excluir Categoria"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                                <span className="text-[10px] font-black uppercase tracking-widest hidden group-hover/btn:inline">Excluir</span>
-                              </button>
-                            </div>
-                          </td>
-                        </motion.tr>
-                      ))}
-                    </tbody>
-                  </table>
+                  <>
+                    <table className="w-full text-left border-separate border-spacing-0 min-w-[1000px]">
+                      <thead className="sticky top-0 z-30 bg-surface-container-low">
+                        <tr>
+                          <th className="px-10 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5">CBO / Categoria</th>
+                          <th className="px-10 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline text-center border-b border-outline-variant/5 sticky right-0 bg-surface-container-low z-40 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] w-[200px]">Ações de Gerenciamento</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-outline-variant/5">
+                        {filteredCategories
+                          .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                          .map((cat) => (
+                            <motion.tr 
+                              layout
+                              key={cat.cbo} 
+                              className="hover:bg-surface-container-low/50 transition-all group"
+                            >
+                            <td className="px-10 py-8">
+                              <div className="flex flex-col gap-1">
+                                <span className="text-[10px] font-black text-secondary tracking-widest">{cat.cbo}</span>
+                                <p className="font-black text-on-surface font-headline text-base group-hover:text-secondary transition-colors uppercase">{cat.categoria}</p>
+                              </div>
+                            </td>
+                            {/* 
+                            <td className="px-6 py-8">
+                              <div className="flex flex-col gap-2">
+                                <span className={`inline-flex px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest w-fit ${
+                                  cat.vinculo === 'DIRETO' ? 'bg-blue-50 text-blue-600' : 'bg-purple-50 text-purple-600'
+                                }`}>
+                                  {cat.vinculo}
+                                </span>
+                                <span className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-tighter">
+                                  {cat.tipo_vinculo}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-8 text-center">
+                              <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-surface-container-high text-on-surface font-black font-headline text-sm group-hover:bg-secondary group-hover:text-white transition-all">
+                                {cat.chs}
+                              </div>
+                            </td>
+                            */}
+                            <td className="px-10 py-8 sticky right-0 bg-surface-container-lowest group-hover:bg-surface-container-low transition-colors z-30 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">
+                              <div className="flex items-center justify-center gap-3">
+                                <button 
+                                  onClick={() => handleEdit(cat)}
+                                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-secondary/5 text-secondary hover:bg-secondary hover:text-white transition-all shadow-sm group/btn"
+                                  title="Editar Categoria"
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                  <span className="text-[10px] font-black uppercase tracking-widest hidden group-hover/btn:inline">Editar</span>
+                                </button>
+                                <button 
+                                  onClick={() => setDeleteConfirmCbo(cat.cbo)}
+                                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all shadow-sm group/btn"
+                                  title="Excluir Categoria"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                  <span className="text-[10px] font-black uppercase tracking-widest hidden group-hover/btn:inline">Excluir</span>
+                                </button>
+                              </div>
+                            </td>
+                          </motion.tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <Pagination 
+                      currentPage={currentPage}
+                      totalPages={Math.ceil(filteredCategories.length / itemsPerPage)}
+                      onPageChange={setCurrentPage}
+                      totalItems={filteredCategories.length}
+                      itemsPerPage={itemsPerPage}
+                      itemName="categorias"
+                    />
+                  </>
                 )}
               </div>
             </div>

@@ -32,6 +32,7 @@ import {
   Building2
 } from 'lucide-react';
 import CSVImporter from '@/components/CSVImporter';
+import Pagination from '@/components/Pagination';
 
 interface Operator {
   id: string;
@@ -729,45 +730,14 @@ export default function OperadoresPage() {
                     </table>
 
                     {/* Pagination Controls */}
-                    <div className="p-6 bg-surface-container-low/20 border-t border-surface-container-low flex justify-between items-center">
-                      <p className="text-[10px] text-on-surface-variant/50 font-body uppercase tracking-widest">
-                        Mostrando {Math.min(filteredOperators.length, (currentPage - 1) * itemsPerPage + 1)} - {Math.min(filteredOperators.length, currentPage * itemsPerPage)} de {filteredOperators.length} operadores
-                      </p>
-                      <div className="flex gap-2">
-                        <button 
-                          onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                          disabled={currentPage === 1}
-                          className="p-2 rounded-lg bg-surface-container-high text-on-surface-variant disabled:opacity-30 hover:bg-surface-container-highest transition-all"
-                        >
-                          <ChevronLeft className="w-4 h-4" />
-                        </button>
-                        <div className="flex items-center gap-1">
-                          {Array.from({ length: Math.min(5, Math.ceil(filteredOperators.length / itemsPerPage)) }, (_, i) => {
-                            const pageNum = i + 1;
-                            return (
-                              <button
-                                key={pageNum}
-                                onClick={() => setCurrentPage(pageNum)}
-                                className={`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-black transition-all ${
-                                  currentPage === pageNum 
-                                    ? 'bg-primary text-white shadow-lg shadow-primary/20' 
-                                    : 'bg-surface-container-low text-on-surface hover:bg-surface-container-high'
-                                }`}
-                              >
-                                {pageNum}
-                              </button>
-                            );
-                          })}
-                        </div>
-                        <button 
-                          onClick={() => setCurrentPage(prev => Math.min(Math.ceil(filteredOperators.length / itemsPerPage), prev + 1))}
-                          disabled={currentPage === Math.ceil(filteredOperators.length / itemsPerPage)}
-                          className="p-2 rounded-lg bg-surface-container-high text-on-surface-variant disabled:opacity-30 hover:bg-surface-container-highest transition-all"
-                        >
-                          <ChevronRight className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
+                    <Pagination 
+                      currentPage={currentPage}
+                      totalPages={Math.ceil(filteredOperators.length / itemsPerPage)}
+                      onPageChange={setCurrentPage}
+                      totalItems={filteredOperators.length}
+                      itemsPerPage={itemsPerPage}
+                      itemName="operadores"
+                    />
                   </>
                 )}
               </div>

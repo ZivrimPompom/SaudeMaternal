@@ -7,6 +7,7 @@ import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { UserCheck, Plus, Edit2, Trash2, Search, AlertCircle, CheckCircle2, X, IdCard, FileUp, Building2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import CSVImporter from '@/components/CSVImporter';
+import Pagination from '@/components/Pagination';
 
 interface Categoria {
   cbo: string;
@@ -625,45 +626,14 @@ export default function ProfissionaisPage() {
                     </table>
 
                     {/* Pagination Controls */}
-                    <div className="p-6 bg-surface-container-low/20 border-t border-outline-variant/5 flex justify-between items-center">
-                      <p className="text-[10px] text-on-surface-variant/50 font-body uppercase tracking-widest">
-                        Mostrando {Math.min(filteredProfessionals.length, (currentPage - 1) * itemsPerPage + 1)} - {Math.min(filteredProfessionals.length, currentPage * itemsPerPage)} de {filteredProfessionals.length} profissionais
-                      </p>
-                      <div className="flex gap-2">
-                        <button 
-                          onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                          disabled={currentPage === 1}
-                          className="p-2 rounded-lg bg-surface-container-high text-on-surface-variant disabled:opacity-30 hover:bg-surface-container-highest transition-all"
-                        >
-                          <ChevronLeft className="w-4 h-4" />
-                        </button>
-                        <div className="flex items-center gap-1">
-                          {Array.from({ length: Math.min(5, Math.ceil(filteredProfessionals.length / itemsPerPage)) }, (_, i) => {
-                            const pageNum = i + 1;
-                            return (
-                              <button
-                                key={pageNum}
-                                onClick={() => setCurrentPage(pageNum)}
-                                className={`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-black transition-all ${
-                                  currentPage === pageNum 
-                                    ? 'bg-primary text-white shadow-lg shadow-primary/20' 
-                                    : 'bg-surface-container-low text-on-surface hover:bg-surface-container-high'
-                                }`}
-                              >
-                                {pageNum}
-                              </button>
-                            );
-                          })}
-                        </div>
-                        <button 
-                          onClick={() => setCurrentPage(prev => Math.min(Math.ceil(filteredProfessionals.length / itemsPerPage), prev + 1))}
-                          disabled={currentPage === Math.ceil(filteredProfessionals.length / itemsPerPage)}
-                          className="p-2 rounded-lg bg-surface-container-high text-on-surface-variant disabled:opacity-30 hover:bg-surface-container-highest transition-all"
-                        >
-                          <ChevronRight className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
+                    <Pagination 
+                      currentPage={currentPage}
+                      totalPages={Math.ceil(filteredProfessionals.length / itemsPerPage)}
+                      onPageChange={setCurrentPage}
+                      totalItems={filteredProfessionals.length}
+                      itemsPerPage={itemsPerPage}
+                      itemName="profissionais"
+                    />
                   </>
                 )}
               </div>

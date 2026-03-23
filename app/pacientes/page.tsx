@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import CSVImporter from '@/components/CSVImporter';
+import Pagination from '@/components/Pagination';
 
 interface Paciente {
   cpf: string;
@@ -741,45 +742,14 @@ export default function PacientesPage() {
                     </table>
 
                     {/* Pagination Controls */}
-                    <div className="p-6 border-t border-outline-variant/5 flex items-center justify-between bg-surface-container-lowest/50">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/40">
-                        Mostrando {Math.min(filteredPacientes.length, (currentPage - 1) * itemsPerPage + 1)} - {Math.min(filteredPacientes.length, currentPage * itemsPerPage)} de {filteredPacientes.length} registros
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <button 
-                          onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                          disabled={currentPage === 1}
-                          className="px-4 py-2 rounded-xl bg-surface-container-low text-on-surface disabled:opacity-30 disabled:cursor-not-allowed hover:bg-surface-container-high transition-all text-[10px] font-black uppercase tracking-widest"
-                        >
-                          Anterior
-                        </button>
-                        <div className="flex items-center gap-1">
-                          {Array.from({ length: Math.min(5, Math.ceil(filteredPacientes.length / itemsPerPage)) }, (_, i) => {
-                            const pageNum = i + 1;
-                            return (
-                              <button
-                                key={pageNum}
-                                onClick={() => setCurrentPage(pageNum)}
-                                className={`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-black transition-all ${
-                                  currentPage === pageNum 
-                                    ? 'bg-primary text-white shadow-lg shadow-primary/20' 
-                                    : 'bg-surface-container-low text-on-surface hover:bg-surface-container-high'
-                                }`}
-                              >
-                                {pageNum}
-                              </button>
-                            );
-                          })}
-                        </div>
-                        <button 
-                          onClick={() => setCurrentPage(prev => Math.min(Math.ceil(filteredPacientes.length / itemsPerPage), prev + 1))}
-                          disabled={currentPage === Math.ceil(filteredPacientes.length / itemsPerPage)}
-                          className="px-4 py-2 rounded-xl bg-surface-container-low text-on-surface disabled:opacity-30 disabled:cursor-not-allowed hover:bg-surface-container-high transition-all text-[10px] font-black uppercase tracking-widest"
-                        >
-                          Próxima
-                        </button>
-                      </div>
-                    </div>
+                    <Pagination 
+                      currentPage={currentPage}
+                      totalPages={Math.ceil(filteredPacientes.length / itemsPerPage)}
+                      onPageChange={setCurrentPage}
+                      totalItems={filteredPacientes.length}
+                      itemsPerPage={itemsPerPage}
+                      itemName="pacientes"
+                    />
                   </>
                 )}
               </div>
