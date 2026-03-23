@@ -9,7 +9,7 @@ import { usePathname } from 'next/navigation';
 import { LucideLogOut, LucideUser, LucideChevronDown } from 'lucide-react';
 
 export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSidebar: () => void; isSidebarOpen: boolean }) {
-  const { searchQuery, setSearchQuery } = useSearch();
+  const { searchQuery, setSearchQuery, isFormOpen, setIsFormOpen } = useSearch();
   const { user, signOut } = useAuth();
   const pathname = usePathname();
   const isHomePage = pathname === '/';
@@ -70,15 +70,31 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
           <>
             <span className="hidden sm:block text-lg font-black text-primary dark:text-primary-container font-headline">{getSearchLabel()}</span>
             <div className="hidden sm:block h-6 w-px bg-slate-200 dark:bg-slate-800 mx-2"></div>
-            <div className="flex items-center bg-surface-container rounded-full px-4 py-1.5 gap-2 w-40 md:w-64">
-              <span className="material-symbols-outlined text-slate-400 text-sm">search</span>
-              <input 
-                className="bg-transparent border-none text-sm focus:ring-0 placeholder-slate-400 w-full font-body" 
-                placeholder={getSearchPlaceholder()} 
-                type="text" 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+            <div className="flex items-center gap-3">
+              <div className="flex items-center bg-surface-container rounded-full px-4 py-1.5 gap-2 w-40 md:w-64">
+                <span className="material-symbols-outlined text-slate-400 text-sm">search</span>
+                <input 
+                  className="bg-transparent border-none text-sm focus:ring-0 placeholder-slate-400 w-full font-body" 
+                  placeholder={getSearchPlaceholder()} 
+                  type="text" 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+
+              {(isCategoriesPage || isProfessionalsPage || isOperatorsPage || isRotinasPage || isPacientesPage || isUnidadesPage) && (
+                <button
+                  onClick={() => setIsFormOpen(!isFormOpen)}
+                  className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold transition-all duration-300 ${
+                    isFormOpen 
+                      ? 'bg-red-600 text-white hover:bg-red-700 shadow-lg shadow-red-200' 
+                      : 'bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-sm">{isFormOpen ? 'close' : 'add'}</span>
+                  <span className="hidden md:inline">{isFormOpen ? 'Fechar' : 'Cadastrar'}</span>
+                </button>
+              )}
             </div>
           </>
         )}

@@ -50,10 +50,14 @@ interface HealthUnit {
 }
 
 export default function OperadoresPage() {
-  const { searchQuery, setSearchQuery } = useSearch();
+  const { searchQuery, setSearchQuery, isFormOpen, setIsFormOpen } = useSearch();
   const [operators, setOperators] = useState<Operator[]>([]);
   const [units, setUnits] = useState<HealthUnit[]>([]);
   const [loading, setLoading] = useState(isSupabaseConfigured);
+
+  useEffect(() => {
+    setIsFormOpen(false);
+  }, [setIsFormOpen]);
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
@@ -376,6 +380,7 @@ export default function OperadoresPage() {
     }
 
     setFormData({ name: '', cpf: '', password: '', status: 'Ativo', unidade_cnes: '' });
+    setIsFormOpen(false);
     fetchOperators();
   };
 
@@ -388,6 +393,7 @@ export default function OperadoresPage() {
       status: op.status,
       unidade_cnes: op.unidade_cnes || ''
     });
+    setIsFormOpen(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -395,6 +401,7 @@ export default function OperadoresPage() {
     setEditingId(null);
     setFormData({ name: '', cpf: '', password: '', status: 'Ativo', unidade_cnes: '' });
     setError(null);
+    setIsFormOpen(false);
   };
 
   const handleDelete = async (cpf: string) => {
@@ -466,153 +473,170 @@ export default function OperadoresPage() {
 
         <div className="grid grid-cols-12 gap-6 md:gap-8">
           {/* Form Section - Bento Card 1 */}
-          <section className="col-span-12 space-y-6">
-            <div className="bg-surface-container-lowest p-6 md:p-8 rounded-2xl shadow-md border border-outline-variant/10 relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-primary-container"></div>
-              <h3 className="text-xl font-bold font-headline mb-8 flex items-center gap-3">
-                {editingId ? <Edit2 className="text-primary w-6 h-6" /> : <UserPlus className="text-primary w-6 h-6" />}
-                {editingId ? 'Editar Registro' : 'Novo Registro'}
-              </h3>
-              <form className="space-y-6" onSubmit={handleSubmit}>
-                {error && (
-                  <div className="p-4 rounded-xl bg-error-container/30 border border-error/20 text-error text-xs font-semibold flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                    <AlertTriangle className="w-5 h-5 shrink-0" />
-                    <span className="flex-1">{error}</span>
-                  </div>
-                )}
-                <div className="space-y-2">
-                  <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Nome Completo</label>
-                  <div className="relative group">
-                    <UserPlus className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-5 h-5" />
-                    <input 
-                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-12 pr-4 py-3.5 transition-all font-body outline-none text-xs" 
-                      placeholder="Ex: Jean Luc Picard" 
-                      type="text" 
-                      value={formData.name || ''}
-                      onChange={(e) => {
-                        setFormData({ ...formData, name: e.target.value });
-                        setError(null);
-                      }}
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">CPF</label>
-                  <div className="relative group">
-                    <Fingerprint className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-5 h-5" />
-                    <input 
-                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-12 pr-4 py-3.5 transition-all font-body outline-none text-xs" 
-                      placeholder="000.000.000-00" 
-                      type="text" 
-                      value={formData.cpf || ''}
-                      onChange={handleCpfChange}
-                      maxLength={14}
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Unidade de Saúde</label>
-                  <div className="relative group">
-                    <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-5 h-5" />
-                    <select 
-                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-12 pr-4 py-3.5 transition-all font-body outline-none text-xs appearance-none"
-                      value={formData.unidade_cnes || ''}
-                      onChange={(e) => setFormData({ ...formData, unidade_cnes: e.target.value })}
-                    >
-                      <option value="">Selecione uma unidade...</option>
-                      {units.map(unit => (
-                        <option key={unit.cnes} value={unit.cnes}>{unit.nome_fantasia}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Status</label>
-                    <div className="relative group">
-                      <Shield className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-5 h-5" />
-                      <select 
-                        className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-12 pr-4 py-3.5 transition-all font-body outline-none text-xs appearance-none"
-                        value={formData.status || 'Ativo'}
-                        onChange={(e) => setFormData({ ...formData, status: e.target.value as 'Ativo' | 'Bloqueado' })}
-                      >
-                        <option value="Ativo">Ativo</option>
-                        <option value="Bloqueado">Bloqueado</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Senha</label>
-                    <div className="relative group">
-                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-5 h-5" />
-                      <input 
-                        className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-12 pr-4 py-3.5 transition-all font-body outline-none text-xs" 
-                        placeholder={editingId ? "Manter" : "••••••••"} 
-                        type="password" 
-                        value={formData.password || ''}
-                        onChange={(e) => {
-                          setFormData({ ...formData, password: e.target.value });
-                          setError(null);
-                        }}
-                        required={!editingId}
-                      />
-                    </div>
-                  </div>
-                </div>
-                <div className="pt-6 space-y-3">
-                  <button className="w-full bg-primary text-white font-bold py-4 rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center justify-center gap-3 font-headline uppercase tracking-widest text-[11px]" type="submit">
-                    {editingId ? <ShieldCheck className="w-5 h-5" /> : <UserPlus className="w-5 h-5" />}
-                    {editingId ? 'Atualizar Operador' : 'Cadastrar Operador'}
-                  </button>
-                  {editingId && (
-                    <div className="grid grid-cols-2 gap-3">
-                      <button 
-                        type="button"
-                        onClick={() => setDeleteConfirmId(editingId)}
-                        className="bg-red-50 text-red-600 font-black py-4 rounded-xl hover:bg-red-100 transition-all flex items-center justify-center gap-2 font-headline uppercase tracking-widest text-[8px]"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                        Excluir
-                      </button>
-                      <button 
-                        type="button"
-                        onClick={cancelEdit}
-                        className="bg-surface-container-high text-on-surface-variant font-black py-4 rounded-xl hover:bg-surface-container-highest transition-all flex items-center justify-center gap-2 font-headline uppercase tracking-widest text-[8px]"
-                      >
-                        <X className="w-3 h-3" />
-                        Cancelar
-                      </button>
-                    </div>
-                  )}
-                  {!editingId && (formData.name || formData.cpf || formData.password) && (
+          <AnimatePresence>
+            {isFormOpen && (
+              <motion.section 
+                initial={{ opacity: 0, height: 0, marginBottom: 0 }}
+                animate={{ opacity: 1, height: 'auto', marginBottom: 24 }}
+                exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                className="col-span-12 space-y-6 overflow-hidden"
+              >
+                <div className="bg-surface-container-lowest p-6 md:p-8 rounded-2xl shadow-md border border-outline-variant/10 relative overflow-hidden">
+                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-primary-container"></div>
+                  <div className="flex justify-between items-center mb-8">
+                    <h3 className="text-xl font-bold font-headline flex items-center gap-3">
+                      {editingId ? <Edit2 className="text-primary w-6 h-6" /> : <UserPlus className="text-primary w-6 h-6" />}
+                      {editingId ? 'Editar Registro' : 'Novo Registro'}
+                    </h3>
                     <button 
-                      type="button"
                       onClick={cancelEdit}
-                      className="w-full bg-surface-container text-on-surface-variant font-bold py-3.5 rounded-xl hover:bg-surface-container-high transition-colors font-headline uppercase tracking-widest text-[8px] flex items-center justify-center gap-2"
+                      className="p-2 rounded-full hover:bg-slate-100 text-slate-400 transition-colors"
                     >
-                      <RefreshCw className="w-4 h-4" />
-                      Limpar Formulário
+                      <X className="w-6 h-6" />
                     </button>
-                  )}
+                  </div>
+                  <form className="space-y-6" onSubmit={handleSubmit}>
+                    {error && (
+                      <div className="p-4 rounded-xl bg-error-container/30 border border-error/20 text-error text-xs font-semibold flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                        <AlertTriangle className="w-5 h-5 shrink-0" />
+                        <span className="flex-1">{error}</span>
+                      </div>
+                    )}
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Nome Completo</label>
+                      <div className="relative group">
+                        <UserPlus className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-5 h-5" />
+                        <input 
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-12 pr-4 py-3.5 transition-all font-body outline-none text-xs" 
+                          placeholder="Ex: Jean Luc Picard" 
+                          type="text" 
+                          value={formData.name || ''}
+                          onChange={(e) => {
+                            setFormData({ ...formData, name: e.target.value });
+                            setError(null);
+                          }}
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">CPF</label>
+                      <div className="relative group">
+                        <Fingerprint className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-5 h-5" />
+                        <input 
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-12 pr-4 py-3.5 transition-all font-body outline-none text-xs" 
+                          placeholder="000.000.000-00" 
+                          type="text" 
+                          value={formData.cpf || ''}
+                          onChange={handleCpfChange}
+                          maxLength={14}
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Unidade de Saúde</label>
+                      <div className="relative group">
+                        <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-5 h-5" />
+                        <select 
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-12 pr-4 py-3.5 transition-all font-body outline-none text-xs appearance-none"
+                          value={formData.unidade_cnes || ''}
+                          onChange={(e) => setFormData({ ...formData, unidade_cnes: e.target.value })}
+                        >
+                          <option value="">Selecione uma unidade...</option>
+                          {units.map(unit => (
+                            <option key={unit.cnes} value={unit.cnes}>{unit.nome_fantasia}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Status</label>
+                        <div className="relative group">
+                          <Shield className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-5 h-5" />
+                          <select 
+                            className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-12 pr-4 py-3.5 transition-all font-body outline-none text-xs appearance-none"
+                            value={formData.status || 'Ativo'}
+                            onChange={(e) => setFormData({ ...formData, status: e.target.value as 'Ativo' | 'Bloqueado' })}
+                          >
+                            <option value="Ativo">Ativo</option>
+                            <option value="Bloqueado">Bloqueado</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Senha</label>
+                        <div className="relative group">
+                          <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-5 h-5" />
+                          <input 
+                            className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-12 pr-4 py-3.5 transition-all font-body outline-none text-xs" 
+                            placeholder={editingId ? "Manter" : "••••••••"} 
+                            type="password" 
+                            value={formData.password || ''}
+                            onChange={(e) => {
+                              setFormData({ ...formData, password: e.target.value });
+                              setError(null);
+                            }}
+                            required={!editingId}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="pt-6 space-y-3">
+                      <button className="w-full bg-primary text-white font-bold py-4 rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center justify-center gap-3 font-headline uppercase tracking-widest text-[11px]" type="submit">
+                        {editingId ? <ShieldCheck className="w-5 h-5" /> : <UserPlus className="w-5 h-5" />}
+                        {editingId ? 'Atualizar Operador' : 'Cadastrar Operador'}
+                      </button>
+                      {editingId && (
+                        <div className="grid grid-cols-2 gap-3">
+                          <button 
+                            type="button"
+                            onClick={() => setDeleteConfirmId(editingId)}
+                            className="bg-red-50 text-red-600 font-black py-4 rounded-xl hover:bg-red-100 transition-all flex items-center justify-center gap-2 font-headline uppercase tracking-widest text-[8px]"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            Excluir
+                          </button>
+                          <button 
+                            type="button"
+                            onClick={cancelEdit}
+                            className="bg-surface-container-high text-on-surface-variant font-black py-4 rounded-xl hover:bg-surface-container-highest transition-all flex items-center justify-center gap-2 font-headline uppercase tracking-widest text-[8px]"
+                          >
+                            <X className="w-3 h-3" />
+                            Cancelar
+                          </button>
+                        </div>
+                      )}
+                      {!editingId && (formData.name || formData.cpf || formData.password) && (
+                        <button 
+                          type="button"
+                          onClick={cancelEdit}
+                          className="w-full bg-surface-container text-on-surface-variant font-bold py-3.5 rounded-xl hover:bg-surface-container-high transition-colors font-headline uppercase tracking-widest text-[8px] flex items-center justify-center gap-2"
+                        >
+                          <RefreshCw className="w-4 h-4" />
+                          Limpar Formulário
+                        </button>
+                      )}
+                    </div>
+                  </form>
                 </div>
-              </form>
-            </div>
 
-            {/* Informational Card - Bento Card 2 */}
-            <div className="bg-tertiary-container/10 p-6 rounded-2xl border border-tertiary-container/20 group hover:bg-tertiary-container/20 transition-colors duration-500">
-              <div className="flex gap-4">
-                <div className="w-10 h-10 rounded-xl bg-tertiary-container/20 flex items-center justify-center text-tertiary shrink-0 group-hover:scale-110 transition-transform">
-                  <Shield className="w-5 h-5" />
+                {/* Informational Card - Bento Card 2 */}
+                <div className="bg-tertiary-container/10 p-6 rounded-2xl border border-tertiary-container/20 group hover:bg-tertiary-container/20 transition-colors duration-500">
+                  <div className="flex gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-tertiary-container/20 flex items-center justify-center text-tertiary shrink-0 group-hover:scale-110 transition-transform">
+                      <Shield className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-tertiary mb-1 uppercase tracking-wider">Diretriz de Segurança</h4>
+                      <p className="text-xs text-on-tertiary-container/70 leading-relaxed font-body">As senhas devem ser alfanuméricas e conter pelo menos 8 caracteres para garantir a integridade dos dados clínicos e conformidade com a LGPD.</p>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="text-sm font-bold text-tertiary mb-1 uppercase tracking-wider">Diretriz de Segurança</h4>
-                  <p className="text-xs text-on-tertiary-container/70 leading-relaxed font-body">As senhas devem ser alfanuméricas e conter pelo menos 8 caracteres para garantir a integridade dos dados clínicos e conformidade com a LGPD.</p>
-                </div>
-              </div>
-            </div>
-          </section>
+              </motion.section>
+            )}
+          </AnimatePresence>
 
           {/* Table Section - Bento Card 3 */}
           <section className="col-span-12">

@@ -42,7 +42,7 @@ interface HealthUnit {
 }
 
 export default function UnidadesSaudePage() {
-  const { searchQuery, setSearchQuery } = useSearch();
+  const { searchQuery, setSearchQuery, isFormOpen, setIsFormOpen } = useSearch();
   const [units, setUnits] = useState<HealthUnit[]>([]);
   const [loading, setLoading] = useState(isSupabaseConfigured);
   const [error, setError] = useState<string | null>(null);
@@ -66,10 +66,11 @@ export default function UnidadesSaudePage() {
   });
 
   useEffect(() => {
+    setIsFormOpen(false);
     if (isSupabaseConfigured) {
       fetchUnits();
     }
-  }, []);
+  }, [setIsFormOpen]);
 
   const fetchUnits = async () => {
     setLoading(true);
@@ -178,6 +179,7 @@ export default function UnidadesSaudePage() {
         telefone: ''
       });
       setEditingId(null);
+      setIsFormOpen(false);
       fetchUnits();
     } catch (err: any) {
       console.error('Erro ao salvar unidade:', err);
@@ -188,6 +190,7 @@ export default function UnidadesSaudePage() {
   const handleEdit = (unit: HealthUnit) => {
     setEditingId(unit.cnes);
     setFormData(unit);
+    setIsFormOpen(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -206,6 +209,7 @@ export default function UnidadesSaudePage() {
       telefone: ''
     });
     setError(null);
+    setIsFormOpen(false);
   };
 
   const handleDelete = async (cnes: string) => {
@@ -286,206 +290,215 @@ export default function UnidadesSaudePage() {
 
         <div className="grid grid-cols-12 gap-6 md:gap-8">
           {/* Form Section */}
-          <section className="col-span-12 space-y-6">
-            <div className="bg-surface-container-lowest p-6 md:p-8 rounded-2xl shadow-md border border-outline-variant/10 relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-primary-container"></div>
-              <h3 className="text-xl font-bold font-headline mb-8 flex items-center gap-3">
-                {editingId ? <Edit2 className="text-primary w-6 h-6" /> : <Plus className="text-primary w-6 h-6" />}
-                {editingId ? 'Editar Unidade' : 'Nova Unidade'}
-              </h3>
-              <form className="space-y-5" onSubmit={handleSubmit}>
-                {error && (
-                  <div className="p-4 rounded-xl bg-error-container/30 border border-error/20 text-error text-xs font-semibold flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                    <AlertTriangle className="w-5 h-5 shrink-0" />
-                    <span className="flex-1">{error}</span>
-                  </div>
-                )}
-                {success && (
-                  <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-semibold flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                    <CheckCircle2 className="w-5 h-5 shrink-0" />
-                    <span className="flex-1">{success}</span>
-                  </div>
-                )}
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">CNES</label>
-                    <div className="relative group">
-                      <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-4 h-4" />
+          <AnimatePresence>
+            {isFormOpen && (
+              <motion.section 
+                initial={{ opacity: 0, height: 0, marginBottom: 0 }}
+                animate={{ opacity: 1, height: 'auto', marginBottom: 32 }}
+                exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                className="col-span-12 overflow-hidden"
+              >
+                <div className="bg-surface-container-lowest p-6 md:p-8 rounded-2xl shadow-md border border-outline-variant/10 relative overflow-hidden">
+                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-primary-container"></div>
+                  <h3 className="text-xl font-bold font-headline mb-8 flex items-center gap-3">
+                    {editingId ? <Edit2 className="text-primary w-6 h-6" /> : <Plus className="text-primary w-6 h-6" />}
+                    {editingId ? 'Editar Unidade' : 'Nova Unidade'}
+                  </h3>
+                  <form className="space-y-5" onSubmit={handleSubmit}>
+                    {error && (
+                      <div className="p-4 rounded-xl bg-error-container/30 border border-error/20 text-error text-xs font-semibold flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                        <AlertTriangle className="w-5 h-5 shrink-0" />
+                        <span className="flex-1">{error}</span>
+                      </div>
+                    )}
+                    {success && (
+                      <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-semibold flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                        <CheckCircle2 className="w-5 h-5 shrink-0" />
+                        <span className="flex-1">{success}</span>
+                      </div>
+                    )}
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">CNES</label>
+                        <div className="relative group">
+                          <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-4 h-4" />
+                          <input 
+                            name="cnes"
+                            className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-10 pr-4 py-3 transition-all font-body outline-none text-xs" 
+                            placeholder="Ex: 2787741" 
+                            type="text" 
+                            value={formData.cnes || ''}
+                            onChange={handleInputChange}
+                            disabled={!!editingId}
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Telefone</label>
+                        <div className="relative group">
+                          <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-4 h-4" />
+                          <input 
+                            name="telefone"
+                            className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-10 pr-4 py-3 transition-all font-body outline-none text-xs" 
+                            placeholder="(00)0000-0000" 
+                            type="text" 
+                            value={formData.telefone || ''}
+                            onChange={handleInputChange}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Nome Fantasia</label>
+                      <div className="relative group">
+                        <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-4 h-4" />
+                        <input 
+                          name="nome_fantasia"
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-10 pr-4 py-3 transition-all font-body outline-none text-xs" 
+                          placeholder="UBS JARDIM ROSELI" 
+                          type="text" 
+                          value={formData.nome_fantasia || ''}
+                          onChange={handleInputChange}
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="md:col-span-2 space-y-2">
+                        <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Logradouro</label>
+                        <div className="relative group">
+                          <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-4 h-4" />
+                          <input 
+                            name="logradouro"
+                            className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-10 pr-4 py-3 transition-all font-body outline-none text-xs" 
+                            placeholder="RUA SIMAO NUNES" 
+                            type="text" 
+                            value={formData.logradouro || ''}
+                            onChange={handleInputChange}
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Número</label>
+                        <input 
+                          name="numero"
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl px-4 py-3 transition-all font-body outline-none text-xs" 
+                          placeholder="31A" 
+                          type="text" 
+                          value={formData.numero || ''}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Complemento</label>
+                        <input 
+                          name="complemento"
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl px-4 py-3 transition-all font-body outline-none text-xs" 
+                          placeholder="Térreo" 
+                          type="text" 
+                          value={formData.complemento || ''}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Bairro</label>
+                        <input 
+                          name="bairro"
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl px-4 py-3 transition-all font-body outline-none text-xs" 
+                          placeholder="JARDIM ROSELI" 
+                          type="text" 
+                          value={formData.bairro || ''}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="md:col-span-2 space-y-2">
+                        <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Município</label>
+                        <input 
+                          name="municipio"
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl px-4 py-3 transition-all font-body outline-none text-xs" 
+                          placeholder="SAO PAULO" 
+                          type="text" 
+                          value={formData.municipio || ''}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">UF</label>
+                        <input 
+                          name="uf"
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl px-4 py-3 transition-all font-body outline-none text-xs" 
+                          placeholder="SP" 
+                          type="text" 
+                          value={formData.uf || ''}
+                          onChange={handleInputChange}
+                          maxLength={2}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">CEP</label>
                       <input 
-                        name="cnes"
-                        className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-10 pr-4 py-3 transition-all font-body outline-none text-xs" 
-                        placeholder="Ex: 2787741" 
+                        name="cep"
+                        className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl px-4 py-3 transition-all font-body outline-none text-xs" 
+                        placeholder="08380-039" 
                         type="text" 
-                        value={formData.cnes || ''}
+                        value={formData.cep || ''}
                         onChange={handleInputChange}
-                        disabled={!!editingId}
-                        required
                       />
                     </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Telefone</label>
-                    <div className="relative group">
-                      <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-4 h-4" />
-                      <input 
-                        name="telefone"
-                        className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-10 pr-4 py-3 transition-all font-body outline-none text-xs" 
-                        placeholder="(00)0000-0000" 
-                        type="text" 
-                        value={formData.telefone || ''}
-                        onChange={handleInputChange}
-                      />
-                    </div>
-                  </div>
-                </div>
 
-                <div className="space-y-2">
-                  <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Nome Fantasia</label>
-                  <div className="relative group">
-                    <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-4 h-4" />
-                    <input 
-                      name="nome_fantasia"
-                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-10 pr-4 py-3 transition-all font-body outline-none text-xs" 
-                      placeholder="UBS JARDIM ROSELI" 
-                      type="text" 
-                      value={formData.nome_fantasia || ''}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="md:col-span-2 space-y-2">
-                    <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Logradouro</label>
-                    <div className="relative group">
-                      <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-4 h-4" />
-                      <input 
-                        name="logradouro"
-                        className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-10 pr-4 py-3 transition-all font-body outline-none text-xs" 
-                        placeholder="RUA SIMAO NUNES" 
-                        type="text" 
-                        value={formData.logradouro || ''}
-                        onChange={handleInputChange}
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Número</label>
-                    <input 
-                      name="numero"
-                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl px-4 py-3 transition-all font-body outline-none text-xs" 
-                      placeholder="31A" 
-                      type="text" 
-                      value={formData.numero || ''}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Complemento</label>
-                    <input 
-                      name="complemento"
-                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl px-4 py-3 transition-all font-body outline-none text-xs" 
-                      placeholder="Térreo" 
-                      type="text" 
-                      value={formData.complemento || ''}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Bairro</label>
-                    <input 
-                      name="bairro"
-                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl px-4 py-3 transition-all font-body outline-none text-xs" 
-                      placeholder="JARDIM ROSELI" 
-                      type="text" 
-                      value={formData.bairro || ''}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="md:col-span-2 space-y-2">
-                    <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Município</label>
-                    <input 
-                      name="municipio"
-                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl px-4 py-3 transition-all font-body outline-none text-xs" 
-                      placeholder="SAO PAULO" 
-                      type="text" 
-                      value={formData.municipio || ''}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">UF</label>
-                    <input 
-                      name="uf"
-                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl px-4 py-3 transition-all font-body outline-none text-xs" 
-                      placeholder="SP" 
-                      type="text" 
-                      value={formData.uf || ''}
-                      onChange={handleInputChange}
-                      maxLength={2}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">CEP</label>
-                  <input 
-                    name="cep"
-                    className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl px-4 py-3 transition-all font-body outline-none text-xs" 
-                    placeholder="08380-039" 
-                    type="text" 
-                    value={formData.cep || ''}
-                    onChange={handleInputChange}
-                  />
-                </div>
-
-                <div className="pt-6 space-y-3">
-                  <button className="w-full bg-primary text-white font-bold py-4 rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center justify-center gap-3 font-headline uppercase tracking-widest text-xs" type="submit">
-                    {editingId ? <CheckCircle2 className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
-                    {editingId ? 'Atualizar Unidade' : 'Cadastrar Unidade'}
-                  </button>
-                  {editingId && (
-                    <div className="grid grid-cols-2 gap-3">
-                      <button 
-                        type="button"
-                        onClick={() => setDeleteConfirmId(editingId)}
-                        className="bg-red-50 text-red-600 font-black py-4 rounded-xl hover:bg-red-100 transition-all flex items-center justify-center gap-2 font-headline uppercase tracking-widest text-[8px]"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                        Excluir
+                    <div className="pt-6 space-y-3">
+                      <button className="w-full bg-primary text-white font-bold py-4 rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center justify-center gap-3 font-headline uppercase tracking-widest text-xs" type="submit">
+                        {editingId ? <CheckCircle2 className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+                        {editingId ? 'Atualizar Unidade' : 'Cadastrar Unidade'}
                       </button>
-                      <button 
-                        type="button"
-                        onClick={cancelEdit}
-                        className="bg-surface-container-high text-on-surface-variant font-black py-4 rounded-xl hover:bg-surface-container-highest transition-all flex items-center justify-center gap-2 font-headline uppercase tracking-widest text-[8px]"
-                      >
-                        <X className="w-3 h-3" />
-                        Cancelar
-                      </button>
+                      {editingId && (
+                        <div className="grid grid-cols-2 gap-3">
+                          <button 
+                            type="button"
+                            onClick={() => setDeleteConfirmId(editingId)}
+                            className="bg-red-50 text-red-600 font-black py-4 rounded-xl hover:bg-red-100 transition-all flex items-center justify-center gap-2 font-headline uppercase tracking-widest text-[8px]"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            Excluir
+                          </button>
+                          <button 
+                            type="button"
+                            onClick={cancelEdit}
+                            className="bg-surface-container-high text-on-surface-variant font-black py-4 rounded-xl hover:bg-surface-container-highest transition-all flex items-center justify-center gap-2 font-headline uppercase tracking-widest text-[8px]"
+                          >
+                            <X className="w-3 h-3" />
+                            Cancelar
+                          </button>
+                        </div>
+                      )}
+                      {!editingId && (formData.cnes || formData.nome_fantasia) && (
+                        <button 
+                          type="button"
+                          onClick={cancelEdit}
+                          className="w-full bg-surface-container text-on-surface-variant font-bold py-3.5 rounded-xl hover:bg-surface-container-high transition-colors font-headline uppercase tracking-widest text-[8px] flex items-center justify-center gap-2"
+                        >
+                          <RefreshCw className="w-4 h-4" />
+                          Limpar Formulário
+                        </button>
+                      )}
                     </div>
-                  )}
-                  {!editingId && (formData.cnes || formData.nome_fantasia) && (
-                    <button 
-                      type="button"
-                      onClick={cancelEdit}
-                      className="w-full bg-surface-container text-on-surface-variant font-bold py-3.5 rounded-xl hover:bg-surface-container-high transition-colors font-headline uppercase tracking-widest text-[8px] flex items-center justify-center gap-2"
-                    >
-                      <RefreshCw className="w-4 h-4" />
-                      Limpar Formulário
-                    </button>
-                  )}
+                  </form>
                 </div>
-              </form>
-            </div>
-          </section>
+              </motion.section>
+            )}
+          </AnimatePresence>
 
           {/* Table Section */}
           <section className="col-span-12">
