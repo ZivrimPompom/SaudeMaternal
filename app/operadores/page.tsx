@@ -206,6 +206,10 @@ export default function OperadoresPage() {
     );
   });
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
   const [formData, setFormData] = useState({
     name: '',
     cpf: '',
@@ -218,6 +222,8 @@ export default function OperadoresPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
 
   const formatCPF = (value: string) => {
     const digits = value.replace(/\D/g, '');
@@ -458,7 +464,7 @@ export default function OperadoresPage() {
 
         <div className="grid grid-cols-12 gap-6 md:gap-8">
           {/* Form Section - Bento Card 1 */}
-          <section className="col-span-12 lg:col-span-3 space-y-6">
+          <section className="col-span-12 space-y-6">
             <div className="bg-surface-container-lowest p-6 md:p-8 rounded-2xl shadow-md border border-outline-variant/10 relative overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-primary-container"></div>
               <h3 className="text-xl font-bold font-headline mb-8 flex items-center gap-3">
@@ -473,11 +479,11 @@ export default function OperadoresPage() {
                   </div>
                 )}
                 <div className="space-y-2">
-                  <label className="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Nome Completo</label>
+                  <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Nome Completo</label>
                   <div className="relative group">
                     <UserPlus className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-5 h-5" />
                     <input 
-                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-12 pr-4 py-3.5 transition-all font-body outline-none text-sm" 
+                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-12 pr-4 py-3.5 transition-all font-body outline-none text-xs" 
                       placeholder="Ex: Jean Luc Picard" 
                       type="text" 
                       value={formData.name || ''}
@@ -490,11 +496,11 @@ export default function OperadoresPage() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">CPF</label>
+                  <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">CPF</label>
                   <div className="relative group">
                     <Fingerprint className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-5 h-5" />
                     <input 
-                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-12 pr-4 py-3.5 transition-all font-body outline-none text-sm" 
+                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-12 pr-4 py-3.5 transition-all font-body outline-none text-xs" 
                       placeholder="000.000.000-00" 
                       type="text" 
                       value={formData.cpf || ''}
@@ -505,11 +511,11 @@ export default function OperadoresPage() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Unidade de Saúde</label>
+                  <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Unidade de Saúde</label>
                   <div className="relative group">
                     <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-5 h-5" />
                     <select 
-                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-12 pr-4 py-3.5 transition-all font-body outline-none text-sm appearance-none"
+                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-12 pr-4 py-3.5 transition-all font-body outline-none text-xs appearance-none"
                       value={formData.unidade_cnes || ''}
                       onChange={(e) => setFormData({ ...formData, unidade_cnes: e.target.value })}
                     >
@@ -522,11 +528,11 @@ export default function OperadoresPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Status</label>
+                    <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Status</label>
                     <div className="relative group">
                       <Shield className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-5 h-5" />
                       <select 
-                        className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-12 pr-4 py-3.5 transition-all font-body outline-none text-sm appearance-none"
+                        className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-12 pr-4 py-3.5 transition-all font-body outline-none text-xs appearance-none"
                         value={formData.status || 'Ativo'}
                         onChange={(e) => setFormData({ ...formData, status: e.target.value as 'Ativo' | 'Bloqueado' })}
                       >
@@ -536,11 +542,11 @@ export default function OperadoresPage() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Senha</label>
+                    <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Senha</label>
                     <div className="relative group">
                       <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-5 h-5" />
                       <input 
-                        className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-12 pr-4 py-3.5 transition-all font-body outline-none text-sm" 
+                        className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-12 pr-4 py-3.5 transition-all font-body outline-none text-xs" 
                         placeholder={editingId ? "Manter" : "••••••••"} 
                         type="password" 
                         value={formData.password || ''}
@@ -554,7 +560,7 @@ export default function OperadoresPage() {
                   </div>
                 </div>
                 <div className="pt-6 space-y-3">
-                  <button className="w-full bg-primary text-white font-bold py-4 rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center justify-center gap-3 font-headline uppercase tracking-widest text-sm" type="submit">
+                  <button className="w-full bg-primary text-white font-bold py-4 rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center justify-center gap-3 font-headline uppercase tracking-widest text-[11px]" type="submit">
                     {editingId ? <ShieldCheck className="w-5 h-5" /> : <UserPlus className="w-5 h-5" />}
                     {editingId ? 'Atualizar Operador' : 'Cadastrar Operador'}
                   </button>
@@ -563,7 +569,7 @@ export default function OperadoresPage() {
                       <button 
                         type="button"
                         onClick={() => setDeleteConfirmId(editingId)}
-                        className="bg-red-50 text-red-600 font-black py-4 rounded-xl hover:bg-red-100 transition-all flex items-center justify-center gap-2 font-headline uppercase tracking-widest text-[10px]"
+                        className="bg-red-50 text-red-600 font-black py-4 rounded-xl hover:bg-red-100 transition-all flex items-center justify-center gap-2 font-headline uppercase tracking-widest text-[8px]"
                       >
                         <Trash2 className="w-3 h-3" />
                         Excluir
@@ -571,7 +577,7 @@ export default function OperadoresPage() {
                       <button 
                         type="button"
                         onClick={cancelEdit}
-                        className="bg-surface-container-high text-on-surface-variant font-black py-4 rounded-xl hover:bg-surface-container-highest transition-all flex items-center justify-center gap-2 font-headline uppercase tracking-widest text-[10px]"
+                        className="bg-surface-container-high text-on-surface-variant font-black py-4 rounded-xl hover:bg-surface-container-highest transition-all flex items-center justify-center gap-2 font-headline uppercase tracking-widest text-[8px]"
                       >
                         <X className="w-3 h-3" />
                         Cancelar
@@ -582,7 +588,7 @@ export default function OperadoresPage() {
                     <button 
                       type="button"
                       onClick={cancelEdit}
-                      className="w-full bg-surface-container text-on-surface-variant font-bold py-3.5 rounded-xl hover:bg-surface-container-high transition-colors font-headline uppercase tracking-widest text-[10px] flex items-center justify-center gap-2"
+                      className="w-full bg-surface-container text-on-surface-variant font-bold py-3.5 rounded-xl hover:bg-surface-container-high transition-colors font-headline uppercase tracking-widest text-[8px] flex items-center justify-center gap-2"
                     >
                       <RefreshCw className="w-4 h-4" />
                       Limpar Formulário
@@ -607,7 +613,7 @@ export default function OperadoresPage() {
           </section>
 
           {/* Table Section - Bento Card 3 */}
-          <section className="col-span-12 lg:col-span-9">
+          <section className="col-span-12">
             <div className="bg-surface-container-lowest rounded-2xl overflow-hidden shadow-md border border-outline-variant/10 flex flex-col h-full">
               <div className="p-6 md:p-8 border-b border-surface-container-low flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-surface-container-lowest/50 backdrop-blur-sm sticky top-0 z-10">
                 <div>
@@ -622,12 +628,15 @@ export default function OperadoresPage() {
                       placeholder="Filtrar..."
                       className="bg-surface-container-low border-none rounded-full pl-9 pr-4 py-2 text-xs font-body focus:ring-2 focus:ring-primary/20 outline-none w-40 md:w-64 transition-all"
                       value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onChange={(e) => {
+                        setSearchQuery(e.target.value);
+                        setCurrentPage(1);
+                      }}
                     />
                   </div>
                 </div>
               </div>
-              <div className="max-h-[700px] overflow-auto scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent">
+              <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent">
                 {loading ? (
                   <div className="p-8 space-y-6">
                     {[1, 2, 3, 4, 5].map((i) => (
@@ -649,83 +658,117 @@ export default function OperadoresPage() {
                     <p className="text-sm font-medium">Nenhum operador encontrado com os critérios atuais.</p>
                   </div>
                 ) : (
-                  <table className="w-full text-left border-separate border-spacing-0 min-w-[1200px]">
-                    <thead className="sticky top-0 z-30 bg-surface-container-low">
-                      <tr>
-                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5 w-[300px]">Profissional</th>
-                        <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5 w-[200px]">Identificação</th>
-                        <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5 w-[150px]">Status</th>
-                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label text-center border-b border-outline-variant/5 sticky right-0 bg-surface-container-low z-40 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] w-[200px]">Ações de Gerenciamento</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-surface-container-low/50">
-                      {filteredOperators.map((op) => (
-                        <tr key={op.cpf} className="hover:bg-surface-container-low/40 transition-all group">
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-surface-container-high to-surface-container-highest flex items-center justify-center text-sm font-bold text-primary shadow-sm group-hover:scale-105 transition-transform">
-                                {op.initials}
-                              </div>
-                              <div>
-                                <p className="font-bold text-on-surface text-sm font-headline leading-tight uppercase">{op.name}</p>
-                                <p className="text-[9px] text-on-surface-variant/60 font-body uppercase tracking-widest mt-0.5">
-                                  {op.unidades_saude?.nome_fantasia || 'Sem Unidade'}
-                                </p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-4 py-4">
-                            <div className="flex flex-col">
-                              <span className="text-xs font-mono text-on-surface-variant font-medium">{op.cpf}</span>
-                              <span className="text-[8px] text-on-surface-variant/40 font-body uppercase tracking-tighter mt-0.5 whitespace-nowrap">CPF Verificado</span>
-                            </div>
-                          </td>
-                          <td className="px-4 py-4">
-                            <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest ${
-                              op.status === 'Ativo' 
-                                ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' 
-                                : 'bg-error-container/50 text-on-error-container border border-error/10'
-                            }`}>
-                              <span className={`w-1 h-1 rounded-full ${op.status === 'Ativo' ? 'bg-emerald-500' : 'bg-error'} animate-pulse`}></span>
-                              {op.status}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 sticky right-0 bg-surface-container-lowest group-hover:bg-surface-container-low transition-colors z-30 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">
-                            <div className="flex items-center justify-center gap-2">
-                              <button 
-                                onClick={() => handleEdit(op)}
-                                className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary/5 text-primary hover:bg-primary hover:text-white transition-all shadow-sm group/btn"
-                                title="Editar Operador"
-                              >
-                                <Edit2 className="w-3.5 h-3.5" />
-                                <span className="text-[9px] font-black uppercase tracking-widest hidden group-hover/btn:inline">Editar</span>
-                              </button>
-                              <button 
-                                onClick={() => setDeleteConfirmId(op.cpf)}
-                                className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all shadow-sm group/btn"
-                                title="Excluir Operador"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                                <span className="text-[9px] font-black uppercase tracking-widest hidden group-hover/btn:inline">Excluir</span>
-                              </button>
-                            </div>
-                          </td>
+                  <>
+                    <table className="w-full text-left border-separate border-spacing-0 min-w-[1000px]">
+                      <thead className="sticky top-0 z-30 bg-surface-container-low">
+                        <tr>
+                          <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5 w-[250px]">Profissional</th>
+                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5 w-[180px]">Identificação</th>
+                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5 w-[120px]">Status</th>
+                          <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label text-center border-b border-outline-variant/5 sticky right-0 bg-surface-container-low z-40 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] w-[180px]">Ações</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y divide-surface-container-low/50">
+                        {filteredOperators
+                          .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                          .map((op) => (
+                            <tr key={op.cpf} className="hover:bg-surface-container-low/40 transition-all group">
+                              <td className="px-6 py-4">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-surface-container-high to-surface-container-highest flex items-center justify-center text-sm font-bold text-primary shadow-sm group-hover:scale-105 transition-transform">
+                                    {op.initials}
+                                  </div>
+                                  <div>
+                                    <p className="font-bold text-on-surface text-sm font-headline leading-tight uppercase line-clamp-1">{op.name}</p>
+                                    <p className="text-[9px] text-on-surface-variant/60 font-body uppercase tracking-widest mt-0.5 line-clamp-1">
+                                      {op.unidades_saude?.nome_fantasia || 'Sem Unidade'}
+                                    </p>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-4 py-4">
+                                <div className="flex flex-col">
+                                  <span className="text-xs font-mono text-on-surface-variant font-medium">{op.cpf}</span>
+                                  <span className="text-[8px] text-on-surface-variant/40 font-body uppercase tracking-tighter mt-0.5 whitespace-nowrap">CPF Verificado</span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-4">
+                                <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                                  op.status === 'Ativo' 
+                                    ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' 
+                                    : 'bg-error-container/50 text-on-error-container border border-error/10'
+                                }`}>
+                                  <span className={`w-1 h-1 rounded-full ${op.status === 'Ativo' ? 'bg-emerald-500' : 'bg-error'} animate-pulse`}></span>
+                                  {op.status}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 sticky right-0 bg-surface-container-lowest group-hover:bg-surface-container-low transition-colors z-30 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">
+                                <div className="flex items-center justify-center gap-2">
+                                  <button 
+                                    onClick={() => handleEdit(op)}
+                                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary/5 text-primary hover:bg-primary hover:text-white transition-all shadow-sm group/btn"
+                                    title="Editar Operador"
+                                  >
+                                    <Edit2 className="w-3.5 h-3.5" />
+                                    <span className="text-[9px] font-black uppercase tracking-widest hidden group-hover/btn:inline">Editar</span>
+                                  </button>
+                                  <button 
+                                    onClick={() => setDeleteConfirmId(op.cpf)}
+                                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all shadow-sm group/btn"
+                                    title="Excluir Operador"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                    <span className="text-[9px] font-black uppercase tracking-widest hidden group-hover/btn:inline">Excluir</span>
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+
+                    {/* Pagination Controls */}
+                    <div className="p-6 bg-surface-container-low/20 border-t border-surface-container-low flex justify-between items-center">
+                      <p className="text-[10px] text-on-surface-variant/50 font-body uppercase tracking-widest">
+                        Mostrando {Math.min(filteredOperators.length, (currentPage - 1) * itemsPerPage + 1)} - {Math.min(filteredOperators.length, currentPage * itemsPerPage)} de {filteredOperators.length} operadores
+                      </p>
+                      <div className="flex gap-2">
+                        <button 
+                          onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                          disabled={currentPage === 1}
+                          className="p-2 rounded-lg bg-surface-container-high text-on-surface-variant disabled:opacity-30 hover:bg-surface-container-highest transition-all"
+                        >
+                          <ChevronLeft className="w-4 h-4" />
+                        </button>
+                        <div className="flex items-center gap-1">
+                          {Array.from({ length: Math.min(5, Math.ceil(filteredOperators.length / itemsPerPage)) }, (_, i) => {
+                            const pageNum = i + 1;
+                            return (
+                              <button
+                                key={pageNum}
+                                onClick={() => setCurrentPage(pageNum)}
+                                className={`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-black transition-all ${
+                                  currentPage === pageNum 
+                                    ? 'bg-primary text-white shadow-lg shadow-primary/20' 
+                                    : 'bg-surface-container-low text-on-surface hover:bg-surface-container-high'
+                                }`}
+                              >
+                                {pageNum}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <button 
+                          onClick={() => setCurrentPage(prev => Math.min(Math.ceil(filteredOperators.length / itemsPerPage), prev + 1))}
+                          disabled={currentPage === Math.ceil(filteredOperators.length / itemsPerPage)}
+                          className="p-2 rounded-lg bg-surface-container-high text-on-surface-variant disabled:opacity-30 hover:bg-surface-container-highest transition-all"
+                        >
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </>
                 )}
-              </div>
-              <div className="p-6 bg-surface-container-low/20 border-t border-surface-container-low flex justify-between items-center">
-                <p className="text-[10px] text-on-surface-variant/50 font-body uppercase tracking-widest">Última sincronização: {new Date().toLocaleTimeString()}</p>
-                <div className="flex gap-2">
-                  <button className="p-2 rounded-lg bg-surface-container-high text-on-surface-variant disabled:opacity-30" disabled>
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  <button className="p-2 rounded-lg bg-surface-container-high text-on-surface-variant disabled:opacity-30" disabled>
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
               </div>
             </div>
 

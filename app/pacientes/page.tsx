@@ -51,6 +51,8 @@ export default function PacientesPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
 
   const [formData, setFormData] = useState<Partial<Paciente>>({
     cpf: '',
@@ -352,7 +354,7 @@ export default function PacientesPage() {
 
         <div className="grid grid-cols-12 gap-10">
           {/* Form Section */}
-          <section className="col-span-12 lg:col-span-3 space-y-8">
+          <section className="col-span-12 space-y-8">
             <div className="bg-surface-container-lowest p-6 md:p-8 rounded-[2.5rem] shadow-2xl shadow-black/5 border border-outline-variant/10 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16" />
               
@@ -391,10 +393,10 @@ export default function PacientesPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">CPF</label>
+                    <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">CPF</label>
                     <input 
                       type="text"
-                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none"
+                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none"
                       placeholder="000.000.000-00"
                       value={formData.cpf || ''}
                       onChange={(e) => setFormData({ ...formData, cpf: formatCpf(e.target.value) })}
@@ -403,10 +405,10 @@ export default function PacientesPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Prontuário</label>
+                    <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Prontuário</label>
                     <input 
                       type="text"
-                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none"
+                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none"
                       placeholder="00-000"
                       value={formData.prontuario || ''}
                       onChange={(e) => setFormData({ ...formData, prontuario: formatProntuario(e.target.value) })}
@@ -415,10 +417,10 @@ export default function PacientesPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Nome da Gestante</label>
+                  <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Nome da Gestante</label>
                   <input 
                     type="text"
-                    className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none uppercase"
+                    className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none uppercase"
                     placeholder="NOME DA GESTANTE"
                     value={formData.gestante || ''}
                     onChange={(e) => setFormData({ ...formData, gestante: e.target.value.toUpperCase() })}
@@ -427,10 +429,10 @@ export default function PacientesPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Nome da Mãe</label>
+                  <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Nome da Mãe</label>
                   <input 
                     type="text"
-                    className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none uppercase"
+                    className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none uppercase"
                     placeholder="NOME DA MÃE"
                     value={formData.nome_mae || ''}
                     onChange={(e) => setFormData({ ...formData, nome_mae: e.target.value.toUpperCase() })}
@@ -439,20 +441,20 @@ export default function PacientesPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">CNS</label>
+                    <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">CNS</label>
                     <input 
                       type="text"
-                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none"
+                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none"
                       placeholder="0000.0000.0000.000"
                       value={formData.cns || ''}
                       onChange={(e) => setFormData({ ...formData, cns: formatCns(e.target.value) })}
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Data Nascimento</label>
+                    <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Data Nascimento</label>
                     <input 
                       type="date"
-                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none"
+                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none"
                       value={formData.data_nascimento || ''}
                       onChange={(e) => setFormData({ ...formData, data_nascimento: e.target.value })}
                     />
@@ -462,32 +464,32 @@ export default function PacientesPage() {
                 {formData.data_nascimento && (
                   <div className="p-4 rounded-2xl bg-primary/5 border border-primary/10 flex justify-between items-center">
                     <div className="space-y-1">
-                      <p className="text-[9px] font-black uppercase tracking-widest text-primary/60">Idade Calculada</p>
-                      <p className="text-sm font-black text-primary">{calculateAge(formData.data_nascimento).ageText}</p>
+                      <p className="text-[8px] font-black uppercase tracking-widest text-primary/60">Idade Calculada</p>
+                      <p className="text-xs font-black text-primary">{calculateAge(formData.data_nascimento).ageText}</p>
                     </div>
                     <div className="text-right space-y-1">
-                      <p className="text-[9px] font-black uppercase tracking-widest text-primary/60">Fase da Vida</p>
-                      <p className="text-sm font-black text-primary">{calculateAge(formData.data_nascimento).lifeStage}</p>
+                      <p className="text-[8px] font-black uppercase tracking-widest text-primary/60">Fase da Vida</p>
+                      <p className="text-xs font-black text-primary">{calculateAge(formData.data_nascimento).lifeStage}</p>
                     </div>
                   </div>
                 )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Contato</label>
+                    <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Contato</label>
                     <input 
                       type="text"
-                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none"
+                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none"
                       placeholder="(00) 00000-0000"
                       value={formData.contato || ''}
                       onChange={(e) => setFormData({ ...formData, contato: formatPhone(e.target.value) })}
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">E-mail</label>
+                    <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">E-mail</label>
                     <input 
                       type="email"
-                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none"
+                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none"
                       placeholder="email@exemplo.com"
                       value={formData.email || ''}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -497,20 +499,20 @@ export default function PacientesPage() {
 
                 <div className="grid grid-cols-3 gap-4">
                   <div className="col-span-2 space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Logradouro</label>
+                    <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Logradouro</label>
                     <input 
                       type="text"
-                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none uppercase"
+                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none uppercase"
                       placeholder="RUA / AVENIDA / PRAÇA"
                       value={formData.logradouro || ''}
                       onChange={(e) => setFormData({ ...formData, logradouro: e.target.value.toUpperCase() })}
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Nº</label>
+                    <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Nº</label>
                     <input 
                       type="text"
-                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none uppercase"
+                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none uppercase"
                       placeholder="99A"
                       value={formData.numero || ''}
                       onChange={(e) => setFormData({ ...formData, numero: e.target.value.toUpperCase() })}
@@ -520,20 +522,20 @@ export default function PacientesPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Complemento</label>
+                    <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Complemento</label>
                     <input 
                       type="text"
-                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none uppercase"
+                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none uppercase"
                       placeholder="PRÓXIMO / TRAVESSA / VIELA"
                       value={formData.complemento || ''}
                       onChange={(e) => setFormData({ ...formData, complemento: e.target.value.toUpperCase() })}
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Bairro</label>
+                    <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Bairro</label>
                     <input 
                       type="text"
-                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none uppercase"
+                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none uppercase"
                       placeholder="BAIRRO"
                       value={formData.bairro || ''}
                       onChange={(e) => setFormData({ ...formData, bairro: e.target.value.toUpperCase() })}
@@ -543,19 +545,19 @@ export default function PacientesPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Cidade</label>
+                    <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Cidade</label>
                     <input 
                       type="text"
-                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none uppercase opacity-60 cursor-not-allowed"
+                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none uppercase opacity-60 cursor-not-allowed"
                       value="SÃO PAULO"
                       readOnly
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">UF</label>
+                    <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">UF</label>
                     <input 
                       type="text"
-                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none uppercase opacity-60 cursor-not-allowed"
+                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none uppercase opacity-60 cursor-not-allowed"
                       value="SP"
                       readOnly
                     />
@@ -565,7 +567,7 @@ export default function PacientesPage() {
                 <div className="pt-4 flex flex-col gap-3">
                   <button 
                     type="submit"
-                    className="w-full bg-primary text-white font-black py-5 rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 font-headline uppercase tracking-widest text-xs"
+                    className="w-full bg-primary text-white font-black py-5 rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 font-headline uppercase tracking-widest text-[10px]"
                   >
                     {editingId ? <Edit2 className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
                     {editingId ? 'Atualizar Paciente' : 'Cadastrar Paciente'}
@@ -575,7 +577,7 @@ export default function PacientesPage() {
                       <button 
                         type="button"
                         onClick={() => setDeleteConfirmId(editingId)}
-                        className="bg-red-50 text-red-600 font-black py-4 rounded-2xl hover:bg-red-100 transition-all flex items-center justify-center gap-2 font-headline uppercase tracking-widest text-[10px]"
+                        className="bg-red-50 text-red-600 font-black py-4 rounded-2xl hover:bg-red-100 transition-all flex items-center justify-center gap-2 font-headline uppercase tracking-widest text-[8px]"
                       >
                         <Trash2 className="w-3 h-3" />
                         Excluir
@@ -588,7 +590,7 @@ export default function PacientesPage() {
                             cpf: '', gestante: '', nome_mae: '', prontuario: '', cns: '', data_nascimento: '', logradouro: '', numero: '', complemento: '', bairro: '', contato: '', email: '', cidade: 'SÃO PAULO', uf: 'SP'
                           });
                         }}
-                        className="bg-surface-container-high text-on-surface-variant font-black py-4 rounded-2xl hover:bg-surface-container-highest transition-all flex items-center justify-center gap-2 font-headline uppercase tracking-widest text-[10px]"
+                        className="bg-surface-container-high text-on-surface-variant font-black py-4 rounded-2xl hover:bg-surface-container-highest transition-all flex items-center justify-center gap-2 font-headline uppercase tracking-widest text-[8px]"
                       >
                         <X className="w-3 h-3" />
                         Cancelar
@@ -601,7 +603,7 @@ export default function PacientesPage() {
           </section>
 
           {/* List Section */}
-          <section className="col-span-12 lg:col-span-9">
+          <section className="col-span-12">
             <div className="bg-surface-container-lowest rounded-[3rem] overflow-hidden shadow-2xl shadow-black/5 border border-outline-variant/10">
               <div className="p-6 md:p-10 border-b border-outline-variant/5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-surface-container-lowest/50 backdrop-blur-sm sticky top-0 z-20">
                 <div className="flex items-center gap-4">
@@ -621,13 +623,16 @@ export default function PacientesPage() {
                       placeholder="Filtrar pacientes..."
                       className="w-full bg-surface-container-low border-none rounded-full pl-12 pr-4 py-3 text-xs font-body focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                       value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onChange={(e) => {
+                        setSearchQuery(e.target.value);
+                        setCurrentPage(1);
+                      }}
                     />
                   </div>
                 </div>
               </div>
 
-              <div className="max-h-[700px] overflow-auto scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent">
+              <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent">
                 {loading ? (
                   <div className="p-24 text-center space-y-4">
                     <div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
@@ -641,96 +646,141 @@ export default function PacientesPage() {
                     <p className="text-sm font-body text-on-surface-variant/40">Nenhuma paciente encontrada.</p>
                   </div>
                 ) : (
-                  <table className="w-full text-left border-separate border-spacing-0 min-w-[1400px]">
-                    <thead className="sticky top-0 z-30 bg-surface-container-low">
-                      <tr>
-                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5 w-[300px]">Gestante / CPF</th>
-                        <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5 w-[200px]">Prontuário / CNS</th>
-                        <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5 w-[150px]">Fase / Idade</th>
-                        <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5">Endereço / Contato</th>
-                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline text-center border-b border-outline-variant/5 sticky right-0 bg-surface-container-low z-40 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] w-[200px]">Ações de Gerenciamento</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-outline-variant/5">
-                      {filteredPacientes.map((pac) => {
-                        const { ageText, lifeStage } = calculateAge(pac.data_nascimento);
-                        return (
-                          <motion.tr 
-                            layout
-                            key={pac.cpf} 
-                            className="hover:bg-surface-container-low/50 transition-all group"
-                          >
-                            <td className="px-6 py-4">
-                              <div className="flex flex-col gap-0.5">
-                                <span className="text-[10px] font-black text-primary tracking-widest">{formatCpf(pac.cpf || '')}</span>
-                                <p className="font-black text-on-surface font-headline text-sm group-hover:text-primary transition-colors uppercase">{pac.gestante}</p>
-                                <span className="text-[9px] font-bold text-on-surface-variant/40 uppercase">Mãe: {pac.nome_mae || 'NÃO INFORMADO'}</span>
-                              </div>
-                            </td>
-                            <td className="px-4 py-4">
-                              <div className="flex flex-col gap-0.5">
-                                <div className="flex items-center gap-1.5">
-                                  <Fingerprint className="w-3 h-3 text-primary/40" />
-                                  <span className="text-[10px] font-black text-on-surface uppercase tracking-wider">P: {pac.prontuario || '---'}</span>
-                                </div>
-                                <div className="flex items-center gap-1.5">
-                                  <AlertCircle className="w-3 h-3 text-on-surface-variant/30" />
-                                  <span className="text-[10px] font-bold text-on-surface-variant/60 whitespace-nowrap">CNS: {formatCns(pac.cns || '') || '---'}</span>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-4 py-4">
-                              <div className="flex flex-col gap-1">
-                                <span className={`text-[9px] font-black px-2 py-0.5 rounded-full w-fit uppercase tracking-widest ${
-                                  lifeStage === 'CRIANÇA' ? 'bg-blue-100 text-blue-700' :
-                                  lifeStage === 'ADOLESCENTE' ? 'bg-purple-100 text-purple-700' :
-                                  lifeStage === 'IDOSO' ? 'bg-orange-100 text-orange-700' :
-                                  'bg-green-100 text-green-700'
-                                }`}>
-                                  {lifeStage}
-                                </span>
-                                <span className="text-[10px] font-bold text-on-surface-variant/60">{ageText}</span>
-                              </div>
-                            </td>
-                            <td className="px-4 py-4">
-                              <div className="flex flex-col gap-0.5">
-                                <div className="flex items-start gap-1.5">
-                                  <MapPin className="w-3 h-3 text-on-surface-variant/30 mt-0.5 shrink-0" />
-                                  <span className="text-[10px] font-bold text-on-surface-variant/60 leading-tight uppercase">
-                                    {pac.logradouro}, {pac.numero} {pac.bairro}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-1.5">
-                                  <Phone className="w-3 h-3 text-on-surface-variant/30" />
-                                  <span className="text-[10px] font-bold text-on-surface-variant/60">{formatPhone(pac.contato || '') || '---'}</span>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 sticky right-0 bg-surface-container-lowest group-hover:bg-surface-container-low transition-colors z-30 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">
-                              <div className="flex items-center justify-center gap-2">
-                                <button 
-                                  onClick={() => handleEdit(pac)}
-                                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary/5 text-primary hover:bg-primary hover:text-white transition-all shadow-sm group/btn"
-                                  title="Editar Paciente"
-                                >
-                                  <Edit2 className="w-3.5 h-3.5" />
-                                  <span className="text-[9px] font-black uppercase tracking-widest hidden group-hover/btn:inline">Editar</span>
-                                </button>
-                                <button 
-                                  onClick={() => setDeleteConfirmId(pac.cpf)}
-                                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all shadow-sm group/btn"
-                                  title="Excluir Paciente"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                  <span className="text-[9px] font-black uppercase tracking-widest hidden group-hover/btn:inline">Excluir</span>
-                                </button>
-                              </div>
-                            </td>
-                          </motion.tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                  <>
+                    <table className="w-full text-left border-separate border-spacing-0 min-w-[1100px]">
+                      <thead className="sticky top-0 z-30 bg-surface-container-low">
+                        <tr>
+                          <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5 w-[250px]">Gestante / CPF</th>
+                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5 w-[180px]">Prontuário / CNS</th>
+                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5 w-[120px]">Fase / Idade</th>
+                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5">Endereço / Contato</th>
+                          <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline text-center border-b border-outline-variant/5 sticky right-0 bg-surface-container-low z-40 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] w-[180px]">Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-outline-variant/5">
+                        {filteredPacientes
+                          .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                          .map((pac) => {
+                            const { ageText, lifeStage } = calculateAge(pac.data_nascimento);
+                            return (
+                              <motion.tr 
+                                layout
+                                key={pac.cpf} 
+                                className="hover:bg-surface-container-low/50 transition-all group"
+                              >
+                                <td className="px-6 py-4">
+                                  <div className="flex flex-col gap-0.5">
+                                    <span className="text-[10px] font-black text-primary tracking-widest">{formatCpf(pac.cpf || '')}</span>
+                                    <p className="font-black text-on-surface font-headline text-sm group-hover:text-primary transition-colors uppercase line-clamp-1">{pac.gestante}</p>
+                                    <span className="text-[9px] font-bold text-on-surface-variant/40 uppercase line-clamp-1">Mãe: {pac.nome_mae || 'NÃO INFORMADO'}</span>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-4">
+                                  <div className="flex flex-col gap-0.5">
+                                    <div className="flex items-center gap-1.5">
+                                      <Fingerprint className="w-3 h-3 text-primary/40" />
+                                      <span className="text-[10px] font-black text-on-surface uppercase tracking-wider">P: {pac.prontuario || '---'}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5">
+                                      <AlertCircle className="w-3 h-3 text-on-surface-variant/30" />
+                                      <span className="text-[10px] font-bold text-on-surface-variant/60 whitespace-nowrap">CNS: {formatCns(pac.cns || '') || '---'}</span>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-4">
+                                  <div className="flex flex-col gap-1">
+                                    <span className={`text-[9px] font-black px-2 py-0.5 rounded-full w-fit uppercase tracking-widest ${
+                                      lifeStage === 'CRIANÇA' ? 'bg-blue-100 text-blue-700' :
+                                      lifeStage === 'ADOLESCENTE' ? 'bg-purple-100 text-purple-700' :
+                                      lifeStage === 'IDOSO' ? 'bg-orange-100 text-orange-700' :
+                                      'bg-green-100 text-green-700'
+                                    }`}>
+                                      {lifeStage}
+                                    </span>
+                                    <span className="text-[10px] font-bold text-on-surface-variant/60">{ageText}</span>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-4">
+                                  <div className="flex flex-col gap-0.5">
+                                    <div className="flex items-start gap-1.5">
+                                      <MapPin className="w-3 h-3 text-on-surface-variant/30 mt-0.5 shrink-0" />
+                                      <span className="text-[10px] font-bold text-on-surface-variant/60 leading-tight uppercase line-clamp-1">
+                                        {pac.logradouro}, {pac.numero} {pac.bairro}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5">
+                                      <Phone className="w-3 h-3 text-on-surface-variant/30" />
+                                      <span className="text-[10px] font-bold text-on-surface-variant/60">{formatPhone(pac.contato || '') || '---'}</span>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 sticky right-0 bg-surface-container-lowest group-hover:bg-surface-container-low transition-colors z-30 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">
+                                  <div className="flex items-center justify-center gap-2">
+                                    <button 
+                                      onClick={() => handleEdit(pac)}
+                                      className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary/5 text-primary hover:bg-primary hover:text-white transition-all shadow-sm group/btn"
+                                      title="Editar Paciente"
+                                    >
+                                      <Edit2 className="w-3.5 h-3.5" />
+                                      <span className="text-[9px] font-black uppercase tracking-widest hidden group-hover/btn:inline">Editar</span>
+                                    </button>
+                                    <button 
+                                      onClick={() => setDeleteConfirmId(pac.cpf)}
+                                      className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all shadow-sm group/btn"
+                                      title="Excluir Paciente"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                      <span className="text-[9px] font-black uppercase tracking-widest hidden group-hover/btn:inline">Excluir</span>
+                                    </button>
+                                  </div>
+                                </td>
+                              </motion.tr>
+                            );
+                          })}
+                      </tbody>
+                    </table>
+
+                    {/* Pagination Controls */}
+                    <div className="p-6 border-t border-outline-variant/5 flex items-center justify-between bg-surface-container-lowest/50">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/40">
+                        Mostrando {Math.min(filteredPacientes.length, (currentPage - 1) * itemsPerPage + 1)} - {Math.min(filteredPacientes.length, currentPage * itemsPerPage)} de {filteredPacientes.length} registros
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <button 
+                          onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                          disabled={currentPage === 1}
+                          className="px-4 py-2 rounded-xl bg-surface-container-low text-on-surface disabled:opacity-30 disabled:cursor-not-allowed hover:bg-surface-container-high transition-all text-[10px] font-black uppercase tracking-widest"
+                        >
+                          Anterior
+                        </button>
+                        <div className="flex items-center gap-1">
+                          {Array.from({ length: Math.min(5, Math.ceil(filteredPacientes.length / itemsPerPage)) }, (_, i) => {
+                            const pageNum = i + 1;
+                            return (
+                              <button
+                                key={pageNum}
+                                onClick={() => setCurrentPage(pageNum)}
+                                className={`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-black transition-all ${
+                                  currentPage === pageNum 
+                                    ? 'bg-primary text-white shadow-lg shadow-primary/20' 
+                                    : 'bg-surface-container-low text-on-surface hover:bg-surface-container-high'
+                                }`}
+                              >
+                                {pageNum}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <button 
+                          onClick={() => setCurrentPage(prev => Math.min(Math.ceil(filteredPacientes.length / itemsPerPage), prev + 1))}
+                          disabled={currentPage === Math.ceil(filteredPacientes.length / itemsPerPage)}
+                          className="px-4 py-2 rounded-xl bg-surface-container-low text-on-surface disabled:opacity-30 disabled:cursor-not-allowed hover:bg-surface-container-high transition-all text-[10px] font-black uppercase tracking-widest"
+                        >
+                          Próxima
+                        </button>
+                      </div>
+                    </div>
+                  </>
                 )}
               </div>
             </div>

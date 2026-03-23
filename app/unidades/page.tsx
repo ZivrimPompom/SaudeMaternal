@@ -48,6 +48,8 @@ export default function UnidadesSaudePage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
 
   const [formData, setFormData] = useState<HealthUnit>({
     cnes: '',
@@ -244,6 +246,10 @@ export default function UnidadesSaudePage() {
     );
   });
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
   return (
     <DashboardLayout>
       <div className="p-4 md:p-8 lg:p-12 pb-32 max-w-7xl mx-auto space-y-8 md:space-y-12">
@@ -279,7 +285,7 @@ export default function UnidadesSaudePage() {
 
         <div className="grid grid-cols-12 gap-6 md:gap-8">
           {/* Form Section */}
-          <section className="col-span-12 lg:col-span-3 space-y-6">
+          <section className="col-span-12 space-y-6">
             <div className="bg-surface-container-lowest p-6 md:p-8 rounded-2xl shadow-md border border-outline-variant/10 relative overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-primary-container"></div>
               <h3 className="text-xl font-bold font-headline mb-8 flex items-center gap-3">
@@ -302,12 +308,12 @@ export default function UnidadesSaudePage() {
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">CNES</label>
+                    <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">CNES</label>
                     <div className="relative group">
                       <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-4 h-4" />
                       <input 
                         name="cnes"
-                        className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-10 pr-4 py-3 transition-all font-body outline-none text-sm" 
+                        className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-10 pr-4 py-3 transition-all font-body outline-none text-xs" 
                         placeholder="Ex: 2787741" 
                         type="text" 
                         value={formData.cnes || ''}
@@ -318,12 +324,12 @@ export default function UnidadesSaudePage() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Telefone</label>
+                    <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Telefone</label>
                     <div className="relative group">
                       <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-4 h-4" />
                       <input 
                         name="telefone"
-                        className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-10 pr-4 py-3 transition-all font-body outline-none text-sm" 
+                        className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-10 pr-4 py-3 transition-all font-body outline-none text-xs" 
                         placeholder="(00)0000-0000" 
                         type="text" 
                         value={formData.telefone || ''}
@@ -334,12 +340,12 @@ export default function UnidadesSaudePage() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Nome Fantasia</label>
+                  <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Nome Fantasia</label>
                   <div className="relative group">
                     <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-4 h-4" />
                     <input 
                       name="nome_fantasia"
-                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-10 pr-4 py-3 transition-all font-body outline-none text-sm" 
+                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-10 pr-4 py-3 transition-all font-body outline-none text-xs" 
                       placeholder="UBS JARDIM ROSELI" 
                       type="text" 
                       value={formData.nome_fantasia || ''}
@@ -351,12 +357,12 @@ export default function UnidadesSaudePage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="md:col-span-2 space-y-2">
-                    <label className="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Logradouro</label>
+                    <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Logradouro</label>
                     <div className="relative group">
                       <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-4 h-4" />
                       <input 
                         name="logradouro"
-                        className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-10 pr-4 py-3 transition-all font-body outline-none text-sm" 
+                        className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-10 pr-4 py-3 transition-all font-body outline-none text-xs" 
                         placeholder="RUA SIMAO NUNES" 
                         type="text" 
                         value={formData.logradouro || ''}
@@ -365,10 +371,10 @@ export default function UnidadesSaudePage() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Número</label>
+                    <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Número</label>
                     <input 
                       name="numero"
-                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl px-4 py-3 transition-all font-body outline-none text-sm" 
+                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl px-4 py-3 transition-all font-body outline-none text-xs" 
                       placeholder="31A" 
                       type="text" 
                       value={formData.numero || ''}
@@ -379,10 +385,10 @@ export default function UnidadesSaudePage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Complemento</label>
+                    <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Complemento</label>
                     <input 
                       name="complemento"
-                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl px-4 py-3 transition-all font-body outline-none text-sm" 
+                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl px-4 py-3 transition-all font-body outline-none text-xs" 
                       placeholder="Térreo" 
                       type="text" 
                       value={formData.complemento || ''}
@@ -390,10 +396,10 @@ export default function UnidadesSaudePage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Bairro</label>
+                    <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Bairro</label>
                     <input 
                       name="bairro"
-                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl px-4 py-3 transition-all font-body outline-none text-sm" 
+                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl px-4 py-3 transition-all font-body outline-none text-xs" 
                       placeholder="JARDIM ROSELI" 
                       type="text" 
                       value={formData.bairro || ''}
@@ -404,10 +410,10 @@ export default function UnidadesSaudePage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="md:col-span-2 space-y-2">
-                    <label className="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Município</label>
+                    <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Município</label>
                     <input 
                       name="municipio"
-                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl px-4 py-3 transition-all font-body outline-none text-sm" 
+                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl px-4 py-3 transition-all font-body outline-none text-xs" 
                       placeholder="SAO PAULO" 
                       type="text" 
                       value={formData.municipio || ''}
@@ -415,10 +421,10 @@ export default function UnidadesSaudePage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">UF</label>
+                    <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">UF</label>
                     <input 
                       name="uf"
-                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl px-4 py-3 transition-all font-body outline-none text-sm" 
+                      className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl px-4 py-3 transition-all font-body outline-none text-xs" 
                       placeholder="SP" 
                       type="text" 
                       value={formData.uf || ''}
@@ -429,10 +435,10 @@ export default function UnidadesSaudePage() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">CEP</label>
+                  <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">CEP</label>
                   <input 
                     name="cep"
-                    className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl px-4 py-3 transition-all font-body outline-none text-sm" 
+                    className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl px-4 py-3 transition-all font-body outline-none text-xs" 
                     placeholder="08380-039" 
                     type="text" 
                     value={formData.cep || ''}
@@ -441,7 +447,7 @@ export default function UnidadesSaudePage() {
                 </div>
 
                 <div className="pt-6 space-y-3">
-                  <button className="w-full bg-primary text-white font-bold py-4 rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center justify-center gap-3 font-headline uppercase tracking-widest text-sm" type="submit">
+                  <button className="w-full bg-primary text-white font-bold py-4 rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center justify-center gap-3 font-headline uppercase tracking-widest text-xs" type="submit">
                     {editingId ? <CheckCircle2 className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
                     {editingId ? 'Atualizar Unidade' : 'Cadastrar Unidade'}
                   </button>
@@ -450,7 +456,7 @@ export default function UnidadesSaudePage() {
                       <button 
                         type="button"
                         onClick={() => setDeleteConfirmId(editingId)}
-                        className="bg-red-50 text-red-600 font-black py-4 rounded-xl hover:bg-red-100 transition-all flex items-center justify-center gap-2 font-headline uppercase tracking-widest text-[10px]"
+                        className="bg-red-50 text-red-600 font-black py-4 rounded-xl hover:bg-red-100 transition-all flex items-center justify-center gap-2 font-headline uppercase tracking-widest text-[8px]"
                       >
                         <Trash2 className="w-3 h-3" />
                         Excluir
@@ -458,7 +464,7 @@ export default function UnidadesSaudePage() {
                       <button 
                         type="button"
                         onClick={cancelEdit}
-                        className="bg-surface-container-high text-on-surface-variant font-black py-4 rounded-xl hover:bg-surface-container-highest transition-all flex items-center justify-center gap-2 font-headline uppercase tracking-widest text-[10px]"
+                        className="bg-surface-container-high text-on-surface-variant font-black py-4 rounded-xl hover:bg-surface-container-highest transition-all flex items-center justify-center gap-2 font-headline uppercase tracking-widest text-[8px]"
                       >
                         <X className="w-3 h-3" />
                         Cancelar
@@ -469,7 +475,7 @@ export default function UnidadesSaudePage() {
                     <button 
                       type="button"
                       onClick={cancelEdit}
-                      className="w-full bg-surface-container text-on-surface-variant font-bold py-3.5 rounded-xl hover:bg-surface-container-high transition-colors font-headline uppercase tracking-widest text-[10px] flex items-center justify-center gap-2"
+                      className="w-full bg-surface-container text-on-surface-variant font-bold py-3.5 rounded-xl hover:bg-surface-container-high transition-colors font-headline uppercase tracking-widest text-[8px] flex items-center justify-center gap-2"
                     >
                       <RefreshCw className="w-4 h-4" />
                       Limpar Formulário
@@ -481,7 +487,7 @@ export default function UnidadesSaudePage() {
           </section>
 
           {/* Table Section */}
-          <section className="col-span-12 lg:col-span-9">
+          <section className="col-span-12">
             <div className="bg-surface-container-lowest rounded-2xl overflow-hidden shadow-md border border-outline-variant/10 flex flex-col h-full">
               <div className="p-6 md:p-8 border-b border-surface-container-low flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-surface-container-lowest/50 backdrop-blur-sm sticky top-0 z-10">
                 <div>
@@ -501,7 +507,7 @@ export default function UnidadesSaudePage() {
                   </div>
                 </div>
               </div>
-              <div className="max-h-[700px] overflow-auto scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent">
+              <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent">
                 {loading ? (
                   <div className="p-8 space-y-6">
                     {[1, 2, 3].map((i) => (
@@ -521,74 +527,108 @@ export default function UnidadesSaudePage() {
                     <p className="text-sm font-medium">Nenhuma unidade encontrada.</p>
                   </div>
                 ) : (
-                  <table className="w-full text-left border-separate border-spacing-0 min-w-[1200px]">
-                    <thead className="sticky top-0 z-30 bg-surface-container-low">
-                      <tr>
-                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5 w-[400px]">Unidade</th>
-                        <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5 w-[200px]">CNES</th>
-                        <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5">Localização</th>
-                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label text-center border-b border-outline-variant/5 sticky right-0 bg-surface-container-low z-40 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] w-[200px]">Ações de Gerenciamento</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-surface-container-low/50">
-                      {filteredUnits.map((unit) => (
-                        <tr key={unit.cnes} className="hover:bg-surface-container-low/40 transition-all group">
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-surface-container-high to-surface-container-highest flex items-center justify-center text-sm font-bold text-primary shadow-sm group-hover:scale-105 transition-transform">
-                                <Building2 className="w-4 h-4" />
-                              </div>
-                              <div>
-                                <p className="font-bold text-on-surface text-sm font-headline leading-tight uppercase">{unit.nome_fantasia}</p>
-                                <p className="text-[9px] text-on-surface-variant/60 font-body uppercase tracking-widest mt-0.5">{unit.telefone || 'Sem telefone'}</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-4 py-4">
-                            <span className="text-xs font-mono text-on-surface-variant font-medium">{unit.cnes}</span>
-                          </td>
-                          <td className="px-4 py-4">
-                            <div className="flex flex-col">
-                              <span className="text-[11px] text-on-surface font-medium">{unit.bairro}</span>
-                              <span className="text-[9px] text-on-surface-variant/60 font-body">{unit.municipio} - {unit.uf}</span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 sticky right-0 bg-surface-container-lowest group-hover:bg-surface-container-low transition-colors z-30 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">
-                            <div className="flex items-center justify-center gap-2">
-                              <button 
-                                onClick={() => handleEdit(unit)}
-                                className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary/5 text-primary hover:bg-primary hover:text-white transition-all shadow-sm group/btn"
-                                title="Editar Unidade"
-                              >
-                                <Edit2 className="w-3.5 h-3.5" />
-                                <span className="text-[9px] font-black uppercase tracking-widest hidden group-hover/btn:inline">Editar</span>
-                              </button>
-                              <button 
-                                onClick={() => setDeleteConfirmId(unit.cnes)}
-                                className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all shadow-sm group/btn"
-                                title="Excluir Unidade"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                                <span className="text-[9px] font-black uppercase tracking-widest hidden group-hover/btn:inline">Excluir</span>
-                              </button>
-                            </div>
-                          </td>
+                  <>
+                    <table className="w-full text-left border-separate border-spacing-0 min-w-[1000px]">
+                      <thead className="sticky top-0 z-30 bg-surface-container-low">
+                        <tr>
+                          <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5 w-[300px]">Unidade</th>
+                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5 w-[150px]">CNES</th>
+                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5">Localização</th>
+                          <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label text-center border-b border-outline-variant/5 sticky right-0 bg-surface-container-low z-40 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] w-[180px]">Ações</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y divide-surface-container-low/50">
+                        {filteredUnits
+                          .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                          .map((unit) => (
+                            <tr key={unit.cnes} className="hover:bg-surface-container-low/40 transition-all group">
+                              <td className="px-6 py-4">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-surface-container-high to-surface-container-highest flex items-center justify-center text-sm font-bold text-primary shadow-sm group-hover:scale-105 transition-transform">
+                                    <Building2 className="w-4 h-4" />
+                                  </div>
+                                  <div>
+                                    <p className="font-bold text-on-surface text-sm font-headline leading-tight uppercase line-clamp-1">{unit.nome_fantasia}</p>
+                                    <p className="text-[9px] text-on-surface-variant/60 font-body uppercase tracking-widest mt-0.5 line-clamp-1">{unit.telefone || 'Sem telefone'}</p>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-4 py-4">
+                                <span className="text-xs font-mono text-on-surface-variant font-medium">{unit.cnes}</span>
+                              </td>
+                              <td className="px-4 py-4">
+                                <div className="flex flex-col">
+                                  <span className="text-[11px] text-on-surface font-medium line-clamp-1">{unit.bairro}</span>
+                                  <span className="text-[9px] text-on-surface-variant/60 font-body line-clamp-1">{unit.municipio} - {unit.uf}</span>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 sticky right-0 bg-surface-container-lowest group-hover:bg-surface-container-low transition-colors z-30 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">
+                                <div className="flex items-center justify-center gap-2">
+                                  <button 
+                                    onClick={() => handleEdit(unit)}
+                                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary/5 text-primary hover:bg-primary hover:text-white transition-all shadow-sm group/btn"
+                                    title="Editar Unidade"
+                                  >
+                                    <Edit2 className="w-3.5 h-3.5" />
+                                    <span className="text-[9px] font-black uppercase tracking-widest hidden group-hover/btn:inline">Editar</span>
+                                  </button>
+                                  <button 
+                                    onClick={() => setDeleteConfirmId(unit.cnes)}
+                                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all shadow-sm group/btn"
+                                    title="Excluir Unidade"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                    <span className="text-[9px] font-black uppercase tracking-widest hidden group-hover/btn:inline">Excluir</span>
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+
+                    {/* Pagination Controls */}
+                    <div className="p-6 bg-surface-container-low/20 border-t border-surface-container-low flex justify-between items-center">
+                      <p className="text-[10px] text-on-surface-variant/50 font-body uppercase tracking-widest">
+                        Mostrando {Math.min(filteredUnits.length, (currentPage - 1) * itemsPerPage + 1)} - {Math.min(filteredUnits.length, currentPage * itemsPerPage)} de {filteredUnits.length} unidades
+                      </p>
+                      <div className="flex gap-2">
+                        <button 
+                          onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                          disabled={currentPage === 1}
+                          className="p-2 rounded-lg bg-surface-container-high text-on-surface-variant disabled:opacity-30 hover:bg-surface-container-highest transition-all"
+                        >
+                          <ChevronLeft className="w-4 h-4" />
+                        </button>
+                        <div className="flex items-center gap-1">
+                          {Array.from({ length: Math.min(5, Math.ceil(filteredUnits.length / itemsPerPage)) }, (_, i) => {
+                            const pageNum = i + 1;
+                            return (
+                              <button
+                                key={pageNum}
+                                onClick={() => setCurrentPage(pageNum)}
+                                className={`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-black transition-all ${
+                                  currentPage === pageNum 
+                                    ? 'bg-primary text-white shadow-lg shadow-primary/20' 
+                                    : 'bg-surface-container-low text-on-surface hover:bg-surface-container-high'
+                                }`}
+                              >
+                                {pageNum}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <button 
+                          onClick={() => setCurrentPage(prev => Math.min(Math.ceil(filteredUnits.length / itemsPerPage), prev + 1))}
+                          disabled={currentPage === Math.ceil(filteredUnits.length / itemsPerPage)}
+                          className="p-2 rounded-lg bg-surface-container-high text-on-surface-variant disabled:opacity-30 hover:bg-surface-container-highest transition-all"
+                        >
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </>
                 )}
-              </div>
-              <div className="p-6 bg-surface-container-low/20 border-t border-surface-container-low flex justify-between items-center">
-                <p className="text-[10px] text-on-surface-variant/50 font-body uppercase tracking-widest">Última sincronização: {new Date().toLocaleTimeString()}</p>
-                <div className="flex gap-2">
-                  <button className="p-2 rounded-lg bg-surface-container-high text-on-surface-variant disabled:opacity-30" disabled>
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  <button className="p-2 rounded-lg bg-surface-container-high text-on-surface-variant disabled:opacity-30" disabled>
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
               </div>
             </div>
           </section>
