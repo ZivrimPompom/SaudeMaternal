@@ -99,11 +99,11 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
                   href={item.href}
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 font-headline text-sm font-semibold tracking-tight ${
                     isActive
-                      ? 'text-slate-900 dark:text-white border-l-4 border-orange-700 bg-white/50 dark:bg-white/10 translate-x-1'
+                      ? 'text-slate-900 dark:text-white border-l-4 border-primary bg-white/50 dark:bg-white/10 translate-x-1'
                       : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/50'
                   }`}
                 >
-                  <span className={`material-symbols-outlined ${isActive ? 'text-orange-600 dark:text-orange-400' : ''}`}>
+                  <span className={`material-symbols-outlined ${isActive ? 'text-primary dark:text-primary-container' : ''}`}>
                     {item.icon}
                   </span>
                   <span>{item.name}</span>
@@ -113,12 +113,12 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
                   onClick={() => toggleMenu(item.name)}
                   className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all duration-200 font-headline text-sm font-semibold tracking-tight ${
                     isActive
-                      ? 'text-slate-900 dark:text-white border-l-4 border-orange-700 bg-white/50 dark:bg-white/10'
+                      ? 'text-slate-900 dark:text-white border-l-4 border-primary bg-white/50 dark:bg-white/10'
                       : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/50'
                   }`}
                 >
                   <span className="flex items-center gap-3">
-                    <span className={`material-symbols-outlined ${isActive ? 'text-orange-600 dark:text-orange-400' : ''}`}>
+                    <span className={`material-symbols-outlined ${isActive ? 'text-primary dark:text-primary-container' : ''}`}>
                       {item.icon}
                     </span>
                     <span>{item.name}</span>
@@ -139,7 +139,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
                         href={sub.href}
                         className={`flex items-center gap-3 px-4 py-2 rounded-r-lg transition-all duration-200 font-headline text-xs font-medium tracking-tight ${
                           isSubActive
-                            ? 'text-orange-700 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/10'
+                            ? 'text-primary dark:text-primary-container bg-primary/5 dark:bg-primary/10'
                             : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/30'
                         }`}
                       >
@@ -164,7 +164,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
         </Link>
         <button 
           onClick={onClose}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-slate-500 dark:text-slate-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors duration-200 font-headline text-sm font-semibold tracking-tight mt-4"
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary-container hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors duration-200 font-headline text-sm font-semibold tracking-tight mt-4"
           title="Recolher Painel"
         >
           <span className="material-symbols-outlined">chevron_left</span>

@@ -134,11 +134,11 @@ export default function Page() {
             </div>
           </Link>
 
-          <Link href="/rotinas" className="bg-surface-container-lowest p-8 md:p-10 rounded-[2.5rem] md:rounded-[3rem] shadow-2xl shadow-black/5 border border-outline-variant/10 hover:border-orange-600/30 hover:shadow-orange-600/10 transition-all group relative overflow-hidden flex flex-col h-full">
-            <div className="absolute top-0 right-0 w-48 h-48 bg-orange-600/5 rounded-full -mr-24 -mt-24 group-hover:scale-125 transition-transform duration-700" />
+          <Link href="/rotinas" className="bg-surface-container-lowest p-8 md:p-10 rounded-[2.5rem] md:rounded-[3rem] shadow-2xl shadow-black/5 border border-outline-variant/10 hover:border-primary/30 hover:shadow-primary/10 transition-all group relative overflow-hidden flex flex-col h-full">
+            <div className="absolute top-0 right-0 w-48 h-48 bg-primary/5 rounded-full -mr-24 -mt-24 group-hover:scale-125 transition-transform duration-700" />
             
-            <div className="w-16 h-16 rounded-3xl bg-orange-600/10 flex items-center justify-center mb-8 group-hover:bg-orange-600 group-hover:-rotate-6 transition-all duration-500 shadow-lg shadow-orange-600/5">
-              <ClipboardList className="text-orange-600 group-hover:text-white w-8 h-8 transition-colors" />
+            <div className="w-16 h-16 rounded-3xl bg-primary/10 flex items-center justify-center mb-8 group-hover:bg-primary group-hover:-rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
+              <ClipboardList className="text-primary group-hover:text-white w-8 h-8 transition-colors" />
             </div>
             
             <h3 className="text-3xl font-black font-headline mb-3 text-on-surface tracking-tight">Rotinas</h3>
@@ -147,10 +147,10 @@ export default function Page() {
             <div className="mt-auto flex items-center justify-between pt-8 border-t border-outline-variant/10">
               <div className="flex flex-col">
                 <span className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/40 mb-1">Protocolos Ativos</span>
-                <span className="text-3xl font-black text-orange-600 font-headline">{stats.routines}</span>
+                <span className="text-3xl font-black text-primary font-headline">{stats.routines}</span>
               </div>
-              <div className="w-12 h-12 rounded-2xl bg-surface-container-low flex items-center justify-center group-hover:bg-orange-600/10 transition-colors">
-                <Plus className="w-6 h-6 text-on-surface-variant/40 group-hover:text-orange-600 transition-colors" />
+              <div className="w-12 h-12 rounded-2xl bg-surface-container-low flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+                <Plus className="w-6 h-6 text-on-surface-variant/40 group-hover:text-primary transition-colors" />
               </div>
             </div>
           </Link>

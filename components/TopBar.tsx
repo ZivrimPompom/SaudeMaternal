@@ -23,17 +23,19 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   const getSearchLabel = () => {
-    if (isCategoriesPage) return 'CBO ou Categoria';
-    if (isProfessionalsPage) return 'Nome, CPF ou CNS';
-    if (isRotinasPage) return 'Descrição ou Tipo';
-    if (isPacientesPage) return 'Nome ou CPF';
-    if (isUnidadesPage) return 'CNES ou Nome';
+    if (isCategoriesPage) return 'Categorias Profissionais';
+    if (isProfessionalsPage) return 'Profissionais';
+    if (isOperatorsPage) return 'Operadores';
+    if (isRotinasPage) return 'Rotinas';
+    if (isPacientesPage) return 'Pacientes';
+    if (isUnidadesPage) return 'Unidades de Saúde';
     return 'Busca';
   };
 
   const getSearchPlaceholder = () => {
     if (isCategoriesPage) return 'CBO ou Categoria...';
     if (isProfessionalsPage) return 'Nome, CPF ou CNS...';
+    if (isOperatorsPage) return 'Nome ou CPF...';
     if (isRotinasPage) return 'Descrição ou Tipo...';
     if (isPacientesPage) return 'Nome ou CPF...';
     if (isUnidadesPage) return 'CNES ou Nome...';
@@ -66,7 +68,7 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
         
         {!isHomePage && (
           <>
-            <span className="hidden sm:block text-lg font-black text-orange-600 dark:text-orange-500 font-headline">{getSearchLabel()}</span>
+            <span className="hidden sm:block text-lg font-black text-primary dark:text-primary-container font-headline">{getSearchLabel()}</span>
             <div className="hidden sm:block h-6 w-px bg-slate-200 dark:bg-slate-800 mx-2"></div>
             <div className="flex items-center bg-surface-container rounded-full px-4 py-1.5 gap-2 w-40 md:w-64">
               <span className="material-symbols-outlined text-slate-400 text-sm">search</span>
@@ -83,8 +85,8 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
       </div>
       <div className="flex items-center gap-6">
         <div className="flex items-center gap-4">
-          <button className="material-symbols-outlined text-slate-600 dark:text-slate-400 hover:text-orange-600 transition-colors">notifications</button>
-          <button className="material-symbols-outlined text-slate-600 dark:text-slate-400 hover:text-orange-600 transition-colors">apps</button>
+          <button className="material-symbols-outlined text-slate-600 dark:text-slate-400 hover:text-primary transition-colors">notifications</button>
+          <button className="material-symbols-outlined text-slate-600 dark:text-slate-400 hover:text-primary transition-colors">apps</button>
         </div>
         
         <div className="relative">
@@ -92,7 +94,7 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
             onClick={() => setIsProfileOpen(!isProfileOpen)}
             className="flex items-center gap-3 hover:bg-slate-50 p-1.5 rounded-xl transition-colors"
           >
-            <span className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold text-xs">
+            <span className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
               {userInitials}
             </span>
             <span className="hidden lg:block text-left">

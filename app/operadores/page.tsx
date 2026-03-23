@@ -387,6 +387,7 @@ export default function OperadoresPage() {
       status: op.status,
       unidade_cnes: op.unidade_cnes || ''
     });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const cancelEdit = () => {
