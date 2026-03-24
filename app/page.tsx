@@ -3,11 +3,11 @@
 import React, { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import Link from 'next/link';
-import { Users, UserPlus, Shield, Activity, Briefcase, UserCheck, ClipboardList, Plus, Building2 } from 'lucide-react';
+import { Users, UserPlus, Shield, Activity, Briefcase, UserCheck, ClipboardList, Plus, Building2, HeartPulse } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
 export default function Page() {
-  const [stats, setStats] = useState({ operators: 0, categories: 0, professionals: 0, routines: 0, patients: 0, units: 0 });
+  const [stats, setStats] = useState({ operators: 0, categories: 0, professionals: 0, routines: 0, patients: 0, units: 0, gestations: 0 });
 
   useEffect(() => {
     if (isSupabaseConfigured) {
@@ -17,21 +17,23 @@ export default function Page() {
         supabase.from('profissionais').select('cpf', { count: 'exact', head: true }),
         supabase.from('rotinas').select('id', { count: 'exact', head: true }),
         supabase.from('pacientes').select('cpf', { count: 'exact', head: true }),
-        supabase.from('unidades_saude').select('cnes', { count: 'exact', head: true })
-      ]).then(([ops, cats, pros, rots, pacs, units]) => {
+        supabase.from('unidades_saude').select('cnes', { count: 'exact', head: true }),
+        supabase.from('gestacoes').select('sispn', { count: 'exact', head: true })
+      ]).then(([ops, cats, pros, rots, pacs, units, gests]) => {
         setStats({
           operators: ops.count || 0,
           categories: cats.count || 0,
           professionals: pros.count || 0,
           routines: rots.count || 0,
           patients: pacs.count || 0,
-          units: units.count || 0
+          units: units.count || 0,
+          gestations: gests.count || 0
         });
       });
     } else {
       // Use a small delay to avoid synchronous state update in effect
       const timer = setTimeout(() => {
-        setStats({ operators: 3, categories: 12, professionals: 8, routines: 15, patients: 42, units: 5 }); // Sample count
+        setStats({ operators: 3, categories: 12, professionals: 8, routines: 15, patients: 42, units: 5, gestations: 28 }); // Sample count
       }, 0);
       return () => clearTimeout(timer);
     }
@@ -169,6 +171,27 @@ export default function Page() {
               <div className="flex flex-col">
                 <span className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/40 mb-1">Unidades</span>
                 <span className="text-3xl font-black text-primary font-headline">{stats.units}</span>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-surface-container-low flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+                <Plus className="w-6 h-6 text-on-surface-variant/40 group-hover:text-primary transition-colors" />
+              </div>
+            </div>
+          </Link>
+
+          <Link href="/gestacoes" className="bg-surface-container-lowest p-8 md:p-10 rounded-[2.5rem] md:rounded-[3rem] shadow-2xl shadow-black/5 border border-outline-variant/10 hover:border-primary/30 hover:shadow-primary/10 transition-all group relative overflow-hidden flex flex-col h-full">
+            <div className="absolute top-0 right-0 w-48 h-48 bg-primary/5 rounded-full -mr-24 -mt-24 group-hover:scale-125 transition-transform duration-700" />
+            
+            <div className="w-16 h-16 rounded-3xl bg-primary/10 flex items-center justify-center mb-8 group-hover:bg-primary group-hover:-rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
+              <HeartPulse className="text-primary group-hover:text-white w-8 h-8 transition-colors" />
+            </div>
+            
+            <h3 className="text-3xl font-black font-headline mb-3 text-on-surface tracking-tight">Gestações</h3>
+            <p className="text-sm text-on-surface-variant/60 font-body mb-10 leading-relaxed">Acompanhamento clínico de gestações, captação precoce e monitoramento de risco.</p>
+            
+            <div className="mt-auto flex items-center justify-between pt-8 border-t border-outline-variant/10">
+              <div className="flex flex-col">
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/40 mb-1">Gestações</span>
+                <span className="text-3xl font-black text-primary font-headline">{stats.gestations}</span>
               </div>
               <div className="w-12 h-12 rounded-2xl bg-surface-container-low flex items-center justify-center group-hover:bg-primary/10 transition-colors">
                 <Plus className="w-6 h-6 text-on-surface-variant/40 group-hover:text-primary transition-colors" />

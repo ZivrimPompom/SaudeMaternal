@@ -120,6 +120,30 @@ export default function GestacoesPage() {
   const [isPacienteSearchOpen, setIsPacienteSearchOpen] = useState(false);
   const [pacienteSearchQuery, setPacienteSearchQuery] = useState('');
 
+  const [filters, setFilters] = useState({
+    cronograma: '',
+    captacao: '',
+    equipe: '',
+    referencia: '',
+    acs: '',
+    status: 'ATIVA'
+  });
+
+  const uniqueEquipes = useMemo(() => {
+    const equipes = gestacoes.map(g => g.equipe).filter(Boolean);
+    return Array.from(new Set(equipes)).sort();
+  }, [gestacoes]);
+
+  const uniqueReferencias = useMemo(() => {
+    const refs = gestacoes.map(g => g.referencia_tecnica).filter(Boolean);
+    return Array.from(new Set(refs)).sort();
+  }, [gestacoes]);
+
+  const uniqueACS = useMemo(() => {
+    const acs = gestacoes.map(g => g.acs).filter(Boolean);
+    return Array.from(new Set(acs)).sort();
+  }, [gestacoes]);
+
   useEffect(() => {
     setIsFormOpen(false);
     fetchInitialData();
@@ -290,30 +314,48 @@ export default function GestacoesPage() {
   };
 
   const filteredGestacoes = gestacoes.filter(g => {
+    // Search query filter
     const query = searchQuery.toLowerCase().trim();
-    if (!query) return true;
-
     const normalize = (str: string) => 
       str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : "";
-
-    const paciente = normalize(g.paciente_nome || '');
-    const sispnOriginal = normalize(g.sispn || '');
-    const cpfOriginal = normalize(g.cpf_paciente || '');
-    
-    const sispnDigits = g.sispn.replace(/\D/g, '');
-    const cpfDigits = g.cpf_paciente.replace(/\D/g, '');
     
     const queryNormalizada = normalize(query);
     const queryDigits = query.replace(/\D/g, '');
 
-    return paciente.includes(queryNormalizada) || 
-           sispnOriginal.includes(queryNormalizada) ||
-           cpfOriginal.includes(queryNormalizada) ||
-           (queryDigits !== '' && sispnDigits.includes(queryDigits)) ||
-           (queryDigits !== '' && cpfDigits.includes(queryDigits)) ||
-           normalize(g.referencia_tecnica || '').includes(queryNormalizada) ||
-           normalize(g.acs || '').includes(queryNormalizada) ||
-           normalize(g.equipe || '').includes(queryNormalizada);
+    const matchesSearch = !query || (
+      normalize(g.paciente_nome || '').includes(queryNormalizada) || 
+      normalize(g.sispn || '').includes(queryNormalizada) ||
+      normalize(g.cpf_paciente || '').includes(queryNormalizada) ||
+      (queryDigits !== '' && g.sispn.replace(/\D/g, '').includes(queryDigits)) ||
+      (queryDigits !== '' && g.cpf_paciente.replace(/\D/g, '').includes(queryDigits)) ||
+      normalize(g.referencia_tecnica || '').includes(queryNormalizada) ||
+      normalize(g.acs || '').includes(queryNormalizada) ||
+      normalize(g.equipe || '').includes(queryNormalizada)
+    );
+
+    if (!matchesSearch) return false;
+
+    // Additional filters
+    if (filters.cronograma) {
+      const gDate = g.data_cadastro || '';
+      // Convert yyyy/MM to yyyy-MM
+      const filterMonth = filters.cronograma.replace('/', '-');
+      if (!gDate.startsWith(filterMonth)) return false;
+    }
+
+    if (filters.captacao) {
+      if (getStatusCaptacao(g.dum, g.data_cadastro) !== filters.captacao) return false;
+    }
+
+    if (filters.equipe && g.equipe !== filters.equipe) return false;
+    if (filters.referencia && g.referencia_tecnica !== filters.referencia) return false;
+    if (filters.acs && g.acs !== filters.acs) return false;
+
+    if (filters.status) {
+      if (getGestacaoStatus(g.dpp) !== filters.status) return false;
+    }
+
+    return true;
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -988,6 +1030,83 @@ export default function GestacoesPage() {
                     value={searchQuery}
                     onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
                   />
+                </div>
+              </div>
+
+              {/* Filtros Avançados */}
+              <div className="px-6 md:px-10 pb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 border-b border-outline-variant/5">
+                <div className="space-y-1">
+                  <label className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant/40 ml-2">Cronograma (AAAA/MM)</label>
+                  <input 
+                    type="text"
+                    placeholder="2024/03"
+                    className="w-full bg-surface-container-low border-none rounded-xl px-4 py-2 text-[10px] font-bold outline-none focus:ring-2 focus:ring-primary/20"
+                    value={filters.cronograma}
+                    onChange={(e) => {
+                      let val = e.target.value.replace(/\D/g, '');
+                      if (val.length > 4) val = val.slice(0, 4) + '/' + val.slice(4, 6);
+                      setFilters({ ...filters, cronograma: val });
+                      setCurrentPage(1);
+                    }}
+                    maxLength={7}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant/40 ml-2">Captação</label>
+                  <select 
+                    className="w-full bg-surface-container-low border-none rounded-xl px-4 py-2 text-[10px] font-bold outline-none focus:ring-2 focus:ring-primary/20 appearance-none"
+                    value={filters.captacao}
+                    onChange={(e) => { setFilters({ ...filters, captacao: e.target.value }); setCurrentPage(1); }}
+                  >
+                    <option value="">TODAS</option>
+                    <option value="PRECOCE">PRECOCE</option>
+                    <option value="TARDIA">TARDIA</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant/40 ml-2">Equipe</label>
+                  <select 
+                    className="w-full bg-surface-container-low border-none rounded-xl px-4 py-2 text-[10px] font-bold outline-none focus:ring-2 focus:ring-primary/20 appearance-none"
+                    value={filters.equipe}
+                    onChange={(e) => { setFilters({ ...filters, equipe: e.target.value }); setCurrentPage(1); }}
+                  >
+                    <option value="">TODAS</option>
+                    {uniqueEquipes.map(eq => <option key={eq} value={eq}>{eq}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant/40 ml-2">Ref. Técnica</label>
+                  <select 
+                    className="w-full bg-surface-container-low border-none rounded-xl px-4 py-2 text-[10px] font-bold outline-none focus:ring-2 focus:ring-primary/20 appearance-none"
+                    value={filters.referencia}
+                    onChange={(e) => { setFilters({ ...filters, referencia: e.target.value }); setCurrentPage(1); }}
+                  >
+                    <option value="">TODAS</option>
+                    {uniqueReferencias.map(ref => <option key={ref} value={ref}>{ref}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant/40 ml-2">ACS</label>
+                  <select 
+                    className="w-full bg-surface-container-low border-none rounded-xl px-4 py-2 text-[10px] font-bold outline-none focus:ring-2 focus:ring-primary/20 appearance-none"
+                    value={filters.acs}
+                    onChange={(e) => { setFilters({ ...filters, acs: e.target.value }); setCurrentPage(1); }}
+                  >
+                    <option value="">TODOS</option>
+                    {uniqueACS.map(acs => <option key={acs} value={acs}>{acs}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant/40 ml-2">Status</label>
+                  <select 
+                    className="w-full bg-surface-container-low border-none rounded-xl px-4 py-2 text-[10px] font-bold outline-none focus:ring-2 focus:ring-primary/20 appearance-none"
+                    value={filters.status}
+                    onChange={(e) => { setFilters({ ...filters, status: e.target.value }); setCurrentPage(1); }}
+                  >
+                    <option value="">TODOS</option>
+                    <option value="ATIVA">ATIVA</option>
+                    <option value="VENCIDA">VENCIDA</option>
+                  </select>
                 </div>
               </div>
 
