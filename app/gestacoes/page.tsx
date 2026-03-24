@@ -449,11 +449,26 @@ export default function GestacoesPage() {
     }
 
     try {
+      // Resolve nomes para CPFs se necessário (para lidar com dados legados sendo editados)
+      let rtCpf = formData.referencia_tecnica;
+      if (rtCpf && rtCpf !== 'NÃO INFORMADO' && rtCpf.replace(/\D/g, '').length !== 11) {
+        const found = profissionais.find(p => p.nome === rtCpf);
+        if (found) rtCpf = found.cpf;
+      }
+
+      let acsCpf = formData.acs;
+      if (acsCpf && acsCpf !== 'NÃO INFORMADO' && acsCpf.replace(/\D/g, '').length !== 11) {
+        const found = profissionais.find(p => p.nome === acsCpf);
+        if (found) acsCpf = found.cpf;
+      }
+
       const payload = {
         ...formData,
         sispn: formData.sispn?.replace(/\D/g, ''),
         cpf_paciente: formData.cpf_paciente?.replace(/\D/g, ''),
-        operador: authUser?.cpf || 'SISTEMA',
+        operador: authUser?.cpf?.replace(/\D/g, '') || 'SISTEMA',
+        referencia_tecnica: rtCpf?.replace(/\D/g, '') || 'NÃO INFORMADO',
+        acs: acsCpf?.replace(/\D/g, '') || 'NÃO INFORMADO',
       };
 
       if (editingId) {
@@ -588,12 +603,13 @@ export default function GestacoesPage() {
                 'gestacao_anterior', 'aborto', 'parto', 'sifilis', 'sifilis_tratada',
                 'hiv', 'hepatite_b', 'hepatite_c', 'classificacao_pn', 'alto_risco_compartilhado'
               ]}
+              requiredColumns={['sispn', 'cpf_paciente']}
               conflictColumn="sispn"
               onSuccess={fetchInitialData}
               transformData={(data) => {
                 const todayStr = new Date().toISOString().split('T')[0];
                 
-                const parseDate = (dateStr: string) => {
+                const parseDate = (dateStr: any) => {
                   if (!dateStr || dateStr.toString().trim() === '') return null;
                   const str = dateStr.toString().trim();
                   // Handle DD/MM/YYYY
@@ -609,7 +625,7 @@ export default function GestacoesPage() {
 
                 const calculateDPP = (dum: string | null) => {
                   if (!dum) return null;
-                  const date = new Date(dum + 'T12:00:00'); // Use noon to avoid timezone shifts
+                  const date = new Date(dum + 'T12:00:00');
                   date.setDate(date.getDate() + 280);
                   return date.toISOString().split('T')[0];
                 };
@@ -631,6 +647,8 @@ export default function GestacoesPage() {
 
                 return data.reduce((acc: any[], row: any) => {
                   const sispn = row.sispn?.toString().replace(/\D/g, '');
+                  if (!sispn) return acc;
+
                   // Pad CPF with leading zeros to 11 digits
                   const cpf = row.cpf_paciente?.toString().replace(/\D/g, '').padStart(11, '0');
                   
@@ -667,7 +685,16 @@ export default function GestacoesPage() {
                     if (!fase) fase = phase;
                   }
 
-                  const rtCpf = row.referencia_tecnica?.replace(/\D/g, '').length === 11 ? row.referencia_tecnica.replace(/\D/g, '') : (profissionais.find(p => p.nome === row.referencia_tecnica)?.cpf || row.referencia_tecnica || 'NÃO INFORMADO');
+                  const rtRaw = row.referencia_tecnica;
+                  const rtCpf = rtRaw?.toString().replace(/\D/g, '').length === 11 
+                    ? rtRaw.toString().replace(/\D/g, '') 
+                    : (profissionais.find(p => p.nome === rtRaw)?.cpf || 'NÃO INFORMADO');
+
+                  const acsRaw = row.acs;
+                  const acsCpf = acsRaw?.toString().replace(/\D/g, '').length === 11 
+                    ? acsRaw.toString().replace(/\D/g, '') 
+                    : (profissionais.find(p => p.nome === acsRaw)?.cpf || 'NÃO INFORMADO');
+
                   const prof = profissionais.find(p => p.cpf === rtCpf);
 
                   acc.push({
@@ -680,12 +707,12 @@ export default function GestacoesPage() {
                     data_cadastro,
                     idade_cadastro: idade || null,
                     fase_vida_cadastro: fase || null,
-                    operador: authUser?.cpf || 'IMPORTAÇÃO',
+                    operador: authUser?.cpf?.replace(/\D/g, '') || 'IMPORTAÇÃO',
                     gestacao_anterior: Math.max(0, parseInt(row.gestacao_anterior) || 0),
                     aborto: Math.max(0, parseInt(row.aborto) || 0),
                     parto: Math.max(0, parseInt(row.parto) || 0),
                     referencia_tecnica: rtCpf,
-                    acs: row.acs?.replace(/\D/g, '').length === 11 ? row.acs.replace(/\D/g, '') : (profissionais.find(p => p.nome === row.acs)?.cpf || row.acs || 'NÃO INFORMADO'),
+                    acs: acsCpf,
                     equipe: prof?.equipe || row.equipe || 'NÃO INFORMADO',
                   });
                   return acc;

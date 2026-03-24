@@ -23,6 +23,7 @@ interface Profissional {
   vinculo: 'DIRETO' | 'INTERMEDIADO';
   tipo_vinculo: 'CLT' | 'ESTATUTARIO' | 'AUTÔNOMO';
   chs: 20 | 30 | 40;
+  situacao: 'ATIVO' | 'INATIVO';
   unidade_cnes?: string;
   categorias_profissionais?: Categoria;
   unidades_saude?: { nome_fantasia: string };
@@ -52,6 +53,7 @@ export default function ProfissionaisPage() {
     vinculo: 'INTERMEDIADO',
     tipo_vinculo: 'CLT',
     chs: 20,
+    situacao: 'ATIVO',
     unidade_cnes: ''
   });
 
@@ -184,6 +186,7 @@ export default function ProfissionaisPage() {
         vinculo: formData.vinculo,
         tipo_vinculo: formData.tipo_vinculo,
         chs: formData.chs,
+        situacao: formData.situacao || 'ATIVO',
         unidade_cnes: formData.unidade_cnes || null
       };
 
@@ -244,6 +247,7 @@ export default function ProfissionaisPage() {
         vinculo: 'INTERMEDIADO',
         tipo_vinculo: 'CLT',
         chs: 20,
+        situacao: 'ATIVO',
         unidade_cnes: ''
       });
       setEditingCpf(null);
@@ -299,7 +303,7 @@ export default function ProfissionaisPage() {
           <div className="flex items-center gap-3">
             <CSVImporter 
               tableName="profissionais" 
-              expectedColumns={['cpf', 'nome', 'cns', 'cbo', 'equipe', 'vinculo', 'tipo_vinculo', 'chs', 'unidade_cnes']}
+              expectedColumns={['cpf', 'nome', 'cns', 'cbo', 'equipe', 'vinculo', 'tipo_vinculo', 'chs', 'unidade_cnes', 'situacao']}
               conflictColumn="cpf"
               onSuccess={fetchData}
               title="Importar Profissionais"
@@ -312,6 +316,7 @@ export default function ProfissionaisPage() {
                 vinculo: (item.vinculo || 'INTERMEDIADO').toUpperCase(),
                 tipo_vinculo: (item.tipo_vinculo || 'CLT').toUpperCase(),
                 chs: parseInt(item.chs) || 20,
+                situacao: (item.situacao || 'ATIVO').toUpperCase(),
                 unidade_cnes: item.unidade_cnes || null
               }))}
             />
@@ -474,17 +479,30 @@ export default function ProfissionaisPage() {
                       </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Tipo de Vínculo</label>
-                      <select 
-                        className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none appearance-none"
-                        value={formData.tipo_vinculo || 'CLT'}
-                        onChange={(e) => setFormData({ ...formData, tipo_vinculo: e.target.value as any })}
-                      >
-                        <option value="CLT">CLT</option>
-                        <option value="ESTATUTARIO">ESTATUTÁRIO</option>
-                        <option value="AUTÔNOMO">AUTÔNOMO</option>
-                      </select>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Tipo de Vínculo</label>
+                        <select 
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none appearance-none"
+                          value={formData.tipo_vinculo || 'CLT'}
+                          onChange={(e) => setFormData({ ...formData, tipo_vinculo: e.target.value as any })}
+                        >
+                          <option value="CLT">CLT</option>
+                          <option value="ESTATUTARIO">ESTATUTÁRIO</option>
+                          <option value="AUTÔNOMO">AUTÔNOMO</option>
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Situação</label>
+                        <select 
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none appearance-none"
+                          value={formData.situacao || 'ATIVO'}
+                          onChange={(e) => setFormData({ ...formData, situacao: e.target.value as any })}
+                        >
+                          <option value="ATIVO">ATIVO</option>
+                          <option value="INATIVO">INATIVO</option>
+                        </select>
+                      </div>
                     </div>
 
                     <div className="pt-4 flex flex-col gap-3">
@@ -569,6 +587,7 @@ export default function ProfissionaisPage() {
                           <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5 w-[200px]">CNS / CBO</th>
                           <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5 w-[120px]">Equipe</th>
                           <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5">Vínculo</th>
+                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5">Situação</th>
                           <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline text-center border-b border-outline-variant/5 sticky right-0 bg-surface-container-low z-40 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] w-[180px]">Ações</th>
                         </tr>
                       </thead>
@@ -623,6 +642,13 @@ export default function ProfissionaisPage() {
                                     </span>
                                   </div>
                                 </div>
+                              </td>
+                              <td className="px-4 py-4">
+                                <span className={`inline-flex px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest ${
+                                  pro.situacao === 'ATIVO' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'
+                                }`}>
+                                  {pro.situacao || 'ATIVO'}
+                                </span>
                               </td>
                               <td className="px-6 py-4 sticky right-0 bg-surface-container-lowest group-hover:bg-surface-container-low transition-colors z-30 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">
                                 <div className="flex items-center justify-center gap-2">

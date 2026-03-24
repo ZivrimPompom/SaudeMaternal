@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'motion/react';
 interface CSVImporterProps {
   tableName: string;
   expectedColumns: string[];
+  requiredColumns?: string[];
   onSuccess: () => void;
   title?: string;
   conflictColumn?: string;
@@ -18,6 +19,7 @@ interface CSVImporterProps {
 export default function CSVImporter({ 
   tableName, 
   expectedColumns, 
+  requiredColumns = [],
   onSuccess, 
   title = 'Importar CSV',
   conflictColumn,
@@ -51,13 +53,15 @@ export default function CSVImporter({
 
         // Case-insensitive and accent-insensitive header validation
         const normalizedHeaders = headers.map(h => normalize(h));
-        const missingColumns = expectedColumns.filter(
+        
+        // Check only required columns
+        const missingRequired = requiredColumns.filter(
           col => !normalizedHeaders.includes(normalize(col))
         );
         
-        if (missingColumns.length > 0) {
-          console.error('Missing columns:', missingColumns);
-          setError(`Colunas ausentes no CSV: ${missingColumns.join(', ')}. Verifique se os cabeçalhos estão corretos.`);
+        if (missingRequired.length > 0) {
+          console.error('Missing required columns:', missingRequired);
+          setError(`Colunas obrigatórias ausentes no CSV: ${missingRequired.join(', ')}. Verifique se os cabeçalhos estão corretos.`);
           if (fileInputRef.current) fileInputRef.current.value = '';
           return;
         }
@@ -70,6 +74,9 @@ export default function CSVImporter({
             if (actualHeader) {
               const value = row[actualHeader];
               newRow[col] = value === '' ? null : value;
+            } else {
+              // Column not in CSV, set to null
+              newRow[col] = null;
             }
           });
           return newRow;
