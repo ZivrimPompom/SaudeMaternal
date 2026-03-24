@@ -591,8 +591,9 @@ export default function GestacoesPage() {
                   }
 
                   // Use patient data to calculate age/phase if missing
-                  let idade = parseInt(row.idade_cadastro);
-                  let fase = row.fase_vida_cadastro;
+                  const parsedIdade = parseInt(row.idade_cadastro);
+                  let idade: number | null = isNaN(parsedIdade) ? null : parsedIdade;
+                  let fase: string | null = row.fase_vida_cadastro || null;
 
                   if ((!idade || !fase) && pac.data_nascimento && data_cadastro) {
                     const { age, phase } = calculateAgeAndPhase(pac.data_nascimento, data_cadastro);
