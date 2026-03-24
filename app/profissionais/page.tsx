@@ -121,12 +121,11 @@ export default function ProfissionaisPage() {
   };
 
   const formatCns = (value: string) => {
-    const digits = value.replace(/\D/g, '');
+    const digits = value.replace(/\D/g, '').slice(0, 15);
     return digits
       .replace(/(\d{4})(\d)/, '$1.$2')
-      .replace(/(\d{4})(\d)/, '$1.$2')
-      .replace(/(\d{4})(\d{1,3})/, '$1.$2')
-      .replace(/(\.\d{3})\d+?$/, '$1');
+      .replace(/(\d{4}\.\d{4})(\d)/, '$1.$2')
+      .replace(/(\d{4}\.\d{4}\.\d{4})(\d)/, '$1.$2');
   };
 
   const filteredProfessionals = professionals.filter(pro => {
@@ -204,7 +203,13 @@ export default function ProfissionaisPage() {
           updateError = retryError;
         }
 
-        if (updateError) throw updateError;
+        if (updateError) {
+          if (updateError.code === '23505' || updateError.message.includes('duplicate key')) {
+            setError('Este CPF já está cadastrado para outro profissional.');
+            return;
+          }
+          throw updateError;
+        }
         setSuccess('Profissional atualizado com sucesso!');
       } else {
         let { error: insertError } = await supabase
@@ -282,14 +287,16 @@ export default function ProfissionaisPage() {
   return (
     <DashboardLayout>
       <div className="p-4 md:p-8 lg:p-12 pb-32 max-w-7xl mx-auto space-y-8 md:space-y-12">
-        <header className="space-y-4">
-          <div className="flex items-center gap-3">
-            <span className="w-12 h-1.5 bg-primary rounded-full"></span>
-            <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Gestão de Pessoas</span>
-          </div>
-          <h2 className="text-5xl font-black tracking-tight font-headline text-on-surface">Cadastro de Profissionais</h2>
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <span className="w-12 h-1.5 bg-primary rounded-full"></span>
+              <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Gestão de Pessoas</span>
+            </div>
+            <h2 className="text-5xl font-black tracking-tight font-headline text-on-surface uppercase text-primary">Profissionais</h2>
             <p className="text-lg text-on-surface-variant/60 font-body max-w-2xl">Administração completa do corpo clínico e técnico da unidade.</p>
+          </div>
+          <div className="flex items-center gap-3">
             <CSVImporter 
               tableName="profissionais" 
               expectedColumns={['cpf', 'nome', 'cns', 'cbo', 'equipe', 'vinculo', 'tipo_vinculo', 'chs', 'unidade_cnes']}
@@ -308,6 +315,10 @@ export default function ProfissionaisPage() {
                 unidade_cnes: item.unidade_cnes || null
               }))}
             />
+            <div className="flex items-center gap-3 bg-surface-container-high px-4 py-2 rounded-full border border-outline-variant/20 shadow-sm">
+              <UserCheck className="text-primary w-5 h-5" />
+              <span className="text-sm font-bold font-label uppercase tracking-widest text-on-surface-variant">{filteredProfessionals.length} Profissionais</span>
+            </div>
           </div>
         </header>
 
@@ -527,7 +538,7 @@ export default function ProfissionaisPage() {
                     <UserCheck className="text-primary w-6 h-6" />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-black font-headline text-on-surface">Profissionais Ativos</h3>
+                    <h3 className="text-2xl font-black font-headline text-on-surface">Profissionais</h3>
                     <p className="text-xs text-on-surface-variant/40 font-body uppercase tracking-widest font-bold">Listagem Geral</p>
                   </div>
                 </div>

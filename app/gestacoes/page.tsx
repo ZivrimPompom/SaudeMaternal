@@ -55,6 +55,9 @@ interface Gestacao {
   created_at?: string;
   // Joined/Computed fields for display
   paciente_nome?: string;
+  referencia_tecnica_nome?: string;
+  acs_nome?: string;
+  operador_nome?: string;
 }
 
 interface Paciente {
@@ -65,12 +68,14 @@ interface Paciente {
 
 interface Operador {
   nome: string;
+  cpf: string;
   status: string;
 }
 
 interface Profissional {
   nome: string;
   cpf: string;
+  cbo: string;
   equipe: string;
   categoria_nome?: string;
 }
@@ -120,6 +125,15 @@ export default function GestacoesPage() {
   const [isPacienteSearchOpen, setIsPacienteSearchOpen] = useState(false);
   const [pacienteSearchQuery, setPacienteSearchQuery] = useState('');
 
+  useEffect(() => {
+    if (formData.referencia_tecnica && formData.referencia_tecnica !== 'NÃO INFORMADO') {
+      const prof = profissionais.find(p => p.cpf === formData.referencia_tecnica);
+      if (prof) {
+        setFormData(prev => ({ ...prev, equipe: prof.equipe || 'SEM EQUIPE' }));
+      }
+    }
+  }, [formData.referencia_tecnica, profissionais]);
+
   const [filters, setFilters] = useState({
     dpp: '',
     captacao: '',
@@ -135,12 +149,12 @@ export default function GestacoesPage() {
   }, [gestacoes]);
 
   const uniqueReferencias = useMemo(() => {
-    const refs = gestacoes.map(g => g.referencia_tecnica).filter(Boolean);
+    const refs = gestacoes.map(g => g.referencia_tecnica_nome).filter(Boolean);
     return Array.from(new Set(refs)).sort();
   }, [gestacoes]);
 
   const uniqueACS = useMemo(() => {
-    const acs = gestacoes.map(g => g.acs).filter(Boolean);
+    const acs = gestacoes.map(g => g.acs_nome).filter(Boolean);
     return Array.from(new Set(acs)).sort();
   }, [gestacoes]);
 
@@ -161,6 +175,35 @@ export default function GestacoesPage() {
       const { data: pacData } = await supabase.from('pacientes').select('cpf, gestante, data_nascimento').order('gestante');
       const pacientesList = pacData || [];
       setPacientes(pacientesList);
+
+      // Fetch Operadores (Ativos)
+      const { data: opData } = await supabase.from('operadores').select('nome, cpf, status').eq('status', 'Ativo');
+      setOperadores(opData || []);
+
+      // Fetch Profissionais with categories
+      const { data: profData } = await supabase
+        .from('profissionais')
+        .select(`
+          nome,
+          cpf,
+          cbo,
+          equipe,
+          categorias_profissionais (categoria)
+        `);
+      
+      const formattedProf = profData?.map(p => {
+        const cat = Array.isArray(p.categorias_profissionais) 
+          ? p.categorias_profissionais[0] 
+          : p.categorias_profissionais;
+        return {
+          nome: p.nome,
+          cpf: p.cpf,
+          cbo: p.cbo,
+          equipe: p.equipe,
+          categoria_nome: (cat as any)?.categoria
+        };
+      }) || [];
+      setProfissionais(formattedProf);
 
       // Fetch Gestacoes with patient names
       const { data: gestData, error: gestError } = await supabase
@@ -184,39 +227,20 @@ export default function GestacoesPage() {
           if (found) nome = found.gestante;
         }
 
+        // Look up names for CPFs
+        const refTec = profData?.find(p => p.cpf === g.referencia_tecnica)?.nome || g.referencia_tecnica;
+        const acsNome = profData?.find(p => p.cpf === g.acs)?.nome || g.acs;
+        const opNome = opData?.find(o => o.cpf === g.operador)?.nome || g.operador;
+
         return {
           ...g,
-          paciente_nome: nome || 'PACIENTE NÃO ENCONTRADO'
+          paciente_nome: nome || 'PACIENTE NÃO ENCONTRADO',
+          referencia_tecnica_nome: refTec,
+          acs_nome: acsNome,
+          operador_nome: opNome
         };
       });
       setGestacoes(formattedGest);
-
-      // Fetch Operadores (Ativos)
-      const { data: opData } = await supabase.from('operadores').select('nome, status').eq('status', 'Ativo');
-      setOperadores(opData || []);
-
-      // Fetch Profissionais with categories
-      const { data: profData } = await supabase
-        .from('profissionais')
-        .select(`
-          nome,
-          cpf,
-          equipe,
-          categorias_profissionais (categoria)
-        `);
-      
-      const formattedProf = profData?.map(p => {
-        const cat = Array.isArray(p.categorias_profissionais) 
-          ? p.categorias_profissionais[0] 
-          : p.categorias_profissionais;
-        return {
-          nome: p.nome,
-          cpf: p.cpf,
-          equipe: p.equipe,
-          categoria_nome: (cat as any)?.categoria
-        };
-      }) || [];
-      setProfissionais(formattedProf);
 
     } catch (err: any) {
       console.error('Erro ao carregar dados:', err);
@@ -328,8 +352,8 @@ export default function GestacoesPage() {
       normalize(g.cpf_paciente || '').includes(queryNormalizada) ||
       (queryDigits !== '' && g.sispn.replace(/\D/g, '').includes(queryDigits)) ||
       (queryDigits !== '' && g.cpf_paciente.replace(/\D/g, '').includes(queryDigits)) ||
-      normalize(g.referencia_tecnica || '').includes(queryNormalizada) ||
-      normalize(g.acs || '').includes(queryNormalizada) ||
+      normalize(g.referencia_tecnica_nome || '').includes(queryNormalizada) ||
+      normalize(g.acs_nome || '').includes(queryNormalizada) ||
       normalize(g.equipe || '').includes(queryNormalizada)
     );
 
@@ -348,8 +372,8 @@ export default function GestacoesPage() {
     }
 
     if (filters.equipe && g.equipe !== filters.equipe) return false;
-    if (filters.referencia && g.referencia_tecnica !== filters.referencia) return false;
-    if (filters.acs && g.acs !== filters.acs) return false;
+    if (filters.referencia && g.referencia_tecnica_nome !== filters.referencia) return false;
+    if (filters.acs && g.acs_nome !== filters.acs) return false;
 
     if (filters.status) {
       if (getGestacaoStatus(g.dpp) !== filters.status) return false;
@@ -429,7 +453,7 @@ export default function GestacoesPage() {
         ...formData,
         sispn: formData.sispn?.replace(/\D/g, ''),
         cpf_paciente: formData.cpf_paciente?.replace(/\D/g, ''),
-        operador: authUser?.nome || authUser?.sigla || 'SISTEMA',
+        operador: authUser?.cpf || 'SISTEMA',
       };
 
       if (editingId) {
@@ -522,16 +546,16 @@ export default function GestacoesPage() {
   }, [formData.cpf_paciente, pacientes]);
 
   const enfermeiros = profissionais.filter(p => {
-    const cat = p.categoria_nome?.toUpperCase() || '';
-    return cat.includes('ENFERMEIRO');
+    const cbo = p.cbo || '';
+    return cbo.startsWith('2235');
   });
-  const displayEnfermeiros = enfermeiros.length > 0 ? enfermeiros : profissionais;
+  const displayEnfermeiros = enfermeiros;
 
   const acsList = profissionais.filter(p => {
-    const cat = p.categoria_nome?.toUpperCase() || '';
-    return cat.includes('AGENTE COMUNITARIO') || cat.includes('ACS');
+    const cbo = p.cbo || '';
+    return cbo === '515105';
   });
-  const displayAcs = acsList.length > 0 ? acsList : profissionais;
+  const displayAcs = acsList;
 
   const filteredPacientesLookup = useMemo(() => {
     const query = pacienteSearchQuery.toLowerCase().trim();
@@ -545,8 +569,8 @@ export default function GestacoesPage() {
   return (
     <DashboardLayout>
       <div className="p-4 md:p-8 lg:p-12 pb-32 max-w-7xl mx-auto space-y-8 md:space-y-12">
-        <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div className="space-y-4">
+        <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+          <div className="space-y-3">
             <div className="flex items-center gap-3">
               <span className="w-12 h-1.5 bg-primary rounded-full"></span>
               <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Acompanhamento Pré-Natal</span>
@@ -643,6 +667,9 @@ export default function GestacoesPage() {
                     if (!fase) fase = phase;
                   }
 
+                  const rtCpf = row.referencia_tecnica?.replace(/\D/g, '').length === 11 ? row.referencia_tecnica.replace(/\D/g, '') : (profissionais.find(p => p.nome === row.referencia_tecnica)?.cpf || row.referencia_tecnica || 'NÃO INFORMADO');
+                  const prof = profissionais.find(p => p.cpf === rtCpf);
+
                   acc.push({
                     ...row,
                     sispn,
@@ -653,13 +680,13 @@ export default function GestacoesPage() {
                     data_cadastro,
                     idade_cadastro: idade || null,
                     fase_vida_cadastro: fase || null,
-                    operador: authUser?.nome || authUser?.sigla || 'IMPORTAÇÃO',
+                    operador: authUser?.cpf || 'IMPORTAÇÃO',
                     gestacao_anterior: Math.max(0, parseInt(row.gestacao_anterior) || 0),
                     aborto: Math.max(0, parseInt(row.aborto) || 0),
                     parto: Math.max(0, parseInt(row.parto) || 0),
-                    referencia_tecnica: row.referencia_tecnica || 'NÃO INFORMADO',
-                    acs: row.acs || 'NÃO INFORMADO',
-                    equipe: row.equipe || 'NÃO INFORMADO',
+                    referencia_tecnica: rtCpf,
+                    acs: row.acs?.replace(/\D/g, '').length === 11 ? row.acs.replace(/\D/g, '') : (profissionais.find(p => p.nome === row.acs)?.cpf || row.acs || 'NÃO INFORMADO'),
+                    equipe: prof?.equipe || row.equipe || 'NÃO INFORMADO',
                   });
                   return acc;
                 }, []);
@@ -801,7 +828,7 @@ export default function GestacoesPage() {
 
                     {/* Datas e Prazos */}
                     <div className="space-y-4">
-                      <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/40 border-b border-primary/10 pb-2">Cronograma Gestacional</h4>
+                      <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/40 border-b border-primary/10 pb-2">DPP Gestacional</h4>
                       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div className="space-y-2">
                           <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">DUM (Última Menstruação)</label>
@@ -876,13 +903,12 @@ export default function GestacoesPage() {
                             className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none appearance-none"
                             value={formData.referencia_tecnica || ''}
                             onChange={(e) => {
-                              const prof = displayEnfermeiros.find(p => p.nome === e.target.value);
-                              setFormData({ ...formData, referencia_tecnica: e.target.value, equipe: prof?.equipe || '' });
+                              setFormData({ ...formData, referencia_tecnica: e.target.value });
                             }}
                             required
                           >
                             <option value="NÃO INFORMADO">NÃO INFORMADO</option>
-                            {displayEnfermeiros.map(p => <option key={p.cpf} value={p.nome}>{p.nome}</option>)}
+                            {displayEnfermeiros.map(p => <option key={p.cpf} value={p.cpf}>{p.nome}</option>)}
                           </select>
                         </div>
                         <div className="space-y-2">
@@ -894,7 +920,7 @@ export default function GestacoesPage() {
                             required
                           >
                             <option value="NÃO INFORMADO">NÃO INFORMADO</option>
-                            {displayAcs.map(p => <option key={p.cpf} value={p.nome}>{p.nome}</option>)}
+                            {displayAcs.map(p => <option key={p.cpf} value={p.cpf}>{p.nome}</option>)}
                           </select>
                         </div>
                       </div>
@@ -1018,7 +1044,7 @@ export default function GestacoesPage() {
                   </div>
                   <div>
                     <h3 className="text-2xl font-black font-headline text-on-surface">Ciclos Gestacionais</h3>
-                    <p className="text-xs text-on-surface-variant/40 font-body uppercase tracking-widest font-bold">Monitoramento Ativo</p>
+                    <p className="text-xs text-on-surface-variant/40 font-body uppercase tracking-widest font-bold">Monitoramento</p>
                   </div>
                 </div>
                 <div className="relative flex-1 md:w-64">
@@ -1129,7 +1155,7 @@ export default function GestacoesPage() {
                       <thead className="sticky top-0 z-30 bg-surface-container-low">
                         <tr>
                           <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5">Gestante / SISPN</th>
-                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5">Cronograma (DUM/DPP)</th>
+                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5">DPP (DUM/DPP)</th>
                           <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5">Semanas / Captação</th>
                           <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5">Equipe / Ref. Técnica</th>
                           <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5">Status</th>
@@ -1176,8 +1202,8 @@ export default function GestacoesPage() {
                                 <td className="px-4 py-4">
                                   <div className="flex flex-col gap-0.5">
                                     <span className="text-[10px] font-black text-primary uppercase tracking-widest">EQUIPE {g.equipe}</span>
-                                    <p className="text-[10px] font-bold text-on-surface-variant uppercase">{g.referencia_tecnica}</p>
-                                    <span className="text-[9px] font-medium text-on-surface-variant/40 uppercase">ACS: {g.acs}</span>
+                                    <p className="text-[10px] font-bold text-on-surface-variant uppercase">{g.referencia_tecnica_nome}</p>
+                                    <span className="text-[9px] font-medium text-on-surface-variant/40 uppercase">ACS: {g.acs_nome}</span>
                                   </div>
                                 </td>
                                 <td className="px-4 py-4">

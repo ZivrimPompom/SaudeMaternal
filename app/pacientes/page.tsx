@@ -227,7 +227,13 @@ export default function PacientesPage() {
           .update(payload)
           .eq('cpf', editingId);
 
-        if (updateError) throw updateError;
+        if (updateError) {
+          if (updateError.code === '23505' || updateError.message.includes('duplicate key')) {
+            setError('Este CPF já está cadastrado para outra paciente.');
+            return;
+          }
+          throw updateError;
+        }
         setSuccess('Paciente atualizado com sucesso!');
       } else {
         const { error: insertError } = await supabase
@@ -307,8 +313,8 @@ export default function PacientesPage() {
   return (
     <DashboardLayout>
       <div className="p-4 md:p-8 lg:p-12 pb-32 max-w-7xl mx-auto space-y-8 md:space-y-12">
-        <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div className="space-y-4">
+        <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+          <div className="space-y-3">
             <div className="flex items-center gap-3">
               <span className="w-12 h-1.5 bg-primary rounded-full"></span>
               <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Gestão Clínica</span>
@@ -316,7 +322,7 @@ export default function PacientesPage() {
             <h2 className="text-5xl font-black tracking-tight font-headline text-on-surface uppercase text-primary">Pacientes</h2>
             <p className="text-lg text-on-surface-variant/60 font-body max-w-2xl">Gerenciamento de gestantes e prontuários do sistema.</p>
           </div>
-          <div className="flex flex-col md:flex-row items-center gap-3">
+          <div className="flex items-center gap-3">
             <CSVImporter 
               tableName="pacientes" 
               expectedColumns={['gestante', 'cpf', 'nome_mae', 'prontuario', 'cns', 'data_nascimento', 'logradouro', 'numero', 'complemento', 'bairro', 'contato', 'email']}
@@ -625,7 +631,7 @@ export default function PacientesPage() {
                     <Users className="text-primary w-6 h-6" />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-black font-headline text-on-surface">Pacientes Cadastradas</h3>
+                    <h3 className="text-2xl font-black font-headline text-on-surface">Pacientes</h3>
                     <p className="text-xs text-on-surface-variant/40 font-body uppercase tracking-widest font-bold">Listagem Geral</p>
                   </div>
                 </div>

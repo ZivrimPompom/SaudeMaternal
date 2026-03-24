@@ -169,47 +169,49 @@ export default function RotinasPage() {
   return (
     <DashboardLayout>
       <div className="p-4 md:p-8 lg:p-12 pb-32 max-w-7xl mx-auto space-y-8 md:space-y-12">
-        <header className="space-y-4">
-          <div className="flex items-center gap-3">
-            <span className="w-12 h-1.5 bg-primary rounded-full"></span>
-            <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Protocolos Clínicos</span>
-          </div>
-          <h2 className="text-5xl font-black tracking-tight font-headline text-on-surface">Cadastro de Rotinas</h2>
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <span className="w-12 h-1.5 bg-primary rounded-full"></span>
+              <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Protocolos Clínicos</span>
+            </div>
+            <h2 className="text-5xl font-black tracking-tight font-headline text-on-surface uppercase text-primary">Rotinas</h2>
             <p className="text-lg text-on-surface-variant/60 font-body max-w-2xl">Definição de exames, vacinas e medicações por trimestre gestacional.</p>
-              <CSVImporter 
-                tableName="rotinas" 
-                expectedColumns={['tipo', 'descricao', 'trimestre', 'categoria']}
-                onSuccess={fetchData}
-                title="Importar Rotinas"
-                transformData={(data) => data.map(item => {
-                  // Normalize Tipo (Singular and No Accents)
-                  let tipo = item.tipo ? item.tipo.toUpperCase().trim() : null;
-                  if (tipo === 'EXAMES' || tipo === 'EXAME') tipo = 'EXAME';
-                  if (tipo === 'VACINAS' || tipo === 'VACINA') tipo = 'VACINA';
-                  if (tipo?.includes('MEDICAC')) tipo = 'MEDICACAO';
+          </div>
+          <div className="flex items-center gap-3">
+            <CSVImporter 
+              tableName="rotinas" 
+              expectedColumns={['tipo', 'descricao', 'trimestre', 'categoria']}
+              onSuccess={fetchData}
+              title="Importar Rotinas"
+              transformData={(data) => data.map(item => {
+                // Normalize Tipo (Singular and No Accents)
+                let tipo = item.tipo ? item.tipo.toUpperCase().trim() : null;
+                if (tipo === 'EXAMES' || tipo === 'EXAME') tipo = 'EXAME';
+                if (tipo === 'VACINAS' || tipo === 'VACINA') tipo = 'VACINA';
+                if (tipo?.includes('MEDICAC')) tipo = 'MEDICACAO';
 
-                  // Normalize Categoria (No Accents)
-                  let categoria = item.categoria ? item.categoria.toUpperCase().trim() : 'OBRIGATORIO';
-                  if (categoria.includes('OBRIGAT')) categoria = 'OBRIGATORIO';
-                  if (categoria.includes('OPCIONAL')) categoria = 'OPCIONAL';
-                  if (categoria.includes('EVENTUAL')) categoria = 'EVENTUAL';
+                // Normalize Categoria (No Accents)
+                let categoria = item.categoria ? item.categoria.toUpperCase().trim() : 'OBRIGATORIO';
+                if (categoria.includes('OBRIGAT')) categoria = 'OBRIGATORIO';
+                if (categoria.includes('OPCIONAL')) categoria = 'OPCIONAL';
+                if (categoria.includes('EVENTUAL')) categoria = 'EVENTUAL';
 
-                  // Normalize Trimestre
-                  let trimestre = item.trimestre ? item.trimestre.toUpperCase().trim() : 'PRIMEIRO';
-                  if (trimestre.includes('1') || trimestre.includes('PRIM')) trimestre = 'PRIMEIRO';
-                  if (trimestre.includes('2') || trimestre.includes('SEG')) trimestre = 'SEGUNDO';
-                  if (trimestre.includes('3') || trimestre.includes('TER')) trimestre = 'TERCEIRO';
+                // Normalize Trimestre
+                let trimestre = item.trimestre ? item.trimestre.toUpperCase().trim() : 'PRIMEIRO';
+                if (trimestre.includes('1') || trimestre.includes('PRIM')) trimestre = 'PRIMEIRO';
+                if (trimestre.includes('2') || trimestre.includes('SEG')) trimestre = 'SEGUNDO';
+                if (trimestre.includes('3') || trimestre.includes('TER')) trimestre = 'TERCEIRO';
 
-                  return {
-                    ...item,
-                    tipo,
-                    descricao: item.descricao ? item.descricao.toUpperCase().trim() : null,
-                    trimestre,
-                    categoria
-                  };
-                })}
-              />
+                return {
+                  ...item,
+                  tipo,
+                  descricao: item.descricao ? item.descricao.toUpperCase().trim() : null,
+                  trimestre,
+                  categoria
+                };
+              })}
+            />
             <div className="flex items-center gap-3 bg-surface-container-high px-4 py-2 rounded-full border border-outline-variant/20 shadow-sm">
               <ClipboardList className="text-primary w-5 h-5" />
               <span className="text-sm font-bold font-label uppercase tracking-widest text-on-surface-variant">{filteredRoutines.length} Rotinas</span>
@@ -367,7 +369,7 @@ export default function RotinasPage() {
                     <ClipboardList className="text-primary w-6 h-6" />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-black font-headline text-on-surface">Protocolos Ativos</h3>
+                    <h3 className="text-2xl font-black font-headline text-on-surface">Protocolos</h3>
                     <p className="text-xs text-on-surface-variant/40 font-body uppercase tracking-widest font-bold">Listagem de Rotinas</p>
                   </div>
                 </div>

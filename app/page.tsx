@@ -18,7 +18,7 @@ export default function Page() {
         supabase.from('rotinas').select('id', { count: 'exact', head: true }),
         supabase.from('pacientes').select('cpf', { count: 'exact', head: true }),
         supabase.from('unidades_saude').select('cnes', { count: 'exact', head: true }),
-        supabase.from('gestacoes').select('sispn', { count: 'exact', head: true }).gt('dpp', new Date().toISOString().split('T')[0])
+        supabase.from('gestacoes').select('sispn', { count: 'exact', head: true })
       ]).then(([ops, cats, pros, rots, pacs, units, gests]) => {
         setStats({
           operators: ops.count || 0,
@@ -190,7 +190,7 @@ export default function Page() {
             
             <div className="mt-auto flex items-center justify-between pt-8 border-t border-outline-variant/10">
               <div className="flex flex-col">
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/40 mb-1">Gestações Ativas</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/40 mb-1">Gestações</span>
                 <span className="text-3xl font-black text-primary font-headline">{stats.gestations}</span>
               </div>
               <div className="w-12 h-12 rounded-2xl bg-surface-container-low flex items-center justify-center group-hover:bg-primary/10 transition-colors">

@@ -186,14 +186,16 @@ export default function CategoriasPage() {
   return (
     <DashboardLayout>
       <div className="p-4 md:p-8 lg:p-12 pb-32 max-w-7xl mx-auto space-y-8 md:space-y-12">
-        <header className="space-y-4">
-          <div className="flex items-center gap-3">
-            <span className="w-12 h-1.5 bg-secondary rounded-full"></span>
-            <span className="text-[10px] font-black text-secondary uppercase tracking-[0.4em]">Recursos Humanos</span>
-          </div>
-          <h2 className="text-5xl font-black tracking-tight font-headline text-on-surface">Categorias Profissionais</h2>
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <span className="w-12 h-1.5 bg-primary rounded-full"></span>
+              <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Recursos Humanos</span>
+            </div>
+            <h2 className="text-5xl font-black tracking-tight font-headline text-on-surface uppercase text-primary">Categorias</h2>
             <p className="text-lg text-on-surface-variant/60 font-body max-w-2xl">Gerenciamento de ocupações, vínculos e cargas horárias (CBO).</p>
+          </div>
+          <div className="flex items-center gap-3">
             <CSVImporter 
               tableName="categorias_profissionais" 
               expectedColumns={['cbo', 'categoria']}
@@ -201,6 +203,10 @@ export default function CategoriasPage() {
               onSuccess={fetchCategories}
               title="Importar Categorias"
             />
+            <div className="flex items-center gap-3 bg-surface-container-high px-4 py-2 rounded-full border border-outline-variant/20 shadow-sm">
+              <Briefcase className="text-primary w-5 h-5" />
+              <span className="text-sm font-bold font-label uppercase tracking-widest text-on-surface-variant">{filteredCategories.length} Categorias</span>
+            </div>
           </div>
         </header>
 

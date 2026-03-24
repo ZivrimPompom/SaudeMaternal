@@ -338,7 +338,11 @@ export default function OperadoresPage() {
 
       if (updateError) {
         console.error('Erro detalhado Supabase (Update):', updateError);
-        setError(`Erro ao atualizar: ${updateError.message}`);
+        if (updateError.code === '23505' || updateError.message.includes('duplicate key') || updateError.message.includes('unique constraint')) {
+          setError('Este CPF já está cadastrado para outro operador.');
+        } else {
+          setError(`Erro ao atualizar: ${updateError.message}`);
+        }
         return;
       }
       setEditingId(null);
@@ -374,7 +378,11 @@ export default function OperadoresPage() {
 
       if (insertError) {
         console.error('Erro detalhado Supabase (Insert):', insertError);
-        setError(`Erro ao salvar: ${insertError.message}`);
+        if (insertError.code === '23505' || insertError.message.includes('duplicate key') || insertError.message.includes('unique constraint')) {
+          setError('Este CPF já está cadastrado para outro operador.');
+        } else {
+          setError(`Erro ao salvar: ${insertError.message}`);
+        }
         return;
       }
     }
@@ -427,10 +435,14 @@ export default function OperadoresPage() {
     <DashboardLayout>
       <div className="p-4 md:p-8 lg:p-12 pb-32 max-w-7xl mx-auto space-y-8 md:space-y-12">
         {/* Page Header */}
-        <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-          <div className="space-y-2">
-            <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight font-headline text-on-surface">Cadastro de Operadores</h2>
-            <p className="text-base md:text-lg text-on-secondary-container font-body opacity-70">Gerencie os perfis de acesso e permissões clínicas</p>
+        <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <span className="w-12 h-1.5 bg-primary rounded-full"></span>
+              <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Controle de Acessos</span>
+            </div>
+            <h2 className="text-5xl font-black tracking-tight font-headline text-on-surface uppercase text-primary">Operadores</h2>
+            <p className="text-lg text-on-surface-variant/60 font-body max-w-2xl">Gerencie os perfis de acesso e permissões clínicas do sistema.</p>
           </div>
           <div className="flex items-center gap-3">
             <CSVImporter 
@@ -643,7 +655,7 @@ export default function OperadoresPage() {
             <div className="bg-surface-container-lowest rounded-2xl overflow-hidden shadow-md border border-outline-variant/10 flex flex-col h-full">
               <div className="p-6 md:p-8 border-b border-surface-container-low flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-surface-container-lowest/50 backdrop-blur-sm sticky top-0 z-10">
                 <div>
-                  <h3 className="text-2xl font-bold font-headline text-on-surface">Operadores Ativos</h3>
+                  <h3 className="text-2xl font-bold font-headline text-on-surface">Operadores</h3>
                   <p className="text-xs text-on-surface-variant font-body opacity-60 mt-1">Listagem completa de profissionais autorizados</p>
                 </div>
                 <div className="flex items-center gap-2">

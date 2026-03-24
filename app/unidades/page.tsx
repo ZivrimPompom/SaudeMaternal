@@ -259,10 +259,14 @@ export default function UnidadesSaudePage() {
     <DashboardLayout>
       <div className="p-4 md:p-8 lg:p-12 pb-32 max-w-7xl mx-auto space-y-8 md:space-y-12">
         {/* Page Header */}
-        <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-          <div className="space-y-2">
-            <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight font-headline text-on-surface">Unidades de Saúde</h2>
-            <p className="text-base md:text-lg text-on-secondary-container font-body opacity-70">Gerencie os estabelecimentos de saúde da rede</p>
+        <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <span className="w-12 h-1.5 bg-primary rounded-full"></span>
+              <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Rede de Atendimento</span>
+            </div>
+            <h2 className="text-5xl font-black tracking-tight font-headline text-on-surface uppercase text-primary">Unidades de Saúde</h2>
+            <p className="text-lg text-on-surface-variant/60 font-body max-w-2xl">Gerencie os estabelecimentos de saúde da rede.</p>
           </div>
           <div className="flex items-center gap-3">
             <CSVImporter 
