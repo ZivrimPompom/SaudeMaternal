@@ -121,7 +121,7 @@ export default function GestacoesPage() {
   const [pacienteSearchQuery, setPacienteSearchQuery] = useState('');
 
   const [filters, setFilters] = useState({
-    cronograma: '',
+    dpp: '',
     captacao: '',
     equipe: '',
     referencia: '',
@@ -336,11 +336,11 @@ export default function GestacoesPage() {
     if (!matchesSearch) return false;
 
     // Additional filters
-    if (filters.cronograma) {
-      const gDate = g.data_cadastro || '';
+    if (filters.dpp) {
+      const gDpp = g.dpp || '';
       // Convert yyyy/MM to yyyy-MM
-      const filterMonth = filters.cronograma.replace('/', '-');
-      if (!gDate.startsWith(filterMonth)) return false;
+      const filterMonth = filters.dpp.replace('/', '-');
+      if (!gDpp.startsWith(filterMonth)) return false;
     }
 
     if (filters.captacao) {
@@ -1036,16 +1036,16 @@ export default function GestacoesPage() {
               {/* Filtros Avançados */}
               <div className="px-6 md:px-10 pb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 border-b border-outline-variant/5">
                 <div className="space-y-1">
-                  <label className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant/40 ml-2">Cronograma (AAAA/MM)</label>
+                  <label className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant/40 ml-2">DPP (AAAA/MM)</label>
                   <input 
                     type="text"
                     placeholder="2024/03"
                     className="w-full bg-surface-container-low border-none rounded-xl px-4 py-2 text-[10px] font-bold outline-none focus:ring-2 focus:ring-primary/20"
-                    value={filters.cronograma}
+                    value={filters.dpp}
                     onChange={(e) => {
                       let val = e.target.value.replace(/\D/g, '');
                       if (val.length > 4) val = val.slice(0, 4) + '/' + val.slice(4, 6);
-                      setFilters({ ...filters, cronograma: val });
+                      setFilters({ ...filters, dpp: val });
                       setCurrentPage(1);
                     }}
                     maxLength={7}
