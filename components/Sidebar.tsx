@@ -40,6 +40,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
       icon: 'group', 
       subItems: [
         { name: 'Pacientes', href: '/pacientes' },
+        { name: 'Gestações', href: '/gestacoes' },
       ] 
     },
     {

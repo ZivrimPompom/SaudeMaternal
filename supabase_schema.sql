@@ -186,3 +186,48 @@ CREATE TRIGGER update_unidades_saude_updated_at
     BEFORE UPDATE ON public.unidades_saude
     FOR EACH ROW
     EXECUTE PROCEDURE update_updated_at_column();
+
+-- 23. Create the pregnancies table (Gestações)
+CREATE TABLE IF NOT EXISTS public.gestacoes (
+    sispn TEXT PRIMARY KEY,
+    cpf_paciente TEXT NOT NULL REFERENCES public.pacientes(cpf),
+    dum DATE,
+    dpp DATE,
+    data_abertura DATE,
+    data_cadastro DATE,
+    operador TEXT NOT NULL DEFAULT 'NÃO INFORMADO',
+    referencia_tecnica TEXT NOT NULL DEFAULT 'NÃO INFORMADO',
+    acs TEXT NOT NULL DEFAULT 'NÃO INFORMADO',
+    equipe TEXT NOT NULL DEFAULT 'NÃO INFORMADO',
+    idade_cadastro INTEGER,
+    fase_vida_cadastro TEXT,
+    gestacao_anterior INTEGER DEFAULT 0,
+    aborto INTEGER DEFAULT 0,
+    parto INTEGER DEFAULT 0,
+    sifilis TEXT CHECK (sifilis IN ('SIM', 'NÃO', 'NÃO SABE')),
+    sifilis_tratada TEXT CHECK (sifilis_tratada IN ('SIM', 'NÃO', 'NÃO SABE')),
+    hiv TEXT CHECK (hiv IN ('POSITIVO', 'NEGATIVO')),
+    hepatite_b TEXT CHECK (hepatite_b IN ('REAGENTE', 'NÃO REAGENTE')),
+    hepatite_c TEXT CHECK (hepatite_c IN ('REAGENTE', 'NÃO REAGENTE')),
+    classificacao_pn TEXT CHECK (classificacao_pn IN ('HABITUAL', 'RISCO')),
+    alto_risco_compartilhado TEXT CHECK (alto_risco_compartilhado IN ('SIM', 'NÃO')),
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 24. Enable Row Level Security (RLS) for the new table
+ALTER TABLE public.gestacoes ENABLE ROW LEVEL SECURITY;
+
+-- 25. Create basic policies for the new table
+DROP POLICY IF EXISTS "Allow all access for development" ON public.gestacoes;
+CREATE POLICY "Allow all access for development" ON public.gestacoes
+    FOR ALL
+    USING (true)
+    WITH CHECK (true);
+
+-- 26. Trigger for updated_at for the new table
+DROP TRIGGER IF EXISTS update_gestacoes_updated_at ON public.gestacoes;
+CREATE TRIGGER update_gestacoes_updated_at
+    BEFORE UPDATE ON public.gestacoes
+    FOR EACH ROW
+    EXECUTE PROCEDURE update_updated_at_column();

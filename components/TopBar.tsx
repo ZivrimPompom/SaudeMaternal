@@ -19,6 +19,7 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
   const isRotinasPage = pathname === '/rotinas';
   const isPacientesPage = pathname === '/pacientes';
   const isUnidadesPage = pathname === '/unidades';
+  const isGestacoesPage = pathname === '/gestacoes';
   
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
@@ -29,6 +30,7 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
     if (isRotinasPage) return 'Rotinas';
     if (isPacientesPage) return 'Pacientes';
     if (isUnidadesPage) return 'Unidades de Saúde';
+    if (isGestacoesPage) return 'Gestações';
     return 'Busca';
   };
 
@@ -39,6 +41,7 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
     if (isRotinasPage) return 'Descrição ou Tipo...';
     if (isPacientesPage) return 'Nome ou CPF...';
     if (isUnidadesPage) return 'CNES ou Nome...';
+    if (isGestacoesPage) return 'SISPN ou CPF...';
     return 'Pesquisar...';
   };
 
@@ -82,7 +85,7 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
                 />
               </div>
 
-              {(isCategoriesPage || isProfessionalsPage || isOperatorsPage || isRotinasPage || isPacientesPage || isUnidadesPage) && (
+              {(isCategoriesPage || isProfessionalsPage || isOperatorsPage || isRotinasPage || isPacientesPage || isUnidadesPage || isGestacoesPage) && (
                 <button
                   onClick={() => setIsFormOpen(!isFormOpen)}
                   className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold transition-all duration-300 ${
