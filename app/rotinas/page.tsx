@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useSearch } from '@/context/SearchContext';
+import { useAuth } from '@/context/AuthContext';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { ClipboardList, Plus, Edit2, Trash2, Search, AlertCircle, CheckCircle2, X, FileUp, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -20,6 +21,7 @@ interface Rotina {
 
 export default function RotinasPage() {
   const { searchQuery, setSearchQuery, isFormOpen, setIsFormOpen } = useSearch();
+  const { user: authUser } = useAuth();
   const [routines, setRoutines] = useState<Rotina[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -99,9 +101,10 @@ export default function RotinasPage() {
     try {
       const payload = {
         tipo: formData.tipo,
-        descricao: formData.descricao.toUpperCase(),
+        descricao: formData.descricao?.toUpperCase(),
         trimestre: formData.trimestre,
-        categoria: formData.categoria
+        categoria: formData.categoria,
+        cpf_operador: authUser?.cpf || null
       };
 
       if (editingId) {

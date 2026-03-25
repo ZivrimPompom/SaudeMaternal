@@ -467,6 +467,7 @@ export default function GestacoesPage() {
         sispn: formData.sispn?.replace(/\D/g, ''),
         cpf_paciente: formData.cpf_paciente?.replace(/\D/g, ''),
         operador: authUser?.cpf?.replace(/\D/g, '') || 'SISTEMA',
+        cpf_operador: authUser?.cpf?.replace(/\D/g, '') || null,
         referencia_tecnica: rtCpf?.replace(/\D/g, '') || 'NÃO INFORMADO',
         acs: acsCpf?.replace(/\D/g, '') || 'NÃO INFORMADO',
       };

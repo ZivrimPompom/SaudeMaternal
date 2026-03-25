@@ -1,5 +1,5 @@
 {
   "name": "SaudeMaternal",
-  "description": "Sistema de curadoria clínica para saúde maternal",
+  "description": "Sistema de curadoria clínica para saúde maternal, incluindo gestão de pacientes, gestações e atendimentos.",
   "requestFramePermissions": []
 }

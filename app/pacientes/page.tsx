@@ -218,7 +218,8 @@ export default function PacientesPage() {
         bairro: formData.bairro?.toUpperCase() || '',
         cidade: 'SÃO PAULO',
         uf: 'SP',
-        operador_responsavel: authUser?.nome || 'SISTEMA'
+        operador_responsavel: authUser?.nome || 'SISTEMA',
+        cpf_operador: authUser?.cpf || null
       };
 
       if (editingId) {

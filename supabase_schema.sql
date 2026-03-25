@@ -232,3 +232,31 @@ CREATE TRIGGER update_gestacoes_updated_at
     BEFORE UPDATE ON public.gestacoes
     FOR EACH ROW
     EXECUTE PROCEDURE update_updated_at_column();
+
+-- 27. Create the consultations table (Consultas/Atendimentos)
+CREATE TABLE IF NOT EXISTS public.consultas (
+    id_consulta UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    sispn TEXT NOT NULL REFERENCES public.gestacoes(sispn),
+    data_consulta DATE NOT NULL,
+    trimestre_consulta TEXT CHECK (trimestre_consulta IN ('1º TRIMESTRE', '2º TRIMESTRE', '3º TRIMESTRE')),
+    cbo TEXT NOT NULL,
+    cpf TEXT NOT NULL DEFAULT 'NÃO INFORMADO',
+    data_proxima_consulta DATE,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 28. Enable Row Level Security (RLS) for the new table
+ALTER TABLE public.consultas ENABLE ROW LEVEL SECURITY;
+
+-- 29. Create basic policies for the new table
+CREATE POLICY "Allow all access for development" ON public.consultas
+    FOR ALL
+    USING (true)
+    WITH CHECK (true);
+
+-- 30. Trigger for updated_at for the new table
+CREATE TRIGGER update_consultas_updated_at
+    BEFORE UPDATE ON public.consultas
+    FOR EACH ROW
+    EXECUTE PROCEDURE update_updated_at_column();

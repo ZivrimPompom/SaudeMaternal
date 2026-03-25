@@ -5,6 +5,7 @@ import Papa from 'papaparse';
 import { supabase } from '@/lib/supabase';
 import { FileUp, AlertCircle, CheckCircle2, Loader2, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useAuth } from '@/context/AuthContext';
 
 interface CSVImporterProps {
   tableName: string;
@@ -31,6 +32,8 @@ export default function CSVImporter({
   const [success, setSuccess] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [previewData, setPreviewData] = useState<any[]>([]);
+
+  const { user: authUser } = useAuth();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -104,6 +107,14 @@ export default function CSVImporter({
       // Apply custom transformation if provided (e.g., uppercase for rotinas)
       if (transformData) {
         dataToInsert = transformData(dataToInsert);
+      }
+
+      // Inject operator's CPF for auditing after transformation to ensure it's not lost
+      if (authUser?.cpf) {
+        dataToInsert = dataToInsert.map(item => ({
+          ...item,
+          cpf_operador: authUser.cpf
+        }));
       }
 
       // Deduplicate data based on conflictColumn to prevent "ON CONFLICT DO UPDATE command cannot affect row a second time"

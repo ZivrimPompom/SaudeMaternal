@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useSearch } from '@/context/SearchContext';
+import { useAuth } from '@/context/AuthContext';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -51,6 +52,7 @@ interface HealthUnit {
 
 export default function OperadoresPage() {
   const { searchQuery, setSearchQuery, isFormOpen, setIsFormOpen } = useSearch();
+  const { user: authUser } = useAuth();
   const [operators, setOperators] = useState<Operator[]>([]);
   const [units, setUnits] = useState<HealthUnit[]>([]);
   const [loading, setLoading] = useState(isSupabaseConfigured);
@@ -282,7 +284,8 @@ export default function OperadoresPage() {
     const operatorData: any = {
       cpf: formData.cpf,
       status: formData.status,
-      unidade_cnes: formData.unidade_cnes || null
+      unidade_cnes: formData.unidade_cnes || null,
+      cpf_operador: authUser?.cpf || null
     };
 
     // Tenta descobrir quais colunas usar baseado no que já carregamos ou tenta ambas

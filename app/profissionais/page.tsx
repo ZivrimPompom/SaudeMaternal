@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useSearch } from '@/context/SearchContext';
+import { useAuth } from '@/context/AuthContext';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { UserCheck, Plus, Edit2, Trash2, Search, AlertCircle, CheckCircle2, X, IdCard, FileUp, Building2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -36,6 +37,7 @@ interface HealthUnit {
 
 export default function ProfissionaisPage() {
   const { searchQuery, isFormOpen, setIsFormOpen } = useSearch();
+  const { user: authUser } = useAuth();
   const [professionals, setProfessionals] = useState<Profissional[]>([]);
   const [categories, setCategories] = useState<Categoria[]>([]);
   const [units, setUnits] = useState<HealthUnit[]>([]);
@@ -187,7 +189,8 @@ export default function ProfissionaisPage() {
         tipo_vinculo: formData.tipo_vinculo,
         chs: formData.chs,
         situacao: formData.situacao || 'ATIVO',
-        unidade_cnes: formData.unidade_cnes || null
+        unidade_cnes: formData.unidade_cnes || null,
+        cpf_operador: authUser?.cpf || null
       };
 
       if (editingCpf) {

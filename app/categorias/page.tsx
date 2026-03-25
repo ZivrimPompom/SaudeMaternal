@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useSearch } from '@/context/SearchContext';
+import { useAuth } from '@/context/AuthContext';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { Briefcase, Plus, Edit2, Trash2, Search, AlertCircle, CheckCircle2, X, FileUp, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -19,6 +20,7 @@ interface CategoriaProfissional {
 
 export default function CategoriasPage() {
   const { searchQuery, isFormOpen, setIsFormOpen } = useSearch();
+  const { user: authUser } = useAuth();
   const [categories, setCategories] = useState<CategoriaProfissional[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -97,14 +99,17 @@ export default function CategoriasPage() {
     }
 
     try {
+      const payload = {
+        ...formData,
+        cpf_operador: authUser?.cpf || null
+      };
+
       if (editingCbo) {
         const { error: updateError } = await supabase
           .from('categorias_profissionais')
           .update({
             categoria: formData.categoria,
-            // vinculo: formData.vinculo,
-            // tipo_vinculo: formData.tipo_vinculo,
-            // chs: formData.chs
+            cpf_operador: authUser?.cpf || null
           })
           .eq('cbo', editingCbo);
 
@@ -113,7 +118,7 @@ export default function CategoriasPage() {
       } else {
         const { error: insertError } = await supabase
           .from('categorias_profissionais')
-          .insert([formData]);
+          .insert([payload]);
 
         if (insertError) {
           if (insertError.code === '23505') {

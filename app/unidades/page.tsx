@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useSearch } from '@/context/SearchContext';
+import { useAuth } from '@/context/AuthContext';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -43,6 +44,7 @@ interface HealthUnit {
 
 export default function UnidadesSaudePage() {
   const { searchQuery, setSearchQuery, isFormOpen, setIsFormOpen } = useSearch();
+  const { user: authUser } = useAuth();
   const [units, setUnits] = useState<HealthUnit[]>([]);
   const [loading, setLoading] = useState(isSupabaseConfigured);
   const [error, setError] = useState<string | null>(null);
@@ -151,17 +153,22 @@ export default function UnidadesSaudePage() {
     }
 
     try {
+      const payload = {
+        ...formData,
+        cpf_operador: authUser?.cpf || null
+      };
+
       if (editingId) {
         const { error: updateError } = await supabase
           .from('unidades_saude')
-          .update(formData)
+          .update(payload)
           .eq('cnes', editingId);
 
         if (updateError) throw updateError;
       } else {
         const { error: insertError } = await supabase
           .from('unidades_saude')
-          .insert([formData]);
+          .insert([payload]);
 
         if (insertError) throw insertError;
       }

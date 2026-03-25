@@ -54,7 +54,13 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
         { name: 'Rotinas', href: '/rotinas' },
       ],
     },
-    { name: 'Movimento', icon: 'sync_alt', href: '#' },
+    { 
+      name: 'Movimento', 
+      icon: 'sync_alt', 
+      subItems: [
+        { name: 'Atendimentos', href: '/atendimentos' },
+      ]
+    },
     { name: 'Dashboards', icon: 'dashboard', href: '#' },
     { name: 'Relatórios', icon: 'analytics', href: '#' },
   ];
