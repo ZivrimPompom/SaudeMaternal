@@ -20,15 +20,15 @@ interface Profissional {
   cbo: string;
 }
 
-interface Consulta {
-  id_consulta: string;
+interface Atendimento {
+  id_atendimento: string;
   sispn: string;
   data_consulta: string;
   trimestre_consulta: '1º TRIMESTRE' | '2º TRIMESTRE' | '3º TRIMESTRE';
   cbo: string;
   cpf: string;
   data_proxima_consulta?: string;
-  observacoes?: string;
+  observacoes_clinicas?: string;
   cpf_operador?: string;
   created_at?: string;
   // Joins
@@ -114,7 +114,7 @@ const formatCpf = (value: string) => {
 export default function AtendimentosPage() {
   const { searchQuery, setSearchQuery, isFormOpen, setIsFormOpen } = useSearch();
   const { user: authUser } = useAuth();
-  const [consultas, setConsultas] = useState<Consulta[]>([]);
+  const [atendimentos, setAtendimentos] = useState<Atendimento[]>([]);
   const [gestacoes, setGestacoes] = useState<Gestacao[]>([]);
   const [categories, setCategories] = useState<Categoria[]>([]);
   const [allProfessionals, setAllProfessionals] = useState<Profissional[]>([]);
@@ -157,13 +157,13 @@ export default function AtendimentosPage() {
     return Array.from(months).sort().reverse();
   }, [gestacoes]);
 
-  const [formData, setFormData] = useState<Partial<Consulta>>({
+  const [formData, setFormData] = useState<Partial<Atendimento>>({
     sispn: '',
     data_consulta: new Date().toISOString().split('T')[0],
     cbo: '',
     cpf: 'NÃO INFORMADO',
     data_proxima_consulta: '',
-    observacoes: ''
+    observacoes_clinicas: ''
   });
 
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -180,7 +180,7 @@ export default function AtendimentosPage() {
         cbo: '',
         cpf: 'NÃO INFORMADO',
         data_proxima_consulta: '',
-        observacoes: ''
+        observacoes_clinicas: ''
       });
       setPatientSearch('');
       setSelectedCategory('NÃO INFORMADO');
@@ -288,16 +288,16 @@ export default function AtendimentosPage() {
         setGestacoes(formattedGest);
       }
 
-      // Fetch Consultas
+      // Fetch Atendimentos
       let { data: consData, error: consError } = await supabase
-        .from('consultas')
+        .from('atendimentos')
         .select('*')
         .order('data_consulta', { ascending: false });
 
       if (consError) throw consError;
 
       // Manually join data to avoid complex join errors
-      const enrichedConsultas = (consData || []).map(c => {
+      const enrichedAtendimentos = (consData || []).map(c => {
         const gest = formattedGest.find(g => g.sispn === c.sispn);
         const prof = professionalsData.find(p => p.cpf === c.cpf);
         return {
@@ -317,7 +317,7 @@ export default function AtendimentosPage() {
         };
       });
 
-      setConsultas(enrichedConsultas);
+      setAtendimentos(enrichedAtendimentos);
     } catch (err: any) {
       console.error('Erro ao buscar dados:', err);
       // Better error message
@@ -349,6 +349,15 @@ export default function AtendimentosPage() {
     return diffWeeks <= 12 ? 'PRECOCE' : 'TARDIA';
   };
 
+  const getGestacaoStatus = (dpp: string) => {
+    if (!dpp) return '---';
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const end = new Date(dpp);
+    end.setHours(0, 0, 0, 0);
+    return now >= end ? 'VENCIDA' : 'ATIVA';
+  };
+
   const getDppReferencia = (dpp: string) => {
     if (!dpp) return '---';
     const date = new Date(dpp);
@@ -373,13 +382,26 @@ export default function AtendimentosPage() {
       return;
     }
 
+    // Regra: só podemos lançar pessoas que tenham sido cadastradas no registro de gestações
+    const gest = gestacoes.find(g => g.sispn === formData.sispn);
+    if (!gest) {
+      setError('Gestaçāo não encontrada no registro de gestações.');
+      return;
+    }
+
+    // Regra: só podem receber registros de atendimento pessoas com o status da gestação = ATIVA
+    const status = getGestacaoStatus(gest.dpp);
+    if (status === 'VENCIDA') {
+      setError('Não é possível registrar atendimentos para gestações com status VENCIDA.');
+      return;
+    }
+
     if (!selectedProfessionalCpf) {
       setError('Selecione um profissional.');
       return;
     }
 
     try {
-      const gest = gestacoes.find(g => g.sispn === formData.sispn);
       const trimestre = calculateTrimestre(gest?.dum || '', formData.data_consulta || '');
       const professional = allProfessionals.find(p => p.cpf === selectedProfessionalCpf);
 
@@ -390,20 +412,20 @@ export default function AtendimentosPage() {
         cbo: professional?.cbo || formData.cbo,
         cpf: selectedProfessionalCpf,
         data_proxima_consulta: formData.data_proxima_consulta || null,
-        observacoes: formData.observacoes || null,
+        observacoes_clinicas: formData.observacoes_clinicas || null,
         cpf_operador: authUser?.cpf || null
       };
 
       if (editingId) {
         const { error: updateError } = await supabase
-          .from('consultas')
+          .from('atendimentos')
           .update(payload)
-          .eq('id_consulta', editingId);
+          .eq('id_atendimento', editingId);
         if (updateError) throw updateError;
         setSuccess('Atendimento atualizado com sucesso!');
       } else {
         const { error: insertError } = await supabase
-          .from('consultas')
+          .from('atendimentos')
           .insert([payload]);
         if (insertError) throw insertError;
         setSuccess('Atendimento registrado com sucesso!');
@@ -415,7 +437,7 @@ export default function AtendimentosPage() {
         cbo: '',
         cpf: 'NÃO INFORMADO',
         data_proxima_consulta: '',
-        observacoes: ''
+        observacoes_clinicas: ''
       });
       setPatientSearch('');
       setProfessionalSearch('');
@@ -429,8 +451,8 @@ export default function AtendimentosPage() {
     }
   };
 
-  const handleEdit = (con: Consulta) => {
-    setEditingId(con.id_consulta);
+  const handleEdit = (con: Atendimento) => {
+    setEditingId(con.id_atendimento);
     const gest = Array.isArray(con.gestacoes) ? con.gestacoes[0] : con.gestacoes;
     const pac = gest?.pacientes;
     const pacObj = Array.isArray(pac) ? pac[0] : pac;
@@ -451,7 +473,7 @@ export default function AtendimentosPage() {
       cbo: con.cbo,
       cpf: con.cpf,
       data_proxima_consulta: con.data_proxima_consulta || '',
-      observacoes: con.observacoes || ''
+      observacoes_clinicas: con.observacoes_clinicas || ''
     });
     setPatientSearch(formatSispn(con.sispn));
     setIsFormOpen(true);
@@ -461,9 +483,9 @@ export default function AtendimentosPage() {
   const handleDelete = async (id: string) => {
     try {
       const { error: delError } = await supabase
-        .from('consultas')
+        .from('atendimentos')
         .delete()
-        .eq('id_consulta', id);
+        .eq('id_atendimento', id);
       if (delError) throw delError;
       setSuccess('Atendimento excluído!');
       setDeleteConfirmId(null);
@@ -473,8 +495,8 @@ export default function AtendimentosPage() {
     }
   };
 
-  const filteredConsultas = useMemo(() => {
-    return consultas.filter(c => {
+  const filteredAtendimentos = useMemo(() => {
+    return atendimentos.filter(c => {
       const query = searchQuery.toLowerCase().trim();
       const normalize = (str: string) => 
         str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : "";
@@ -514,7 +536,7 @@ export default function AtendimentosPage() {
 
       return true;
     });
-  }, [consultas, searchQuery, filters, gestacoes]);
+  }, [atendimentos, searchQuery, filters, gestacoes]);
 
   const patientSearchResults = useMemo(() => {
     if (!patientSearch || patientSearch.length < 2) return [];
@@ -526,6 +548,10 @@ export default function AtendimentosPage() {
     const queryText = normalize(patientSearch);
     
     return gestacoes.filter(g => {
+      // Regra: só mostrar gestações ATIVAS para novos atendimentos
+      const status = getGestacaoStatus(g.dpp);
+      if (status !== 'ATIVA') return false;
+
       const nome = normalize(g.paciente_nome || '');
       const sispn = normalize(g.sispn || '');
       const cpf = normalize(g.paciente_cpf || '');
@@ -567,7 +593,7 @@ export default function AtendimentosPage() {
   }, [selectedCategory, categories, allProfessionals]);
 
   const uniqueEquipes = Array.from(new Set(gestacoes.map(g => g.equipe))).filter(Boolean).sort();
-  const uniqueCategorias = Array.from(new Set(consultas.map(c => getCboCategory(c.cbo)))).filter(Boolean).sort();
+  const uniqueCategorias = Array.from(new Set(atendimentos.map(c => getCboCategory(c.cbo)))).filter(Boolean).sort();
 
   return (
     <DashboardLayout>
@@ -590,8 +616,8 @@ export default function AtendimentosPage() {
           <div className="flex flex-col sm:flex-row items-center gap-4">
             <div className="flex items-center gap-3 w-full sm:w-auto">
               <CSVImporter 
-                tableName="consultas"
-                expectedColumns={['sispn', 'data_consulta', 'cbo', 'cpf', 'data_proxima_consulta', 'observacoes']}
+                tableName="atendimentos"
+                expectedColumns={['sispn', 'data_consulta', 'cbo', 'cpf', 'data_proxima_consulta', 'observacoes_clinicas']}
                 requiredColumns={['sispn', 'data_consulta', 'cbo']}
                 onSuccess={fetchData}
                 title="Importar CSV"
@@ -599,7 +625,13 @@ export default function AtendimentosPage() {
                   const existingSispns = new Set(gestacoes.map(g => g.sispn?.toString().replace(/\D/g, '') || ''));
                   return data.filter(item => {
                     const sispn = item.sispn?.toString().replace(/\D/g, '');
-                    return sispn && existingSispns.has(sispn);
+                    if (!sispn || !existingSispns.has(sispn)) return false;
+
+                    // Regra: só importar atendimentos para gestações ATIVAS
+                    const gest = gestacoes.find(g => g.sispn?.toString().replace(/\D/g, '') === sispn);
+                    if (gest && getGestacaoStatus(gest.dpp) !== 'ATIVA') return false;
+
+                    return true;
                   }).map(item => {
                     const sispnClean = item.sispn?.toString().replace(/\D/g, '');
                     const gest = gestacoes.find(g => g.sispn?.toString().replace(/\D/g, '') === sispnClean);
@@ -617,14 +649,15 @@ export default function AtendimentosPage() {
                       data_consulta: dataConsulta,
                       data_proxima_consulta: formatDate(item.data_proxima_consulta),
                       trimestre_consulta: calculateTrimestre(gest?.dum || '', dataConsulta),
-                      cpf: item.cpf || 'NÃO INFORMADO'
+                      cpf: item.cpf || 'NÃO INFORMADO',
+                      observacoes_clinicas: item.observacoes_clinicas || item.observacoes || null
                     };
                   });
                 }}
               />
               <div className="flex items-center gap-3 bg-surface-container-high px-4 py-2 rounded-full border border-outline-variant/20 shadow-sm">
                 <span className="material-symbols-outlined text-primary text-xl">clinical_notes</span>
-                <span className="text-sm font-bold font-label uppercase tracking-widest text-on-surface-variant">{filteredConsultas.length} Atendimentos</span>
+                <span className="text-sm font-bold font-label uppercase tracking-widest text-on-surface-variant">{filteredAtendimentos.length} Atendimentos</span>
               </div>
             </div>
           </div>
@@ -889,8 +922,8 @@ export default function AtendimentosPage() {
                         <textarea 
                           className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none resize-none h-32"
                           placeholder="Notas sobre o atendimento..."
-                          value={formData.observacoes}
-                          onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
+                          value={formData.observacoes_clinicas}
+                          onChange={(e) => setFormData({ ...formData, observacoes_clinicas: e.target.value })}
                         />
                       </div>
                     </div>
@@ -908,7 +941,7 @@ export default function AtendimentosPage() {
                           cbo: '',
                           cpf: 'NÃO INFORMADO',
                           data_proxima_consulta: '',
-                          observacoes: ''
+                          observacoes_clinicas: ''
                         });
                         setPatientSearch('');
                         setProfessionalSearch('');
@@ -1008,7 +1041,7 @@ export default function AtendimentosPage() {
             </div>
 
             <div className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-widest">
-              Exibindo <span className="text-primary">{filteredConsultas.length}</span> registros
+              Exibindo <span className="text-primary">{filteredAtendimentos.length}</span> registros
             </div>
           </div>
 
@@ -1027,7 +1060,7 @@ export default function AtendimentosPage() {
                 <tbody className="divide-y divide-outline-variant/5">
                   {loading ? (
                     <tr><td colSpan={5} className="p-32 text-center"><div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full mx-auto"></div></td></tr>
-                  ) : filteredConsultas.length === 0 ? (
+                  ) : filteredAtendimentos.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="p-32 text-center">
                         <div className="flex flex-col items-center gap-4 opacity-20">
@@ -1037,10 +1070,10 @@ export default function AtendimentosPage() {
                       </td>
                     </tr>
                   ) : (
-                    filteredConsultas
+                    filteredAtendimentos
                       .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
                       .map((con) => (
-                        <tr key={con.id_consulta} className="hover:bg-primary/[0.02] transition-colors group">
+                        <tr key={con.id_atendimento} className="hover:bg-primary/[0.02] transition-colors group">
                           <td className="px-8 py-6">
                             <div className="flex items-center gap-4">
                               <div className="w-12 h-12 rounded-2xl bg-primary/5 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
@@ -1112,7 +1145,7 @@ export default function AtendimentosPage() {
                                 <span className="material-symbols-outlined text-lg">edit</span>
                               </button>
                               <button 
-                                onClick={() => setDeleteConfirmId(con.id_consulta)}
+                                onClick={() => setDeleteConfirmId(con.id_atendimento)}
                                 className="p-3 rounded-2xl bg-surface-container-high text-on-surface-variant hover:bg-error hover:text-white hover:shadow-lg hover:shadow-error/20 transition-all active:scale-90"
                                 title="Excluir"
                               >
@@ -1129,9 +1162,9 @@ export default function AtendimentosPage() {
             
             <Pagination 
               currentPage={currentPage}
-              totalPages={Math.ceil(filteredConsultas.length / itemsPerPage)}
+              totalPages={Math.ceil(filteredAtendimentos.length / itemsPerPage)}
               onPageChange={setCurrentPage}
-              totalItems={filteredConsultas.length}
+              totalItems={filteredAtendimentos.length}
               itemsPerPage={itemsPerPage}
               itemName="atendimentos"
             />

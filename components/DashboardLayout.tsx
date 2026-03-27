@@ -14,10 +14,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   React.useEffect(() => {
     setMounted(true);
-    // Inicia aberta no desktop, fechada no mobile
-    if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
-      setIsSidebarOpen(true);
-    }
+    // Inicia fechada em todos os dispositivos
+    setIsSidebarOpen(false);
   }, []);
 
   useEffect(() => {

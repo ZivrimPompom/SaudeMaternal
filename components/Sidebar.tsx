@@ -18,7 +18,7 @@ interface MenuItem {
 
 export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const pathname = usePathname();
-  const [openMenus, setOpenMenus] = useState<string[]>(['Cadastros', 'Pacientes']);
+  const [openMenus, setOpenMenus] = useState<string[]>([]);
 
   // Close sidebar on mobile when route changes
   useEffect(() => {

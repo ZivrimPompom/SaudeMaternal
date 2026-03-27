@@ -432,6 +432,16 @@ export default function GestacoesPage() {
     return true;
   });
 
+  const calculateStatus = (dum: string) => {
+    if (!dum) return 'ATIVA';
+    const dumDate = new Date(dum + 'T12:00:00');
+    const today = new Date();
+    // Se a data de hoje for maior que DUM + 280 dias, está vencida
+    const limitDate = new Date(dumDate);
+    limitDate.setDate(limitDate.getDate() + 280);
+    return today > limitDate ? 'VENCIDA' : 'ATIVA';
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -443,6 +453,14 @@ export default function GestacoesPage() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const todayStr = today.toISOString().split('T')[0];
+
+    // Regra: só podemos cadastrar pacientes que tenham cadastro prévio
+    const cpfPaciente = formData.cpf_paciente || '';
+    const patientExists = pacientes.some(p => p.cpf.replace(/\D/g, '') === cpfPaciente.replace(/\D/g, ''));
+    if (!patientExists) {
+      setError('Paciente não encontrada no cadastro de pacientes. Cadastre a paciente primeiro.');
+      return;
+    }
 
     if (formData.dum) {
       if (formData.dum > todayStr) {
@@ -835,7 +853,7 @@ export default function GestacoesPage() {
                           <div className="relative">
                             <input 
                               type="text"
-                              className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none"
+                              className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none shadow-inner pr-12"
                               placeholder="000.000.000-00"
                               value={formData.cpf_paciente || ''}
                               onChange={(e) => {
@@ -847,34 +865,42 @@ export default function GestacoesPage() {
                               onFocus={() => setIsPacienteSearchOpen(true)}
                               required
                             />
+                            <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant/30">arrow_drop_down</span>
+                            
                             <AnimatePresence>
                               {isPacienteSearchOpen && (
                                 <motion.div 
                                   initial={{ opacity: 0, y: 10 }}
                                   animate={{ opacity: 1, y: 0 }}
                                   exit={{ opacity: 0, y: 10 }}
-                                  className="absolute top-full left-0 right-0 z-50 mt-2 bg-white rounded-2xl shadow-2xl border border-outline-variant/10 overflow-hidden max-h-60 overflow-y-auto"
+                                  className="absolute top-full left-0 right-0 z-50 mt-2 bg-white rounded-2xl shadow-2xl border-4 border-primary z-50 overflow-hidden"
                                 >
-                                  {filteredPacientesLookup.length > 0 ? (
-                                    filteredPacientesLookup.map(p => (
-                                      <button
-                                        key={p.cpf}
-                                        type="button"
-                                        onClick={() => {
-                                          setFormData({ ...formData, cpf_paciente: formatCpf(p.cpf) });
-                                          setIsPacienteSearchOpen(false);
-                                        }}
-                                        className="w-full text-left px-6 py-4 hover:bg-primary/5 transition-colors flex flex-col gap-1 border-b border-outline-variant/5 last:border-0"
-                                      >
-                                        <span className="text-[10px] font-black text-primary uppercase">{p.gestante}</span>
-                                        <span className="text-[9px] font-bold text-on-surface-variant/60">{formatCpf(p.cpf)}</span>
-                                      </button>
-                                    ))
-                                  ) : (
-                                    <div className="px-6 py-4 text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-widest text-center">
-                                      Nenhuma paciente encontrada
-                                    </div>
-                                  )}
+                                  <div className="bg-primary px-6 py-3">
+                                    <p className="text-white font-black text-[10px] uppercase tracking-widest">Selecione a gestante...</p>
+                                  </div>
+                                  <div className="max-h-80 overflow-y-auto">
+                                    {filteredPacientesLookup.length > 0 ? (
+                                      filteredPacientesLookup.map(p => (
+                                        <button
+                                          key={p.cpf}
+                                          type="button"
+                                          onClick={() => {
+                                            setFormData({ ...formData, cpf_paciente: formatCpf(p.cpf) });
+                                            setIsPacienteSearchOpen(false);
+                                          }}
+                                          className="w-full px-6 py-4 text-left hover:bg-primary/5 transition-colors border-b border-outline-variant/5 last:border-0 group"
+                                        >
+                                          <p className="font-bold text-xs text-on-surface uppercase group-hover:text-primary transition-colors">
+                                            {p.gestante} ({formatCpf(p.cpf)})
+                                          </p>
+                                        </button>
+                                      ))
+                                    ) : (
+                                      <div className="px-6 py-4 text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-widest text-center">
+                                        Nenhuma paciente encontrada
+                                      </div>
+                                    )}
+                                  </div>
                                 </motion.div>
                               )}
                             </AnimatePresence>
@@ -998,7 +1024,7 @@ export default function GestacoesPage() {
                           <div className="relative">
                             <input 
                               type="text"
-                              className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none pr-12"
+                              className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none shadow-inner pr-12"
                               placeholder="Buscar enfermeiro..."
                               value={rtSearchQuery}
                               onChange={(e) => {
@@ -1007,7 +1033,7 @@ export default function GestacoesPage() {
                               }}
                               onFocus={() => setIsRtDropdownOpen(true)}
                             />
-                            <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant/30">search</span>
+                            <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant/30">arrow_drop_down</span>
                             
                             <AnimatePresence>
                               {isRtDropdownOpen && rtSearchResults.length > 0 && (
@@ -1015,23 +1041,28 @@ export default function GestacoesPage() {
                                   initial={{ opacity: 0, y: 10 }}
                                   animate={{ opacity: 1, y: 0 }}
                                   exit={{ opacity: 0, y: 10 }}
-                                  className="absolute top-full left-0 right-0 z-50 mt-2 bg-white rounded-2xl shadow-2xl border border-outline-variant/10 overflow-hidden max-h-60 overflow-y-auto"
+                                  className="absolute top-full left-0 right-0 z-50 mt-2 bg-white rounded-2xl shadow-2xl border-4 border-primary overflow-hidden"
                                 >
-                                  {rtSearchResults.map(p => (
-                                    <button
-                                      key={p.cpf}
-                                      type="button"
-                                      onClick={() => {
-                                        setFormData({ ...formData, referencia_tecnica: p.cpf });
-                                        setRtSearchQuery(p.nome);
-                                        setIsRtDropdownOpen(false);
-                                      }}
-                                      className="w-full text-left px-6 py-4 hover:bg-primary/5 transition-colors flex flex-col gap-1 border-b border-outline-variant/5 last:border-0"
-                                    >
-                                      <span className="text-[10px] font-black text-primary uppercase">{p.nome}</span>
-                                      <span className="text-[9px] font-bold text-on-surface-variant/60">{p.equipe}</span>
-                                    </button>
-                                  ))}
+                                  <div className="bg-primary px-6 py-3">
+                                    <p className="text-white font-black text-[10px] uppercase tracking-widest">Selecione o enfermeiro...</p>
+                                  </div>
+                                  <div className="max-h-60 overflow-y-auto">
+                                    {rtSearchResults.map(p => (
+                                      <button
+                                        key={p.cpf}
+                                        type="button"
+                                        onClick={() => {
+                                          setFormData({ ...formData, referencia_tecnica: p.cpf });
+                                          setRtSearchQuery(p.nome);
+                                          setIsRtDropdownOpen(false);
+                                        }}
+                                        className="w-full text-left px-6 py-4 hover:bg-primary/5 transition-colors flex flex-col gap-1 border-b border-outline-variant/5 last:border-0 group"
+                                      >
+                                        <span className="text-[10px] font-black text-primary uppercase group-hover:scale-105 transition-transform origin-left">{p.nome}</span>
+                                        <span className="text-[9px] font-bold text-on-surface-variant/60">{p.equipe}</span>
+                                      </button>
+                                    ))}
+                                  </div>
                                 </motion.div>
                               )}
                             </AnimatePresence>
@@ -1043,7 +1074,7 @@ export default function GestacoesPage() {
                           <div className="relative">
                             <input 
                               type="text"
-                              className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none pr-12"
+                              className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none shadow-inner pr-12"
                               placeholder="Buscar ACS..."
                               value={acsSearchQuery}
                               onChange={(e) => {
@@ -1052,7 +1083,7 @@ export default function GestacoesPage() {
                               }}
                               onFocus={() => setIsAcsDropdownOpen(true)}
                             />
-                            <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant/30">search</span>
+                            <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant/30">arrow_drop_down</span>
                             
                             <AnimatePresence>
                               {isAcsDropdownOpen && acsSearchResults.length > 0 && (
@@ -1060,23 +1091,28 @@ export default function GestacoesPage() {
                                   initial={{ opacity: 0, y: 10 }}
                                   animate={{ opacity: 1, y: 0 }}
                                   exit={{ opacity: 0, y: 10 }}
-                                  className="absolute top-full left-0 right-0 z-50 mt-2 bg-white rounded-2xl shadow-2xl border border-outline-variant/10 overflow-hidden max-h-60 overflow-y-auto"
+                                  className="absolute top-full left-0 right-0 z-50 mt-2 bg-white rounded-2xl shadow-2xl border-4 border-primary overflow-hidden"
                                 >
-                                  {acsSearchResults.map(p => (
-                                    <button
-                                      key={p.cpf}
-                                      type="button"
-                                      onClick={() => {
-                                        setFormData({ ...formData, acs: p.cpf });
-                                        setAcsSearchQuery(p.nome);
-                                        setIsAcsDropdownOpen(false);
-                                      }}
-                                      className="w-full text-left px-6 py-4 hover:bg-primary/5 transition-colors flex flex-col gap-1 border-b border-outline-variant/5 last:border-0"
-                                    >
-                                      <span className="text-[10px] font-black text-primary uppercase">{p.nome}</span>
-                                      <span className="text-[9px] font-bold text-on-surface-variant/60">{p.equipe}</span>
-                                    </button>
-                                  ))}
+                                  <div className="bg-primary px-6 py-3">
+                                    <p className="text-white font-black text-[10px] uppercase tracking-widest">Selecione o ACS...</p>
+                                  </div>
+                                  <div className="max-h-60 overflow-y-auto">
+                                    {acsSearchResults.map(p => (
+                                      <button
+                                        key={p.cpf}
+                                        type="button"
+                                        onClick={() => {
+                                          setFormData({ ...formData, acs: p.cpf });
+                                          setAcsSearchQuery(p.nome);
+                                          setIsAcsDropdownOpen(false);
+                                        }}
+                                        className="w-full text-left px-6 py-4 hover:bg-primary/5 transition-colors flex flex-col gap-1 border-b border-outline-variant/5 last:border-0 group"
+                                      >
+                                        <span className="text-[10px] font-black text-primary uppercase group-hover:scale-105 transition-transform origin-left">{p.nome}</span>
+                                        <span className="text-[9px] font-bold text-on-surface-variant/60">{p.equipe}</span>
+                                      </button>
+                                    ))}
+                                  </div>
                                 </motion.div>
                               )}
                             </AnimatePresence>
