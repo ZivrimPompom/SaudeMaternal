@@ -1,17 +1,22 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useSearch } from '@/context/SearchContext';
 import { useAuth } from '@/context/AuthContext';
 import { usePathname } from 'next/navigation';
-import { LucideLogOut, LucideUser, LucideChevronDown } from 'lucide-react';
 
 export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSidebar: () => void; isSidebarOpen: boolean }) {
   const { searchQuery, setSearchQuery, isFormOpen, setIsFormOpen } = useSearch();
   const { user, signOut } = useAuth();
   const pathname = usePathname();
+
+  // Limpar a busca ao mudar de página para evitar "sujeira" entre as telas
+  useEffect(() => {
+    setSearchQuery('');
+  }, [pathname, setSearchQuery]);
+
   const isHomePage = pathname === '/';
   const isCategoriesPage = pathname === '/categorias';
   const isProfessionalsPage = pathname === '/profissionais';
@@ -20,6 +25,7 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
   const isPacientesPage = pathname === '/pacientes';
   const isUnidadesPage = pathname === '/unidades';
   const isGestacoesPage = pathname === '/gestacoes';
+  const isAtendimentosPage = pathname === '/atendimentos';
   
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
@@ -31,6 +37,7 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
     if (isPacientesPage) return 'Pacientes';
     if (isUnidadesPage) return 'Unidades de Saúde';
     if (isGestacoesPage) return 'Gestações';
+    if (isAtendimentosPage) return 'Atendimentos';
     return 'Busca';
   };
 
@@ -42,6 +49,7 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
     if (isPacientesPage) return 'Nome ou CPF...';
     if (isUnidadesPage) return 'CNES ou Nome...';
     if (isGestacoesPage) return 'SISPN ou CPF...';
+    if (isAtendimentosPage) return 'Nome, CPF ou SISPN...';
     return 'Pesquisar...';
   };
 
@@ -85,7 +93,7 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
                 />
               </div>
 
-              {(isCategoriesPage || isProfessionalsPage || isOperatorsPage || isRotinasPage || isPacientesPage || isUnidadesPage || isGestacoesPage) && (
+              {(isCategoriesPage || isProfessionalsPage || isOperatorsPage || isRotinasPage || isPacientesPage || isUnidadesPage || isGestacoesPage || isAtendimentosPage) && (
                 <button
                   onClick={() => setIsFormOpen(!isFormOpen)}
                   className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold transition-all duration-300 ${
@@ -120,7 +128,7 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
               <span className="block text-xs font-bold leading-none mb-1 capitalize">{userName}</span>
               <span className="block text-[10px] text-slate-500 leading-none truncate max-w-[120px]">{userRole}</span>
             </span>
-            <LucideChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`} />
+            <span className={`material-symbols-outlined text-slate-400 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`}>expand_more</span>
           </button>
 
           {isProfileOpen && (
@@ -133,7 +141,7 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
                 onClick={() => signOut()}
                 className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
               >
-                <LucideLogOut className="w-4 h-4" />
+                <span className="material-symbols-outlined text-lg">logout</span>
                 <span>Sair do Sistema</span>
               </button>
             </div>

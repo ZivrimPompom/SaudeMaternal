@@ -5,26 +5,6 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { useSearch } from '@/context/SearchContext';
 import { useAuth } from '@/context/AuthContext';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
-import { 
-  Baby, 
-  Plus, 
-  Edit2, 
-  Trash2, 
-  Search, 
-  AlertCircle, 
-  CheckCircle2, 
-  X, 
-  Calendar, 
-  User,
-  Stethoscope,
-  HeartPulse,
-  Activity,
-  ClipboardList,
-  Clock,
-  Check,
-  ChevronDown,
-  FileUp
-} from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Pagination from '@/components/Pagination';
 import CSVImporter from '@/components/CSVImporter';
@@ -58,6 +38,7 @@ interface Gestacao {
   referencia_tecnica_nome?: string;
   acs_nome?: string;
   operador_nome?: string;
+  pacientes?: any;
 }
 
 interface Paciente {
@@ -123,7 +104,51 @@ export default function GestacoesPage() {
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isPacienteSearchOpen, setIsPacienteSearchOpen] = useState(false);
+
+  // Reset form when closed
+  useEffect(() => {
+    if (!isFormOpen) {
+      setEditingId(null);
+      setFormData({
+        sispn: '',
+        cpf_paciente: '',
+        dum: '',
+        dpp: '',
+        data_abertura: '',
+        data_cadastro: new Date().toISOString().split('T')[0],
+        operador: 'NÃO INFORMADO',
+        referencia_tecnica: 'NÃO INFORMADO',
+        acs: 'NÃO INFORMADO',
+        equipe: 'NÃO INFORMADO',
+        idade_cadastro: 0,
+        fase_vida_cadastro: '',
+        gestacao_anterior: 0,
+        aborto: 0,
+        parto: 0,
+        sifilis: 'NÃO',
+        sifilis_tratada: 'NÃO SABE',
+        hiv: 'NEGATIVO',
+        hepatite_b: 'NÃO REAGENTE',
+        hepatite_c: 'NÃO REAGENTE',
+        classificacao_pn: 'HABITUAL',
+        alto_risco_compartilhado: 'NÃO'
+      });
+      setRtSearchQuery('');
+      setAcsSearchQuery('');
+      setError(null);
+      setSuccess(null);
+    }
+  }, [isFormOpen]);
   const [pacienteSearchQuery, setPacienteSearchQuery] = useState('');
+
+  // Searchable Dropdowns for RT and ACS
+  const [rtSearchQuery, setRtSearchQuery] = useState('');
+  const [isRtDropdownOpen, setIsRtDropdownOpen] = useState(false);
+  const rtDropdownRef = React.useRef<HTMLDivElement>(null);
+
+  const [acsSearchQuery, setAcsSearchQuery] = useState('');
+  const [isAcsDropdownOpen, setIsAcsDropdownOpen] = useState(false);
+  const acsDropdownRef = React.useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (formData.referencia_tecnica && formData.referencia_tecnica !== 'NÃO INFORMADO') {
@@ -143,6 +168,19 @@ export default function GestacoesPage() {
     status: 'ATIVA'
   });
 
+  const uniqueDppMonths = useMemo(() => {
+    const months = new Set<string>();
+    gestacoes.forEach(g => {
+      if (g.dpp) {
+        const date = new Date(g.dpp);
+        if (!isNaN(date.getTime())) {
+          months.add(`${date.getFullYear()}/${(date.getMonth() + 1).toString().padStart(2, '0')}`);
+        }
+      }
+    });
+    return Array.from(months).sort().reverse();
+  }, [gestacoes]);
+
   const uniqueEquipes = useMemo(() => {
     const equipes = gestacoes.map(g => g.equipe).filter(Boolean);
     return Array.from(new Set(equipes)).sort();
@@ -161,6 +199,18 @@ export default function GestacoesPage() {
   useEffect(() => {
     setIsFormOpen(false);
     fetchInitialData();
+
+    // Click outside listener for dropdowns
+    const handleClickOutside = (event: MouseEvent) => {
+      if (rtDropdownRef.current && !rtDropdownRef.current.contains(event.target as Node)) {
+        setIsRtDropdownOpen(false);
+      }
+      if (acsDropdownRef.current && !acsDropdownRef.current.contains(event.target as Node)) {
+        setIsAcsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [setIsFormOpen]);
 
   const fetchInitialData = async () => {
@@ -395,46 +445,22 @@ export default function GestacoesPage() {
     const todayStr = today.toISOString().split('T')[0];
 
     if (formData.dum) {
-      const dumDate = new Date(formData.dum);
-      const minDum = new Date(today);
-      minDum.setDate(minDum.getDate() - 280);
-      
       if (formData.dum > todayStr) {
         setError('DUM não pode ser maior que hoje.');
-        return;
-      }
-      if (dumDate < minDum) {
-        setError('DUM não pode ser menor que hoje - 280 dias.');
         return;
       }
     }
 
     if (formData.data_abertura) {
-      const openDate = new Date(formData.data_abertura);
-      const minOpen = new Date(today);
-      minOpen.setDate(minOpen.getDate() - 15);
-      
       if (formData.data_abertura > todayStr) {
         setError('Data de Abertura não pode ser maior que hoje.');
-        return;
-      }
-      if (openDate < minOpen) {
-        setError('Data de Abertura não pode ser menor que hoje - 15 dias.');
         return;
       }
     }
 
     if (formData.data_cadastro) {
-      const cadDate = new Date(formData.data_cadastro);
-      const minCad = new Date(today);
-      minCad.setDate(minCad.getDate() - 15);
-      
       if (formData.data_cadastro > todayStr) {
         setError('Data de Cadastro não pode ser maior que hoje.');
-        return;
-      }
-      if (cadDate < minCad) {
-        setError('Data de Cadastro não pode ser menor que hoje - 15 dias.');
         return;
       }
       if (formData.data_abertura && formData.data_cadastro < formData.data_abertura) {
@@ -462,12 +488,20 @@ export default function GestacoesPage() {
         if (found) acsCpf = found.cpf;
       }
 
+      const { 
+        paciente_nome, 
+        referencia_tecnica_nome, 
+        acs_nome, 
+        operador_nome, 
+        pacientes,
+        ...cleanFormData 
+      } = formData;
+
       const payload = {
-        ...formData,
+        ...cleanFormData,
         sispn: formData.sispn?.replace(/\D/g, ''),
         cpf_paciente: formData.cpf_paciente?.replace(/\D/g, ''),
         operador: authUser?.cpf?.replace(/\D/g, '') || 'SISTEMA',
-        cpf_operador: authUser?.cpf?.replace(/\D/g, '') || null,
         referencia_tecnica: rtCpf?.replace(/\D/g, '') || 'NÃO INFORMADO',
         acs: acsCpf?.replace(/\D/g, '') || 'NÃO INFORMADO',
       };
@@ -535,6 +569,8 @@ export default function GestacoesPage() {
       sispn: formatSispn(g.sispn),
       cpf_paciente: formatCpf(g.cpf_paciente)
     });
+    setRtSearchQuery(g.referencia_tecnica_nome || '');
+    setAcsSearchQuery(g.acs_nome || '');
     setError(null);
     setSuccess(null);
     setIsFormOpen(true);
@@ -574,13 +610,45 @@ export default function GestacoesPage() {
   const displayAcs = acsList;
 
   const filteredPacientesLookup = useMemo(() => {
-    const query = pacienteSearchQuery.toLowerCase().trim();
-    if (!query) return pacientes.slice(0, 10);
+    const normalize = (str: string) => 
+      str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : "";
+    
+    const query = normalize(pacienteSearchQuery);
+    const queryDigits = pacienteSearchQuery.replace(/\D/g, '');
+
+    if (!query && !queryDigits) return pacientes.slice(0, 10);
+    
     return pacientes.filter(p => 
-      p.gestante.toLowerCase().includes(query) || 
-      p.cpf.includes(query.replace(/\D/g, ''))
+      normalize(p.gestante).includes(query) || 
+      (queryDigits !== '' && p.cpf.includes(queryDigits))
     ).slice(0, 10);
   }, [pacientes, pacienteSearchQuery]);
+
+  const rtSearchResults = useMemo(() => {
+    const normalize = (str: string) => 
+      str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : "";
+    
+    const query = normalize(rtSearchQuery);
+    if (!query) return enfermeiros.slice(0, 10);
+    
+    return enfermeiros.filter(p => 
+      normalize(p.nome).includes(query) || 
+      p.cpf.includes(query.replace(/\D/g, ''))
+    ).slice(0, 10);
+  }, [enfermeiros, rtSearchQuery]);
+
+  const acsSearchResults = useMemo(() => {
+    const normalize = (str: string) => 
+      str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : "";
+    
+    const query = normalize(acsSearchQuery);
+    if (!query) return acsList.slice(0, 10);
+    
+    return acsList.filter(p => 
+      normalize(p.nome).includes(query) || 
+      p.cpf.includes(query.replace(/\D/g, ''))
+    ).slice(0, 10);
+  }, [acsList, acsSearchQuery]);
 
   return (
     <DashboardLayout>
@@ -594,7 +662,7 @@ export default function GestacoesPage() {
             <h2 className="text-5xl font-black tracking-tight font-headline text-on-surface uppercase text-primary">Gestações</h2>
             <p className="text-lg text-on-surface-variant/60 font-body max-w-2xl">Controle e monitoramento de ciclos gestacionais.</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <CSVImporter 
               tableName="gestacoes"
               title="Importar Gestações"
@@ -721,7 +789,7 @@ export default function GestacoesPage() {
               }}
             />
             <div className="flex items-center gap-3 bg-surface-container-high px-4 py-2 rounded-full border border-outline-variant/20 shadow-sm">
-              <Baby className="text-primary w-5 h-5" />
+              <span className="material-symbols-outlined text-primary text-xl">child_care</span>
               <span className="text-sm font-bold font-label uppercase tracking-widest text-on-surface-variant">{filteredGestacoes.length} Gestações</span>
             </div>
           </div>
@@ -739,7 +807,7 @@ export default function GestacoesPage() {
                 <div className="bg-surface-container-lowest p-6 md:p-8 rounded-[2.5rem] shadow-2xl shadow-black/5 border border-outline-variant/10 relative overflow-hidden">
                   <h3 className="text-2xl font-black font-headline mb-8 flex items-center gap-3">
                     <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
-                      <Plus className="text-primary w-5 h-5" />
+                      <span className="material-symbols-outlined text-primary text-2xl">add</span>
                     </div>
                     {editingId ? 'Editar Gestação' : 'Nova Gestação'}
                   </h3>
@@ -748,12 +816,12 @@ export default function GestacoesPage() {
                     <AnimatePresence mode="wait">
                       {error && (
                         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="p-4 rounded-2xl bg-red-50 text-red-600 text-xs font-bold flex items-center gap-3">
-                          <AlertCircle className="w-4 h-4" /> {error}
+                          <span className="material-symbols-outlined text-lg">error</span> {error}
                         </motion.div>
                       )}
                       {success && (
                         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="p-4 rounded-2xl bg-green-50 text-green-600 text-xs font-bold flex items-center gap-3">
-                          <CheckCircle2 className="w-4 h-4" /> {success}
+                          <span className="material-symbols-outlined text-lg">check_circle</span> {success}
                         </motion.div>
                       )}
                     </AnimatePresence>
@@ -925,31 +993,94 @@ export default function GestacoesPage() {
                     <div className="space-y-4">
                       <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/40 border-b border-primary/10 pb-2">Responsáveis e Equipe</h4>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
+                        <div className="space-y-2 relative" ref={rtDropdownRef}>
                           <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Referência Técnica (Enfermeiro)</label>
-                          <select 
-                            className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none appearance-none"
-                            value={formData.referencia_tecnica || ''}
-                            onChange={(e) => {
-                              setFormData({ ...formData, referencia_tecnica: e.target.value });
-                            }}
-                            required
-                          >
-                            <option value="NÃO INFORMADO">NÃO INFORMADO</option>
-                            {displayEnfermeiros.map(p => <option key={p.cpf} value={p.cpf}>{p.nome}</option>)}
-                          </select>
+                          <div className="relative">
+                            <input 
+                              type="text"
+                              className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none pr-12"
+                              placeholder="Buscar enfermeiro..."
+                              value={rtSearchQuery}
+                              onChange={(e) => {
+                                setRtSearchQuery(e.target.value);
+                                setIsRtDropdownOpen(true);
+                              }}
+                              onFocus={() => setIsRtDropdownOpen(true)}
+                            />
+                            <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant/30">search</span>
+                            
+                            <AnimatePresence>
+                              {isRtDropdownOpen && rtSearchResults.length > 0 && (
+                                <motion.div 
+                                  initial={{ opacity: 0, y: 10 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  exit={{ opacity: 0, y: 10 }}
+                                  className="absolute top-full left-0 right-0 z-50 mt-2 bg-white rounded-2xl shadow-2xl border border-outline-variant/10 overflow-hidden max-h-60 overflow-y-auto"
+                                >
+                                  {rtSearchResults.map(p => (
+                                    <button
+                                      key={p.cpf}
+                                      type="button"
+                                      onClick={() => {
+                                        setFormData({ ...formData, referencia_tecnica: p.cpf });
+                                        setRtSearchQuery(p.nome);
+                                        setIsRtDropdownOpen(false);
+                                      }}
+                                      className="w-full text-left px-6 py-4 hover:bg-primary/5 transition-colors flex flex-col gap-1 border-b border-outline-variant/5 last:border-0"
+                                    >
+                                      <span className="text-[10px] font-black text-primary uppercase">{p.nome}</span>
+                                      <span className="text-[9px] font-bold text-on-surface-variant/60">{p.equipe}</span>
+                                    </button>
+                                  ))}
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
                         </div>
-                        <div className="space-y-2">
+
+                        <div className="space-y-2 relative" ref={acsDropdownRef}>
                           <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">ACS (Agente de Saúde)</label>
-                          <select 
-                            className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none appearance-none"
-                            value={formData.acs || ''}
-                            onChange={(e) => setFormData({ ...formData, acs: e.target.value })}
-                            required
-                          >
-                            <option value="NÃO INFORMADO">NÃO INFORMADO</option>
-                            {displayAcs.map(p => <option key={p.cpf} value={p.cpf}>{p.nome}</option>)}
-                          </select>
+                          <div className="relative">
+                            <input 
+                              type="text"
+                              className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none pr-12"
+                              placeholder="Buscar ACS..."
+                              value={acsSearchQuery}
+                              onChange={(e) => {
+                                setAcsSearchQuery(e.target.value);
+                                setIsAcsDropdownOpen(true);
+                              }}
+                              onFocus={() => setIsAcsDropdownOpen(true)}
+                            />
+                            <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant/30">search</span>
+                            
+                            <AnimatePresence>
+                              {isAcsDropdownOpen && acsSearchResults.length > 0 && (
+                                <motion.div 
+                                  initial={{ opacity: 0, y: 10 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  exit={{ opacity: 0, y: 10 }}
+                                  className="absolute top-full left-0 right-0 z-50 mt-2 bg-white rounded-2xl shadow-2xl border border-outline-variant/10 overflow-hidden max-h-60 overflow-y-auto"
+                                >
+                                  {acsSearchResults.map(p => (
+                                    <button
+                                      key={p.cpf}
+                                      type="button"
+                                      onClick={() => {
+                                        setFormData({ ...formData, acs: p.cpf });
+                                        setAcsSearchQuery(p.nome);
+                                        setIsAcsDropdownOpen(false);
+                                      }}
+                                      className="w-full text-left px-6 py-4 hover:bg-primary/5 transition-colors flex flex-col gap-1 border-b border-outline-variant/5 last:border-0"
+                                    >
+                                      <span className="text-[10px] font-black text-primary uppercase">{p.nome}</span>
+                                      <span className="text-[9px] font-bold text-on-surface-variant/60">{p.equipe}</span>
+                                    </button>
+                                  ))}
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
                         </div>
                       </div>
                       <div className="space-y-2">
@@ -1043,16 +1174,16 @@ export default function GestacoesPage() {
                         type="submit"
                         className="w-full bg-primary text-white font-black py-5 rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 font-headline uppercase tracking-widest text-[10px]"
                       >
-                        {editingId ? <Edit2 className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                        <span className="material-symbols-outlined text-lg">{editingId ? 'edit' : 'add'}</span>
                         {editingId ? 'Atualizar Gestação' : 'Cadastrar Gestação'}
                       </button>
                       {editingId && (
                         <div className="grid grid-cols-2 gap-3">
                           <button type="button" onClick={() => setDeleteConfirmId(editingId)} className="bg-red-50 text-red-600 font-black py-4 rounded-2xl hover:bg-red-100 transition-all flex items-center justify-center gap-2 font-headline uppercase tracking-widest text-[8px]">
-                            <Trash2 className="w-3 h-3" /> Excluir
+                            <span className="material-symbols-outlined text-sm">delete</span> Excluir
                           </button>
                           <button type="button" onClick={() => { setEditingId(null); setIsFormOpen(false); }} className="bg-surface-container-high text-on-surface-variant font-black py-4 rounded-2xl hover:bg-surface-container-highest transition-all flex items-center justify-center gap-2 font-headline uppercase tracking-widest text-[8px]">
-                            <X className="w-3 h-3" /> Cancelar
+                            <span className="material-symbols-outlined text-sm">close</span> Cancelar
                           </button>
                         </div>
                       )}
@@ -1068,15 +1199,15 @@ export default function GestacoesPage() {
               <div className="p-6 md:p-10 border-b border-outline-variant/5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-surface-container-lowest/50 backdrop-blur-sm sticky top-0 z-20">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
-                    <Baby className="text-primary w-6 h-6" />
+                    <span className="material-symbols-outlined text-primary text-2xl">pregnant_woman</span>
                   </div>
                   <div>
-                    <h3 className="text-2xl font-black font-headline text-on-surface">Ciclos Gestacionais</h3>
-                    <p className="text-xs text-on-surface-variant/40 font-body uppercase tracking-widest font-bold">Monitoramento</p>
+                    <h3 className="text-2xl font-black font-headline text-on-surface uppercase tracking-tight">Ciclos Gestacionais</h3>
+                    <p className="text-xs text-on-surface-variant/40 font-body uppercase tracking-widest font-bold">Monitoramento Ativo</p>
                   </div>
                 </div>
                 <div className="relative flex-1 md:w-64">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/30 w-4 h-4" />
+                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/30 text-xl">search</span>
                   <input 
                     type="text" 
                     placeholder="Filtrar por nome, CPF ou SISPN..."
@@ -1088,79 +1219,77 @@ export default function GestacoesPage() {
               </div>
 
               {/* Filtros Avançados */}
-              <div className="px-6 md:px-10 pb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 border-b border-outline-variant/5">
-                <div className="space-y-1">
-                  <label className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant/40 ml-2">DPP (AAAA/MM)</label>
-                  <input 
-                    type="text"
-                    placeholder="2024/03"
-                    className="w-full bg-surface-container-low border-none rounded-xl px-4 py-2 text-[10px] font-bold outline-none focus:ring-2 focus:ring-primary/20"
-                    value={filters.dpp}
-                    onChange={(e) => {
-                      let val = e.target.value.replace(/\D/g, '');
-                      if (val.length > 4) val = val.slice(0, 4) + '/' + val.slice(4, 6);
-                      setFilters({ ...filters, dpp: val });
-                      setCurrentPage(1);
-                    }}
-                    maxLength={7}
-                  />
+              <div className="px-6 md:px-10 pb-6 flex flex-wrap items-center gap-4 border-b border-outline-variant/5">
+                <div className="flex items-center gap-2 bg-primary/5 px-5 py-2.5 rounded-full border border-primary/10 shrink-0">
+                  <span className="material-symbols-outlined text-primary text-sm">filter_list</span>
+                  <span className="text-[9px] font-black uppercase tracking-widest text-primary">Filtros Ativos</span>
                 </div>
-                <div className="space-y-1">
-                  <label className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant/40 ml-2">Captação</label>
+
+                <div className="flex flex-wrap items-center gap-3">
                   <select 
-                    className="w-full bg-surface-container-low border-none rounded-xl px-4 py-2 text-[10px] font-bold outline-none focus:ring-2 focus:ring-primary/20 appearance-none"
+                    className="bg-surface-container-low border-none rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
+                    value={filters.dpp}
+                    onChange={(e) => { setFilters({ ...filters, dpp: e.target.value }); setCurrentPage(1); }}
+                  >
+                    <option value="">DPP (AAAA/MM)</option>
+                    {uniqueDppMonths.map(month => <option key={month} value={month}>{month}</option>)}
+                  </select>
+
+                  <select 
+                    className="bg-surface-container-low border-none rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
                     value={filters.captacao}
                     onChange={(e) => { setFilters({ ...filters, captacao: e.target.value }); setCurrentPage(1); }}
                   >
-                    <option value="">TODAS</option>
+                    <option value="">Captação</option>
                     <option value="PRECOCE">PRECOCE</option>
                     <option value="TARDIA">TARDIA</option>
                   </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant/40 ml-2">Equipe</label>
+
                   <select 
-                    className="w-full bg-surface-container-low border-none rounded-xl px-4 py-2 text-[10px] font-bold outline-none focus:ring-2 focus:ring-primary/20 appearance-none"
+                    className="bg-surface-container-low border-none rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
                     value={filters.equipe}
                     onChange={(e) => { setFilters({ ...filters, equipe: e.target.value }); setCurrentPage(1); }}
                   >
-                    <option value="">TODAS</option>
+                    <option value="">Equipe</option>
                     {uniqueEquipes.map(eq => <option key={eq} value={eq}>{eq}</option>)}
                   </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant/40 ml-2">Ref. Técnica</label>
+
                   <select 
-                    className="w-full bg-surface-container-low border-none rounded-xl px-4 py-2 text-[10px] font-bold outline-none focus:ring-2 focus:ring-primary/20 appearance-none"
+                    className="bg-surface-container-low border-none rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
                     value={filters.referencia}
                     onChange={(e) => { setFilters({ ...filters, referencia: e.target.value }); setCurrentPage(1); }}
                   >
-                    <option value="">TODAS</option>
+                    <option value="">Ref. Técnica</option>
                     {uniqueReferencias.map(ref => <option key={ref} value={ref}>{ref}</option>)}
                   </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant/40 ml-2">ACS</label>
+
                   <select 
-                    className="w-full bg-surface-container-low border-none rounded-xl px-4 py-2 text-[10px] font-bold outline-none focus:ring-2 focus:ring-primary/20 appearance-none"
+                    className="bg-surface-container-low border-none rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
                     value={filters.acs}
                     onChange={(e) => { setFilters({ ...filters, acs: e.target.value }); setCurrentPage(1); }}
                   >
-                    <option value="">TODOS</option>
+                    <option value="">ACS</option>
                     {uniqueACS.map(acs => <option key={acs} value={acs}>{acs}</option>)}
                   </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant/40 ml-2">Status</label>
+
                   <select 
-                    className="w-full bg-surface-container-low border-none rounded-xl px-4 py-2 text-[10px] font-bold outline-none focus:ring-2 focus:ring-primary/20 appearance-none"
+                    className="bg-surface-container-low border-none rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
                     value={filters.status}
                     onChange={(e) => { setFilters({ ...filters, status: e.target.value }); setCurrentPage(1); }}
                   >
-                    <option value="">TODOS</option>
+                    <option value="">Status</option>
                     <option value="ATIVA">ATIVA</option>
                     <option value="VENCIDA">VENCIDA</option>
                   </select>
+
+                  {(filters.dpp || filters.captacao || filters.equipe || filters.referencia || filters.acs || filters.status) && (
+                    <button 
+                      onClick={() => setFilters({ dpp: '', captacao: '', equipe: '', referencia: '', acs: '', status: '' })}
+                      className="text-[9px] font-black uppercase tracking-widest text-error hover:underline shrink-0"
+                    >
+                      Limpar
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -1173,7 +1302,7 @@ export default function GestacoesPage() {
                 ) : filteredGestacoes.length === 0 ? (
                   <div className="p-24 text-center space-y-6">
                     <div className="w-20 h-20 bg-surface-container-low rounded-[2rem] flex items-center justify-center mx-auto">
-                      <Search className="text-on-surface-variant/20 w-10 h-10" />
+                      <span className="material-symbols-outlined text-on-surface-variant/20 text-5xl">search</span>
                     </div>
                     <p className="text-sm font-body text-on-surface-variant/40">Nenhuma gestação encontrada.</p>
                   </div>
@@ -1210,11 +1339,11 @@ export default function GestacoesPage() {
                                 <td className="px-4 py-4">
                                   <div className="flex flex-col gap-1">
                                     <div className="flex items-center gap-2">
-                                      <Calendar className="w-3 h-3 text-primary/40" />
+                                      <span className="material-symbols-outlined text-primary/40 text-[14px]">calendar_today</span>
                                       <span className="text-[10px] font-bold text-on-surface">DUM: {new Date(g.dum).toLocaleDateString('pt-BR')}</span>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                      <Clock className="w-3 h-3 text-secondary/40" />
+                                      <span className="material-symbols-outlined text-secondary/40 text-[14px]">event_repeat</span>
                                       <span className="text-[10px] font-bold text-secondary">DPP: {new Date(g.dpp).toLocaleDateString('pt-BR')}</span>
                                     </div>
                                   </div>
@@ -1242,11 +1371,11 @@ export default function GestacoesPage() {
                                 <td className="px-6 py-4 sticky right-0 bg-surface-container-lowest group-hover:bg-surface-container-low transition-colors z-30 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">
                                   <div className="flex items-center justify-center gap-2">
                                     <button onClick={() => handleEdit(g)} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary/5 text-primary hover:bg-primary hover:text-white transition-all shadow-sm group/btn">
-                                      <Edit2 className="w-3.5 h-3.5" />
+                                      <span className="material-symbols-outlined text-[14px]">edit</span>
                                       <span className="text-[9px] font-black uppercase tracking-widest hidden group-hover/btn:inline">Editar</span>
                                     </button>
                                     <button onClick={() => setDeleteConfirmId(g.sispn)} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all shadow-sm group/btn">
-                                      <Trash2 className="w-3.5 h-3.5" />
+                                      <span className="material-symbols-outlined text-[14px]">delete</span>
                                       <span className="text-[9px] font-black uppercase tracking-widest hidden group-hover/btn:inline">Excluir</span>
                                     </button>
                                   </div>
@@ -1277,7 +1406,7 @@ export default function GestacoesPage() {
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
             <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="bg-white rounded-[2.5rem] p-10 max-w-md w-full shadow-2xl border border-outline-variant/10 space-y-8">
               <div className="w-20 h-20 bg-red-50 rounded-[2rem] flex items-center justify-center mx-auto">
-                <Trash2 className="text-red-600 w-10 h-10" />
+                <span className="material-symbols-outlined text-red-600 text-5xl">delete_forever</span>
               </div>
               <div className="text-center space-y-2">
                 <h3 className="text-2xl font-black font-headline text-on-surface">Confirmar Exclusão</h3>

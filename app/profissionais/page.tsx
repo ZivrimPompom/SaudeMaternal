@@ -5,7 +5,6 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { useSearch } from '@/context/SearchContext';
 import { useAuth } from '@/context/AuthContext';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
-import { UserCheck, Plus, Edit2, Trash2, Search, AlertCircle, CheckCircle2, X, IdCard, FileUp, Building2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import CSVImporter from '@/components/CSVImporter';
 import Pagination from '@/components/Pagination';
@@ -300,8 +299,8 @@ export default function ProfissionaisPage() {
               <span className="w-12 h-1.5 bg-primary rounded-full"></span>
               <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Gestão de Pessoas</span>
             </div>
-            <h2 className="text-5xl font-black tracking-tight font-headline text-on-surface uppercase text-primary">Profissionais</h2>
-            <p className="text-lg text-on-surface-variant/60 font-body max-w-2xl">Administração completa do corpo clínico e técnico da unidade.</p>
+            <h2 className="text-5xl md:text-6xl font-black tracking-tighter font-headline text-primary uppercase leading-none">Profissionais</h2>
+            <p className="text-lg text-on-surface-variant/60 font-body max-w-xl leading-relaxed">Administração completa do corpo clínico e técnico da unidade.</p>
           </div>
           <div className="flex items-center gap-3">
             <CSVImporter 
@@ -324,7 +323,7 @@ export default function ProfissionaisPage() {
               }))}
             />
             <div className="flex items-center gap-3 bg-surface-container-high px-4 py-2 rounded-full border border-outline-variant/20 shadow-sm">
-              <UserCheck className="text-primary w-5 h-5" />
+              <span className="material-symbols-outlined text-primary text-[20px]">person_check</span>
               <span className="text-sm font-bold font-label uppercase tracking-widest text-on-surface-variant">{filteredProfessionals.length} Profissionais</span>
             </div>
           </div>
@@ -345,7 +344,7 @@ export default function ProfissionaisPage() {
                   
                   <h3 className="text-2xl font-black font-headline mb-8 flex items-center gap-3 relative z-10">
                     <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
-                      <Plus className="text-primary w-5 h-5" />
+                      <span className="material-symbols-outlined text-primary text-xl">{editingCpf ? 'edit' : 'person_add'}</span>
                     </div>
                     {editingCpf ? 'Editar Cadastro' : 'Novo Profissional'}
                   </h3>
@@ -359,7 +358,7 @@ export default function ProfissionaisPage() {
                           exit={{ opacity: 0, height: 0 }}
                           className="p-4 rounded-2xl bg-red-50 border border-red-100 text-red-600 text-xs font-bold flex items-center gap-3"
                         >
-                          <AlertCircle className="w-4 h-4 shrink-0" />
+                          <span className="material-symbols-outlined text-lg shrink-0">error</span>
                           {error}
                         </motion.div>
                       )}
@@ -370,7 +369,7 @@ export default function ProfissionaisPage() {
                           exit={{ opacity: 0, height: 0 }}
                           className="p-4 rounded-2xl bg-green-50 border border-green-100 text-green-600 text-xs font-bold flex items-center gap-3"
                         >
-                          <CheckCircle2 className="w-4 h-4 shrink-0" />
+                          <span className="material-symbols-outlined text-lg shrink-0">check_circle</span>
                           {success}
                         </motion.div>
                       )}
@@ -513,7 +512,7 @@ export default function ProfissionaisPage() {
                         type="submit"
                         className="w-full bg-primary text-white font-black py-5 rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 font-headline uppercase tracking-widest text-[10px]"
                       >
-                        {editingCpf ? <Edit2 className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                        <span className="material-symbols-outlined text-lg">{editingCpf ? 'save' : 'person_add'}</span>
                         {editingCpf ? 'Atualizar Profissional' : 'Cadastrar Profissional'}
                       </button>
                       {editingCpf && (
@@ -523,7 +522,7 @@ export default function ProfissionaisPage() {
                             onClick={() => setDeleteConfirmCpf(editingCpf)}
                             className="bg-red-50 text-red-600 font-black py-4 rounded-2xl hover:bg-red-100 transition-all flex items-center justify-center gap-2 font-headline uppercase tracking-widest text-[8px]"
                           >
-                            <Trash2 className="w-3 h-3" />
+                            <span className="material-symbols-outlined text-[14px]">delete</span>
                             Excluir
                           </button>
                           <button 
@@ -538,7 +537,7 @@ export default function ProfissionaisPage() {
                             }}
                             className="bg-surface-container-high text-on-surface-variant font-black py-4 rounded-2xl hover:bg-surface-container-highest transition-all flex items-center justify-center gap-2 font-headline uppercase tracking-widest text-[8px]"
                           >
-                            <X className="w-3 h-3" />
+                            <span className="material-symbols-outlined text-[14px]">close</span>
                             Cancelar
                           </button>
                         </div>
@@ -556,10 +555,10 @@ export default function ProfissionaisPage() {
               <div className="p-6 md:p-10 border-b border-outline-variant/5 flex justify-between items-center bg-surface-container-lowest/50 backdrop-blur-sm sticky top-0 z-20">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
-                    <UserCheck className="text-primary w-6 h-6" />
+                    <span className="material-symbols-outlined text-primary text-2xl">person_check</span>
                   </div>
                   <div>
-                    <h3 className="text-2xl font-black font-headline text-on-surface">Profissionais</h3>
+                    <h3 className="text-2xl font-black font-headline text-on-surface uppercase tracking-tight">Profissionais</h3>
                     <p className="text-xs text-on-surface-variant/40 font-body uppercase tracking-widest font-bold">Listagem Geral</p>
                   </div>
                 </div>
@@ -577,7 +576,7 @@ export default function ProfissionaisPage() {
                 ) : filteredProfessionals.length === 0 ? (
                   <div className="p-24 text-center space-y-6">
                     <div className="w-20 h-20 bg-surface-container-low rounded-[2rem] flex items-center justify-center mx-auto">
-                      <Search className="text-on-surface-variant/20 w-10 h-10" />
+                      <span className="material-symbols-outlined text-on-surface-variant/20 text-5xl">search</span>
                     </div>
                     <p className="text-sm font-body text-on-surface-variant/40">Nenhum profissional encontrado.</p>
                   </div>
@@ -615,7 +614,7 @@ export default function ProfissionaisPage() {
                               <td className="px-4 py-4">
                                 <div className="flex flex-col gap-0.5">
                                   <div className="flex items-center gap-1.5">
-                                    <IdCard className="w-3 h-3 text-on-surface-variant/30" />
+                                    <span className="material-symbols-outlined text-on-surface-variant/30 text-[14px]">badge</span>
                                     <span className="text-[10px] font-bold text-on-surface-variant/60 whitespace-nowrap">{formatCns(pro.cns) || '---'}</span>
                                   </div>
                                   <span className="text-[10px] font-black text-secondary uppercase tracking-tighter line-clamp-1">
@@ -660,7 +659,7 @@ export default function ProfissionaisPage() {
                                     className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary/5 text-primary hover:bg-primary hover:text-white transition-all shadow-sm group/btn"
                                     title="Editar Profissional"
                                   >
-                                    <Edit2 className="w-3.5 h-3.5" />
+                                    <span className="material-symbols-outlined text-[14px]">edit</span>
                                     <span className="text-[9px] font-black uppercase tracking-widest hidden group-hover/btn:inline">Editar</span>
                                   </button>
                                   <button 
@@ -668,7 +667,7 @@ export default function ProfissionaisPage() {
                                     className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all shadow-sm group/btn"
                                     title="Excluir Profissional"
                                   >
-                                    <Trash2 className="w-3.5 h-3.5" />
+                                    <span className="material-symbols-outlined text-[14px]">delete</span>
                                     <span className="text-[9px] font-black uppercase tracking-widest hidden group-hover/btn:inline">Excluir</span>
                                   </button>
                                 </div>
@@ -706,7 +705,7 @@ export default function ProfissionaisPage() {
               className="bg-white rounded-[2.5rem] p-10 max-w-md w-full shadow-2xl border border-outline-variant/10 space-y-8"
             >
               <div className="w-20 h-20 bg-red-50 rounded-[2rem] flex items-center justify-center mx-auto">
-                <Trash2 className="text-red-600 w-10 h-10" />
+                <span className="material-symbols-outlined text-red-600 text-5xl">delete_forever</span>
               </div>
               <div className="text-center space-y-2">
                 <h3 className="text-2xl font-black font-headline text-on-surface">Confirmar Exclusão</h3>

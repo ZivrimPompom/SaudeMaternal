@@ -5,7 +5,6 @@ import Sidebar from '@/components/Sidebar';
 import TopBar from '@/components/TopBar';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { LucideLoader2 } from 'lucide-react';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -33,7 +32,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (!mounted || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-surface">
-        <LucideLoader2 className="w-8 h-8 animate-spin text-primary" />
+        <span className="material-symbols-outlined w-8 h-8 animate-spin text-primary text-3xl">progress_activity</span>
       </div>
     );
   }
