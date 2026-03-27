@@ -59,6 +59,7 @@ interface ExamResult {
   rotinas?: {
     descricao: string;
     tipo: string;
+    trimestre: string;
   };
 }
 
@@ -110,6 +111,7 @@ export default function ExamesPage() {
     {
       id: Math.random().toString(36).substr(2, 9),
       id_rotina: '',
+      tipo_temp: 'EXAME',
       data_realizacao: new Date().toISOString().split('T')[0],
       resultado: 'NEGATIVO / NÃO REAGENTE',
       trimestre_realizacao: '1º TRIMESTRE'
@@ -119,6 +121,7 @@ export default function ExamesPage() {
   // Filters
   const [filters, setFilters] = useState({
     dpp: '',
+    tipo: '',
     trimestre: '',
     rotina: '',
     equipe: ''
@@ -139,11 +142,13 @@ export default function ExamesPage() {
       setFormData({
         sispn: '',
       });
+      const today = new Date().toISOString().split('T')[0];
       setFormEntries([
         {
           id: Math.random().toString(36).substr(2, 9),
           id_rotina: '',
-          data_realizacao: new Date().toISOString().split('T')[0],
+          tipo_temp: 'EXAME',
+          data_realizacao: today,
           resultado: 'NEGATIVO / NÃO REAGENTE',
           trimestre_realizacao: '1º TRIMESTRE'
         }
@@ -185,8 +190,8 @@ export default function ExamesPage() {
         `),
         supabase.from('registro_rotinas').select(`
           *,
-          rotinas (descricao, tipo)
-        `).order('data_realizacao', { ascending: false }),
+          rotinas (descricao, tipo, trimestre)
+        `).order('data_realizacao', { ascending: true }).order('id_registro', { ascending: true }),
         supabase.from('categorias_profissionais').select('*').order('categoria'),
         supabase.from('profissionais').select('cpf, nome, cbo').eq('situacao', 'ATIVO').order('nome')
       ]);
@@ -413,8 +418,9 @@ export default function ExamesPage() {
       );
 
       if (!matchesSearch) return false;
+      if (filters.tipo && r.rotinas?.tipo !== filters.tipo) return false;
       if (filters.trimestre && r.trimestre_realizacao !== filters.trimestre) return false;
-      if (filters.rotina && r.id_rotina !== filters.rotina) return false;
+      if (filters.rotina && r.rotinas?.descricao !== filters.rotina) return false;
       if (filters.equipe && (gest as any)?.equipe !== filters.equipe) return false;
 
       return true;
@@ -486,26 +492,43 @@ export default function ExamesPage() {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-8">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                     {/* Patient Selection */}
                     <div className="space-y-2 relative" ref={patientDropdownRef}>
-                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">SISPN / Gestante <span className="text-error">*</span></label>
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Busca por SISPN ou Nome <span className="text-error">*</span></label>
                       <div className="relative">
                         <input 
                           type="text"
                           className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none shadow-inner"
-                          placeholder="Busque a gestante..."
+                          placeholder="Busca por SISPN ou Nome"
                           value={patientSearch}
                           onChange={(e) => { setPatientSearch(e.target.value); setIsPatientDropdownOpen(true); }}
                           onFocus={() => setIsPatientDropdownOpen(true)}
                         />
                         <AnimatePresence>
                           {isPatientDropdownOpen && patientSearchResults.length > 0 && (
-                            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border-4 border-primary z-50 overflow-hidden">
+                            <motion.div 
+                              initial={{ opacity: 0, y: 10 }} 
+                              animate={{ opacity: 1, y: 0 }} 
+                              exit={{ opacity: 0, y: 10 }} 
+                              className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border-4 border-primary z-50 overflow-hidden"
+                            >
+                              <div className="bg-primary px-6 py-3">
+                                <p className="text-white font-black text-[10px] uppercase tracking-widest">Selecione a gestante...</p>
+                              </div>
                               <div className="max-h-60 overflow-y-auto">
-                                {patientSearchResults.map(g => (
-                                  <button key={g.sispn} type="button" onClick={() => { setFormData({ ...formData, sispn: g.sispn }); setPatientSearch(g.paciente_nome); setIsPatientDropdownOpen(false); }} className="w-full px-6 py-4 text-left hover:bg-primary/5 border-b border-outline-variant/5 last:border-0">
-                                    <p className="font-bold text-xs text-on-surface uppercase">{g.paciente_nome} ({g.sispn})</p>
+                                {patientSearchResults.map((g, idx) => (
+                                  <button 
+                                    key={`${g.sispn}-${idx}`} 
+                                    type="button" 
+                                    onClick={() => { 
+                                      setFormData({ ...formData, sispn: g.sispn }); 
+                                      setPatientSearch(g.paciente_nome); 
+                                      setIsPatientDropdownOpen(false); 
+                                    }} 
+                                    className="w-full px-6 py-4 text-left hover:bg-primary/5 border-b border-outline-variant/5 last:border-0 group"
+                                  >
+                                    <p className="font-bold text-xs text-on-surface uppercase group-hover:text-primary transition-colors">{g.paciente_nome} ({g.sispn})</p>
                                   </button>
                                 ))}
                               </div>
@@ -514,6 +537,19 @@ export default function ExamesPage() {
                         </AnimatePresence>
                       </div>
                     </div>
+
+                    {/* SISPN */}
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">SISPN</label>
+                      <input 
+                        type="text" 
+                        readOnly 
+                        className="w-full bg-surface-container-low border-2 border-transparent rounded-2xl px-6 py-4 font-body text-sm outline-none text-primary font-bold uppercase" 
+                        value={selectedGestante?.sispn || ''} 
+                        placeholder="-"
+                      />
+                    </div>
+
 
                     {/* Professional Search */}
                     <div className="space-y-2 relative" ref={professionalDropdownRef}>
@@ -529,18 +565,31 @@ export default function ExamesPage() {
                         />
                         <AnimatePresence>
                           {isProfessionalDropdownOpen && professionalSearchResults.length > 0 && (
-                            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border-4 border-primary z-50 overflow-hidden">
+                            <motion.div 
+                              initial={{ opacity: 0, y: 10 }} 
+                              animate={{ opacity: 1, y: 0 }} 
+                              exit={{ opacity: 0, y: 10 }} 
+                              className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border-4 border-primary z-50 overflow-hidden"
+                            >
+                              <div className="bg-primary px-6 py-3">
+                                <p className="text-white font-black text-[10px] uppercase tracking-widest">Selecione o profissional...</p>
+                              </div>
                               <div className="max-h-60 overflow-y-auto">
-                                {professionalSearchResults.map(p => (
-                                  <button key={p.cpf} type="button" onClick={() => { 
-                                    setSelectedProfessionalCpf(p.cpf); 
-                                    setProfessionalSearch(p.nome); 
-                                    setIsProfessionalDropdownOpen(false);
-                                    const cat = categories.find(c => p.cbo.startsWith(c.cbo));
-                                    if (cat) setSelectedCategory(cat.categoria);
-                                  }} className="w-full px-6 py-4 text-left hover:bg-primary/5 border-b border-outline-variant/5 last:border-0">
-                                    <p className="font-bold text-xs text-on-surface uppercase">{p.nome}</p>
-                                    <p className="text-[9px] text-on-surface-variant/60 uppercase">{p.cbo}</p>
+                                {professionalSearchResults.map((p, idx) => (
+                                  <button 
+                                    key={`${p.cpf}-${idx}`} 
+                                    type="button" 
+                                    onClick={() => { 
+                                      setSelectedProfessionalCpf(p.cpf); 
+                                      setProfessionalSearch(p.nome); 
+                                      setIsProfessionalDropdownOpen(false);
+                                      const cat = categories.find(c => p.cbo.startsWith(c.cbo));
+                                      if (cat) setSelectedCategory(cat.categoria);
+                                    }} 
+                                    className="w-full px-6 py-4 text-left hover:bg-primary/5 border-b border-outline-variant/5 last:border-0 group"
+                                  >
+                                    <p className="font-bold text-xs text-on-surface uppercase group-hover:text-primary transition-colors">{p.nome}</p>
+                                    <p className="text-[10px] text-on-surface-variant/60 uppercase">{p.cbo}</p>
                                   </button>
                                 ))}
                               </div>
@@ -552,7 +601,7 @@ export default function ExamesPage() {
 
                     {/* Category (Automatic) */}
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Categoria Profissional (Automático)</label>
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Categoria</label>
                       <input type="text" readOnly className="w-full bg-surface-container-low border-2 border-transparent rounded-2xl px-6 py-4 font-body text-sm outline-none text-primary font-bold uppercase" value={selectedCategory} />
                     </div>
                   </div>
@@ -591,11 +640,11 @@ export default function ExamesPage() {
                         <button 
                           type="button" 
                           onClick={() => {
-                            const lastEntry = formEntries[formEntries.length - 1];
                             setFormEntries([...formEntries, {
                               id: Math.random().toString(36).substr(2, 9),
                               id_rotina: '',
-                              data_realizacao: lastEntry?.data_realizacao || new Date().toISOString().split('T')[0],
+                              tipo_temp: 'EXAME',
+                              data_realizacao: new Date().toISOString().split('T')[0],
                               resultado: 'NEGATIVO / NÃO REAGENTE',
                               trimestre_realizacao: '1º TRIMESTRE'
                             }]);
@@ -613,7 +662,7 @@ export default function ExamesPage() {
                         <thead className="bg-surface-container-high">
                           <tr>
                             <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Data Realização</th>
-                            <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Tipo de Rotina</th>
+                            <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Rotina</th>
                             <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Descrição + Trimestre</th>
                             <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Resultado</th>
                             {!editingId && <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60 text-center">Ações</th>}
@@ -623,64 +672,76 @@ export default function ExamesPage() {
                           {formEntries.map((entry, index) => (
                             <tr key={entry.id} className="hover:bg-white/50 transition-colors">
                               <td className="px-6 py-4">
-                                <input 
-                                  type="date" 
-                                  className="bg-transparent border-none p-0 text-xs font-bold outline-none focus:ring-0 w-full"
-                                  value={entry.data_realizacao}
-                                  onChange={(e) => {
-                                    const newEntries = [...formEntries];
-                                    newEntries[index].data_realizacao = e.target.value;
-                                    setFormEntries(newEntries);
-                                  }}
-                                />
+                                <div className="bg-surface-container-low/50 rounded-xl px-3 py-2">
+                                  <input 
+                                    type="date" 
+                                    className="bg-transparent border-none p-0 text-[11px] font-bold outline-none focus:ring-0 w-full text-on-surface"
+                                    value={entry.data_realizacao}
+                                    onChange={(e) => {
+                                      const newEntries = [...formEntries];
+                                      newEntries[index].data_realizacao = e.target.value;
+                                      setFormEntries(newEntries);
+                                    }}
+                                  />
+                                </div>
                               </td>
                               <td className="px-6 py-4">
-                                <select 
-                                  className="bg-transparent border-none p-0 text-xs font-bold outline-none focus:ring-0 w-full uppercase"
-                                  value={entry.tipo_temp || routines.find(r => r.id === entry.id_rotina)?.tipo || ''}
-                                  onChange={(e) => {
-                                    const newEntries = [...formEntries];
-                                    newEntries[index].tipo_temp = e.target.value;
-                                    newEntries[index].id_rotina = ''; // Reset when type changes
-                                    setFormEntries(newEntries);
-                                  }}
-                                >
-                                  <option value="">Tipo</option>
-                                  <option value="EXAME">EXAME</option>
-                                  <option value="VACINA">VACINA</option>
-                                </select>
+                                <div className="bg-surface-container-low/50 rounded-xl px-3 py-2">
+                                  <select 
+                                    className="bg-transparent border-none p-0 text-[11px] font-bold outline-none focus:ring-0 w-full uppercase text-on-surface cursor-pointer appearance-none"
+                                    value={entry.tipo_temp || routines.find(r => r.id === entry.id_rotina)?.tipo || ''}
+                                    onChange={(e) => {
+                                      const newEntries = [...formEntries];
+                                      newEntries[index].tipo_temp = e.target.value;
+                                      newEntries[index].id_rotina = ''; // Reset when type changes
+                                      setFormEntries(newEntries);
+                                    }}
+                                  >
+                                    <option value="">Tipo</option>
+                                    <option value="EXAME">EXAME</option>
+                                    <option value="VACINA">VACINA</option>
+                                  </select>
+                                </div>
                               </td>
                               <td className="px-6 py-4">
-                                <select 
-                                  className="bg-transparent border-none p-0 text-xs font-bold outline-none focus:ring-0 w-full uppercase"
-                                  value={entry.id_rotina}
-                                  onChange={(e) => {
-                                    const newEntries = [...formEntries];
-                                    newEntries[index].id_rotina = e.target.value;
-                                    setFormEntries(newEntries);
-                                  }}
-                                >
-                                  <option value="">Selecione a Rotina</option>
-                                  {routines
-                                    .filter(r => !entry.tipo_temp || r.tipo === entry.tipo_temp)
-                                    .map(r => (
-                                      <option key={r.id} value={r.id}>{r.descricao} ({r.trimestre})</option>
-                                    ))}
-                                </select>
+                                <div className="bg-surface-container-low/50 rounded-xl px-3 py-2">
+                                  <select 
+                                    className="bg-transparent border-none p-0 text-[11px] font-bold outline-none focus:ring-0 w-full uppercase text-on-surface cursor-pointer appearance-none"
+                                    value={entry.id_rotina}
+                                    onChange={(e) => {
+                                      const newEntries = [...formEntries];
+                                      newEntries[index].id_rotina = e.target.value;
+                                      setFormEntries(newEntries);
+                                    }}
+                                  >
+                                    <option value="">Selecione a Rotina</option>
+                                    {routines
+                                      .filter(r => !entry.tipo_temp || r.tipo === entry.tipo_temp)
+                                      .sort((a, b) => {
+                                        if (a.descricao !== b.descricao) return a.descricao.localeCompare(b.descricao);
+                                        return a.trimestre.localeCompare(b.trimestre);
+                                      })
+                                      .map(r => (
+                                        <option key={r.id} value={r.id}>{r.descricao} ({r.trimestre})</option>
+                                      ))}
+                                  </select>
+                                </div>
                               </td>
                               <td className="px-6 py-4">
-                                <select 
-                                  className="bg-transparent border-none p-0 text-xs font-bold outline-none focus:ring-0 w-full uppercase"
-                                  value={entry.resultado}
-                                  onChange={(e) => {
-                                    const newEntries = [...formEntries];
-                                    newEntries[index].resultado = e.target.value;
-                                    setFormEntries(newEntries);
-                                  }}
-                                >
-                                  <option value="POSITIVO / REAGENTE">POSITIVO / REAGENTE</option>
-                                  <option value="NEGATIVO / NÃO REAGENTE">NEGATIVO / NÃO REAGENTE</option>
-                                </select>
+                                <div className="bg-surface-container-low/50 rounded-xl px-3 py-2">
+                                  <select 
+                                    className="bg-transparent border-none p-0 text-[11px] font-bold outline-none focus:ring-0 w-full uppercase text-on-surface cursor-pointer appearance-none"
+                                    value={entry.resultado}
+                                    onChange={(e) => {
+                                      const newEntries = [...formEntries];
+                                      newEntries[index].resultado = e.target.value;
+                                      setFormEntries(newEntries);
+                                    }}
+                                  >
+                                    <option value="POSITIVO / REAGENTE">POSITIVO / REAGENTE</option>
+                                    <option value="NEGATIVO / NÃO REAGENTE">NEGATIVO / NÃO REAGENTE</option>
+                                  </select>
+                                </div>
                               </td>
                               {!editingId && (
                                 <td className="px-6 py-4 text-center">
@@ -758,16 +819,23 @@ export default function ExamesPage() {
 
         <section className="space-y-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="flex items-center gap-4 overflow-x-auto pb-2 no-scrollbar">
+            <div className="flex flex-wrap items-center gap-4">
               <select className="bg-surface-container-low border-none rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none" value={filters.trimestre} onChange={(e) => setFilters({ ...filters, trimestre: e.target.value })}>
                 <option value="">Trimestre</option>
                 <option value="1º TRIMESTRE">1º TRIMESTRE</option>
                 <option value="2º TRIMESTRE">2º TRIMESTRE</option>
                 <option value="3º TRIMESTRE">3º TRIMESTRE</option>
               </select>
+              <select className="bg-surface-container-low border-none rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none" value={filters.tipo} onChange={(e) => setFilters({ ...filters, tipo: e.target.value })}>
+                <option value="">Tipo</option>
+                <option value="EXAME">EXAME</option>
+                <option value="VACINA">VACINA</option>
+              </select>
               <select className="bg-surface-container-low border-none rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none" value={filters.rotina} onChange={(e) => setFilters({ ...filters, rotina: e.target.value })}>
-                <option value="">Tipo de Rotina</option>
-                {routines.map(r => <option key={r.id} value={r.id}>{r.descricao}</option>)}
+                <option value="">Rotina</option>
+                {Array.from(new Set(routines.map(r => r.descricao))).sort().map(desc => (
+                  <option key={desc} value={desc}>{desc}</option>
+                ))}
               </select>
               <select className="bg-surface-container-low border-none rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none" value={filters.equipe} onChange={(e) => setFilters({ ...filters, equipe: e.target.value })}>
                 <option value="">Equipe</option>

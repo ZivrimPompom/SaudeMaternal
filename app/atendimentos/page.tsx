@@ -679,7 +679,7 @@ export default function AtendimentosPage() {
                   </div>
                   <div>
                     <h3 className="text-2xl font-black text-primary uppercase tracking-tight">
-                      {editingId ? 'Editar Atendimento' : 'Novo Lançamento Individual'}
+                      {editingId ? 'Editar Atendimento' : 'NOVO ATENDIMENTO'}
                     </h3>
                     <p className="text-sm text-on-surface-variant/60 font-body">Preencha os dados clínicos com atenção para análise futura.</p>
                   </div>
@@ -690,12 +690,12 @@ export default function AtendimentosPage() {
                     {/* Column 1 */}
                     <div className="space-y-6">
                       <div className="space-y-2 relative" ref={patientDropdownRef}>
-                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">SISPN <span className="text-error">*</span></label>
+                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Busca por SISPN ou Nome <span className="text-error">*</span></label>
                         <div className="relative">
                           <input 
                             type="text"
                             className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none shadow-inner pr-12"
-                            placeholder="Buscar por Nome ou SISPN..."
+                            placeholder="Busca por SISPN ou Nome"
                             value={patientSearch}
                             onChange={(e) => {
                               const val = e.target.value;
@@ -723,13 +723,13 @@ export default function AtendimentosPage() {
                                   <p className="text-white font-black text-[10px] uppercase tracking-widest">Selecione a gestante...</p>
                                 </div>
                                 <div className="max-h-80 overflow-y-auto">
-                                  {patientSearchResults.map(g => (
+                                  {patientSearchResults.map((g, idx) => (
                                     <button
-                                      key={g.sispn}
+                                      key={`${g.sispn}-${idx}`}
                                       type="button"
                                       onClick={() => {
                                         setFormData({ ...formData, sispn: g.sispn });
-                                        setPatientSearch(formatSispn(g.sispn));
+                                        setPatientSearch(g.paciente_nome);
                                         setIsPatientDropdownOpen(false);
                                       }}
                                       className="w-full px-6 py-4 text-left hover:bg-primary/5 transition-colors border-b border-outline-variant/5 last:border-0 group"
@@ -746,15 +746,17 @@ export default function AtendimentosPage() {
                         </div>
                       </div>
 
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Nome da Gestante</label>
-                        <input 
-                          type="text"
-                          readOnly
-                          className="w-full bg-surface-container-low border-2 border-transparent rounded-2xl px-6 py-6 font-headline text-lg font-black outline-none text-primary uppercase shadow-sm"
-                          value={selectedGestante?.paciente_nome || ''}
-                          placeholder="SELECIONE UMA GESTANTE ACIMA"
-                        />
+                      <div className="grid grid-cols-1 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">SISPN</label>
+                          <input 
+                            type="text"
+                            readOnly
+                            className="w-full bg-surface-container-low border-2 border-transparent rounded-2xl px-6 py-4 font-headline text-lg font-black outline-none text-primary uppercase shadow-sm"
+                            value={selectedGestante?.sispn || ''}
+                            placeholder="-"
+                          />
+                        </div>
                       </div>
 
                       <div className="grid grid-cols-2 gap-4">
@@ -877,30 +879,35 @@ export default function AtendimentosPage() {
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: 10 }}
-                                className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-outline-variant/10 z-50 overflow-hidden"
+                                className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border-4 border-primary z-50 overflow-hidden"
                               >
-                                {professionalSearchResults.map(p => (
-                                  <button
-                                    key={p.cpf}
-                                    type="button"
-                                    onClick={() => {
-                                      setSelectedProfessionalCpf(p.cpf);
-                                      setProfessionalSearch(p.nome);
-                                      setIsProfessionalDropdownOpen(false);
-                                      
-                                      // Auto-populate category
-                                      const categoryName = getCboCategory(p.cbo);
-                                      setSelectedCategory(categoryName);
-                                    }}
-                                    className="w-full px-6 py-4 text-left hover:bg-primary/5 transition-colors flex items-center gap-3 group"
-                                  >
-                                    <span className="material-symbols-outlined text-primary text-lg">medical_services</span>
-                                    <div>
-                                      <p className="font-black text-xs text-primary uppercase">{p.nome}</p>
-                                      <p className="text-[10px] font-bold text-on-surface-variant/40 font-mono">{getCboCategory(p.cbo)} • {p.cpf}</p>
-                                    </div>
-                                  </button>
-                                ))}
+                                <div className="bg-primary px-6 py-3">
+                                  <p className="text-white font-black text-[10px] uppercase tracking-widest">Selecione o profissional...</p>
+                                </div>
+                                <div className="max-h-80 overflow-y-auto">
+                                  {professionalSearchResults.map((p, idx) => (
+                                    <button
+                                      key={`${p.cpf}-${idx}`}
+                                      type="button"
+                                      onClick={() => {
+                                        setSelectedProfessionalCpf(p.cpf);
+                                        setProfessionalSearch(p.nome);
+                                        setIsProfessionalDropdownOpen(false);
+                                        
+                                        // Auto-populate category
+                                        const categoryName = getCboCategory(p.cbo);
+                                        setSelectedCategory(categoryName);
+                                      }}
+                                      className="w-full px-6 py-4 text-left hover:bg-primary/5 transition-colors flex items-center gap-3 group"
+                                    >
+                                      <span className="material-symbols-outlined text-primary text-lg">medical_services</span>
+                                      <div>
+                                        <p className="font-black text-xs text-primary uppercase">{p.nome}</p>
+                                        <p className="text-[10px] font-bold text-on-surface-variant/40 font-mono">{getCboCategory(p.cbo)} • {p.cpf}</p>
+                                      </div>
+                                    </button>
+                                  ))}
+                                </div>
                               </motion.div>
                             )}
                           </AnimatePresence>
@@ -980,7 +987,7 @@ export default function AtendimentosPage() {
         {/* Filters and Table Section */}
         <section className="space-y-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="flex items-center gap-4 overflow-x-auto pb-2 no-scrollbar">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="flex items-center gap-2 bg-primary/5 px-5 py-2.5 rounded-full border border-primary/10 shrink-0">
                 <span className="material-symbols-outlined text-primary text-sm">filter_list</span>
                 <span className="text-[9px] font-black uppercase tracking-widest text-primary">Filtros Ativos</span>
@@ -1072,8 +1079,8 @@ export default function AtendimentosPage() {
                   ) : (
                     filteredAtendimentos
                       .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-                      .map((con) => (
-                        <tr key={con.id_atendimento} className="hover:bg-primary/[0.02] transition-colors group">
+                      .map((con, idx) => (
+                        <tr key={con.id_atendimento || `atendimento-${idx}`} className="hover:bg-primary/[0.02] transition-colors group">
                           <td className="px-8 py-6">
                             <div className="flex items-center gap-4">
                               <div className="w-12 h-12 rounded-2xl bg-primary/5 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">

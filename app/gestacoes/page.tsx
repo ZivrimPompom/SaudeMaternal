@@ -681,18 +681,6 @@ export default function GestacoesPage() {
             <p className="text-lg text-on-surface-variant/60 font-body max-w-2xl">Controle e monitoramento de ciclos gestacionais.</p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <button
-              onClick={() => setIsFormOpen(!isFormOpen)}
-              className={`flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-black transition-all duration-300 shadow-lg uppercase tracking-widest font-headline w-full sm:w-auto justify-center ${
-                isFormOpen 
-                  ? 'bg-red-50 text-red-600 hover:bg-red-600 hover:text-white shadow-red-200' 
-                  : 'bg-primary text-white hover:bg-primary/90 shadow-primary/20'
-              }`}
-            >
-              <span className="material-symbols-outlined text-lg">{isFormOpen ? 'close' : 'add'}</span>
-              <span>{isFormOpen ? 'Fechar' : 'Nova Gestação'}</span>
-            </button>
-
             <CSVImporter 
               tableName="gestacoes"
               title="Importar Gestações"
@@ -861,23 +849,21 @@ export default function GestacoesPage() {
                       <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/40 border-b border-primary/10 pb-2">Identificação da Gestante</h4>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="space-y-2 relative">
-                          <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">CPF da Paciente</label>
+                          <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Busca por CPF ou Nome <span className="text-error">*</span></label>
                           <div className="relative">
                             <input 
                               type="text"
                               className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none shadow-inner pr-12"
-                              placeholder="000.000.000-00"
-                              value={formData.cpf_paciente || ''}
+                              placeholder="Busca por CPF ou Nome"
+                              value={pacienteSearchQuery}
                               onChange={(e) => {
-                                const val = formatCpf(e.target.value);
-                                setFormData({ ...formData, cpf_paciente: val });
-                                setPacienteSearchQuery(val);
+                                setPacienteSearchQuery(e.target.value);
                                 setIsPacienteSearchOpen(true);
                               }}
                               onFocus={() => setIsPacienteSearchOpen(true)}
                               required
                             />
-                            <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant/30">arrow_drop_down</span>
+                            <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant/30">person_search</span>
                             
                             <AnimatePresence>
                               {isPacienteSearchOpen && (
@@ -885,7 +871,7 @@ export default function GestacoesPage() {
                                   initial={{ opacity: 0, y: 10 }}
                                   animate={{ opacity: 1, y: 0 }}
                                   exit={{ opacity: 0, y: 10 }}
-                                  className="absolute top-full left-0 right-0 z-50 mt-2 bg-white rounded-2xl shadow-2xl border-4 border-primary z-50 overflow-hidden"
+                                  className="absolute top-full left-0 right-0 z-50 mt-2 bg-white rounded-2xl shadow-2xl border-4 border-primary overflow-hidden"
                                 >
                                   <div className="bg-primary px-6 py-3">
                                     <p className="text-white font-black text-[10px] uppercase tracking-widest">Selecione a gestante...</p>
@@ -898,6 +884,7 @@ export default function GestacoesPage() {
                                           type="button"
                                           onClick={() => {
                                             setFormData({ ...formData, cpf_paciente: formatCpf(p.cpf) });
+                                            setPacienteSearchQuery(p.gestante);
                                             setIsPacienteSearchOpen(false);
                                           }}
                                           className="w-full px-6 py-4 text-left hover:bg-primary/5 transition-colors border-b border-outline-variant/5 last:border-0 group"
@@ -1253,16 +1240,6 @@ export default function GestacoesPage() {
                     <h3 className="text-2xl font-black font-headline text-on-surface uppercase tracking-tight">Ciclos Gestacionais</h3>
                     <p className="text-xs text-on-surface-variant/40 font-body uppercase tracking-widest font-bold">Monitoramento Ativo</p>
                   </div>
-                </div>
-                <div className="relative flex-1 md:w-64">
-                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/30 text-xl">search</span>
-                  <input 
-                    type="text" 
-                    placeholder="Filtrar por nome, CPF ou SISPN..."
-                    className="w-full bg-surface-container-low border-none rounded-full pl-12 pr-4 py-3 text-xs font-body focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                    value={searchQuery}
-                    onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-                  />
                 </div>
               </div>
 
