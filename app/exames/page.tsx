@@ -16,6 +16,23 @@ interface Routine {
   trimestre: string;
 }
 
+const CBO_CATEGORIES: Record<string, string> = {
+  '2235': 'ENFERMEIRO',
+  '2251': 'MEDICO',
+  '2252': 'MEDICO',
+  '2253': 'MEDICO',
+  '2232': 'DENTISTA',
+  '3222': 'TECNICO ENFERMAGEM',
+  '5151': 'ACS',
+};
+
+const getCboCategory = (cbo: any) => {
+  if (!cbo) return 'NÃO INFORMADO';
+  const cboStr = String(cbo);
+  const prefix = cboStr.substring(0, 4);
+  return CBO_CATEGORIES[prefix] || 'OUTROS';
+};
+
 interface ExamResult {
   id_registro: string;
   sispn: string;
@@ -103,7 +120,7 @@ export default function ExamesPage() {
   const [filters, setFilters] = useState({
     dpp: '',
     trimestre: '',
-    exame: '',
+    rotina: '',
     equipe: ''
   });
 
@@ -220,11 +237,11 @@ export default function ExamesPage() {
     }
   };
 
-  const calculateTrimestre = (dum: string, dataExame: string) => {
-    if (!dum || !dataExame) return '1º TRIMESTRE';
+  const calculateTrimestre = (dum: string, dataRotina: string) => {
+    if (!dum || !dataRotina) return '1º TRIMESTRE';
     const start = new Date(dum);
-    const exam = new Date(dataExame);
-    const diffTime = exam.getTime() - start.getTime();
+    const rotinaDate = new Date(dataRotina);
+    const diffTime = rotinaDate.getTime() - start.getTime();
     const diffWeeks = diffTime / (1000 * 60 * 60 * 24 * 7);
 
     if (diffWeeks <= 13) return '1º TRIMESTRE';
@@ -246,7 +263,7 @@ export default function ExamesPage() {
     return `${date.getFullYear()}/${(date.getMonth() + 1).toString().padStart(2, '0')}`;
   };
 
-  const getExameReferencia = (data: string) => {
+  const getRotinaReferencia = (data: string) => {
     if (!data) return '---';
     const date = new Date(data);
     return `${date.getFullYear()}/${(date.getMonth() + 1).toString().padStart(2, '0')}`;
@@ -387,17 +404,17 @@ export default function ExamesPage() {
       const pac = gest?.pacientes;
       const pacObj = Array.isArray(pac) ? pac[0] : pac;
       const pacienteNome = (pacObj as any)?.gestante || '';
-      const exameNome = r.rotinas?.descricao || '';
+      const rotinaNome = r.rotinas?.descricao || '';
       
       const matchesSearch = !query || (
         normalize(pacienteNome).includes(queryNormalizada) ||
         normalize(r.sispn).includes(queryNormalizada) ||
-        normalize(exameNome).includes(queryNormalizada)
+        normalize(rotinaNome).includes(queryNormalizada)
       );
 
       if (!matchesSearch) return false;
       if (filters.trimestre && r.trimestre_realizacao !== filters.trimestre) return false;
-      if (filters.exame && r.id_rotina !== filters.exame) return false;
+      if (filters.rotina && r.id_rotina !== filters.rotina) return false;
       if (filters.equipe && (gest as any)?.equipe !== filters.equipe) return false;
 
       return true;
@@ -463,7 +480,7 @@ export default function ExamesPage() {
                     <span className="material-symbols-outlined text-2xl">edit_note</span>
                   </div>
                   <div>
-                    <h3 className="text-2xl font-black text-primary uppercase tracking-tight">Novos Dados do Exame</h3>
+                    <h3 className="text-2xl font-black text-primary uppercase tracking-tight">Novos Dados da Rotina</h3>
                     <p className="text-sm text-on-surface-variant/60 font-body">Insira as informações do laudo laboratorial.</p>
                   </div>
                 </div>
@@ -693,13 +710,13 @@ export default function ExamesPage() {
                     <div className="space-y-4 pt-6 border-t border-outline-variant/10">
                       <div className="flex items-center gap-2">
                         <span className="material-symbols-outlined text-primary text-sm">history</span>
-                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Movimento de Exames Realizados</h4>
+                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Movimento de Rotinas Realizadas</h4>
                       </div>
                       <div className="bg-surface-container-low rounded-3xl overflow-hidden border border-outline-variant/5">
                         <table className="w-full text-left text-[10px]">
                           <thead className="bg-surface-container-high">
                             <tr>
-                              <th className="px-4 py-3 font-black uppercase tracking-widest text-on-surface-variant/60">Exame</th>
+                              <th className="px-4 py-3 font-black uppercase tracking-widest text-on-surface-variant/60">Rotina</th>
                               <th className="px-4 py-3 font-black uppercase tracking-widest text-on-surface-variant/60">Data</th>
                               <th className="px-4 py-3 font-black uppercase tracking-widest text-on-surface-variant/60">Resultado</th>
                               <th className="px-4 py-3 font-black uppercase tracking-widest text-on-surface-variant/60">Trimestre</th>
@@ -748,8 +765,8 @@ export default function ExamesPage() {
                 <option value="2º TRIMESTRE">2º TRIMESTRE</option>
                 <option value="3º TRIMESTRE">3º TRIMESTRE</option>
               </select>
-              <select className="bg-surface-container-low border-none rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none" value={filters.exame} onChange={(e) => setFilters({ ...filters, exame: e.target.value })}>
-                <option value="">Tipo de Exame</option>
+              <select className="bg-surface-container-low border-none rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none" value={filters.rotina} onChange={(e) => setFilters({ ...filters, rotina: e.target.value })}>
+                <option value="">Tipo de Rotina</option>
                 {routines.map(r => <option key={r.id} value={r.id}>{r.descricao}</option>)}
               </select>
               <select className="bg-surface-container-low border-none rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none" value={filters.equipe} onChange={(e) => setFilters({ ...filters, equipe: e.target.value })}>
@@ -769,7 +786,7 @@ export default function ExamesPage() {
                   <tr>
                     <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Gestante</th>
                     <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">SISPN</th>
-                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Exame</th>
+                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Rotina</th>
                     <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Data</th>
                     <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Resultado</th>
                     <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Profissional</th>
@@ -791,7 +808,10 @@ export default function ExamesPage() {
                           <span className="text-[10px] font-bold text-primary/40 uppercase tracking-widest">{res.gestacoes?.equipe}</span>
                         </td>
                         <td className="px-8 py-6 text-[10px] font-bold text-on-surface-variant/60 font-mono">{res.sispn}</td>
-                        <td className="px-8 py-6 text-xs font-bold text-on-surface uppercase">{res.rotinas?.descricao}</td>
+                        <td className="px-8 py-6">
+                          <p className="text-xs font-bold text-on-surface uppercase">{res.rotinas?.descricao}</p>
+                          <span className="text-[10px] font-bold text-primary/40 uppercase tracking-widest">{res.rotinas?.trimestre}</span>
+                        </td>
                         <td className="px-8 py-6 text-xs font-bold text-on-surface">{new Date(res.data_realizacao).toLocaleDateString('pt-BR')}</td>
                         <td className="px-8 py-6">
                           <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${res.resultado.includes('POSITIVO') || res.resultado.includes('REAGENTE') ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
@@ -802,7 +822,7 @@ export default function ExamesPage() {
                           <p className="text-xs font-bold text-on-surface uppercase">
                             {allProfessionals.find(p => p.cpf === res.cpf_profissional)?.nome || '---'}
                           </p>
-                          <p className="text-[10px] text-on-surface-variant/40 font-mono">{res.cbo}</p>
+                          <p className="text-[10px] text-on-surface-variant/40 font-mono uppercase tracking-widest font-bold">{getCboCategory(res.cbo)}</p>
                         </td>
                         <td className="px-8 py-6">
                           <div className="flex items-center justify-center gap-3">
