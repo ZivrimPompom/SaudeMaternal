@@ -681,6 +681,18 @@ export default function GestacoesPage() {
             <p className="text-lg text-on-surface-variant/60 font-body max-w-2xl">Controle e monitoramento de ciclos gestacionais.</p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
+            <button
+              onClick={() => setIsFormOpen(!isFormOpen)}
+              className={`flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-black transition-all duration-300 shadow-lg uppercase tracking-widest font-headline w-full sm:w-auto justify-center ${
+                isFormOpen 
+                  ? 'bg-red-50 text-red-600 hover:bg-red-600 hover:text-white shadow-red-200' 
+                  : 'bg-primary text-white hover:bg-primary/90 shadow-primary/20'
+              }`}
+            >
+              <span className="material-symbols-outlined text-lg">{isFormOpen ? 'close' : 'add'}</span>
+              <span>{isFormOpen ? 'Fechar' : 'Nova Gestação'}</span>
+            </button>
+
             <CSVImporter 
               tableName="gestacoes"
               title="Importar Gestações"

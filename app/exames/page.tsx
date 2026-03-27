@@ -17,13 +17,15 @@ interface Routine {
 }
 
 interface ExamResult {
-  id: string;
+  id_registro: string;
   sispn: string;
   id_rotina: string;
   data_realizacao: string;
   resultado: string;
   observacoes?: string;
-  trimestre_realizacao: '1º TRIMESTRE' | '2º TRIMESTRE' | '3º TRIMESTRE';
+  trimestre_realizacao: string;
+  cbo: string;
+  cpf_profissional: string;
   cpf_operador?: string;
   created_at?: string;
   // Joins
@@ -31,6 +33,7 @@ interface ExamResult {
     dum: string;
     dpp: string;
     equipe: string;
+    data_cadastro: string;
     pacientes: {
       gestante: string;
       cpf: string;
@@ -67,14 +70,34 @@ export default function ExamesPage() {
   const [results, setResults] = useState<ExamResult[]>([]);
   const [gestacoes, setGestacoes] = useState<Gestacao[]>([]);
   const [routines, setRoutines] = useState<Routine[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [allProfessionals, setAllProfessionals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState('MEDICO');
+  const [selectedProfessionalCpf, setSelectedProfessionalCpf] = useState('');
   
   // Patient Search in Form
   const [patientSearch, setPatientSearch] = useState('');
   const [isPatientDropdownOpen, setIsPatientDropdownOpen] = useState(false);
   const patientDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Professional Search in Form
+  const [professionalSearch, setProfessionalSearch] = useState('');
+  const [isProfessionalDropdownOpen, setIsProfessionalDropdownOpen] = useState(false);
+  const professionalDropdownRef = useRef<HTMLDivElement>(null);
+
+  // New states for multiple entries
+  const [formEntries, setFormEntries] = useState<any[]>([
+    {
+      id: Math.random().toString(36).substr(2, 9),
+      id_rotina: '',
+      data_realizacao: new Date().toISOString().split('T')[0],
+      resultado: 'NEGATIVO / NÃO REAGENTE',
+      trimestre_realizacao: '1º TRIMESTRE'
+    }
+  ]);
 
   // Filters
   const [filters, setFilters] = useState({
@@ -86,11 +109,6 @@ export default function ExamesPage() {
 
   const [formData, setFormData] = useState<Partial<ExamResult>>({
     sispn: '',
-    id_rotina: '',
-    data_realizacao: new Date().toISOString().split('T')[0],
-    resultado: 'NEGATIVO / NÃO REAGENTE',
-    observacoes: '',
-    trimestre_realizacao: '1º TRIMESTRE'
   });
 
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -103,13 +121,20 @@ export default function ExamesPage() {
       setEditingId(null);
       setFormData({
         sispn: '',
-        id_rotina: '',
-        data_realizacao: new Date().toISOString().split('T')[0],
-        resultado: 'NEGATIVO / NÃO REAGENTE',
-        observacoes: '',
-        trimestre_realizacao: '1º TRIMESTRE'
       });
+      setFormEntries([
+        {
+          id: Math.random().toString(36).substr(2, 9),
+          id_rotina: '',
+          data_realizacao: new Date().toISOString().split('T')[0],
+          resultado: 'NEGATIVO / NÃO REAGENTE',
+          trimestre_realizacao: '1º TRIMESTRE'
+        }
+      ]);
       setPatientSearch('');
+      setProfessionalSearch('');
+      setSelectedProfessionalCpf('');
+      setSelectedCategory('MEDICO');
       setError(null);
       setSuccess(null);
     }
@@ -122,6 +147,9 @@ export default function ExamesPage() {
       if (patientDropdownRef.current && !patientDropdownRef.current.contains(event.target as Node)) {
         setIsPatientDropdownOpen(false);
       }
+      if (professionalDropdownRef.current && !professionalDropdownRef.current.contains(event.target as Node)) {
+        setIsProfessionalDropdownOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -132,16 +160,18 @@ export default function ExamesPage() {
     setLoading(true);
     setError(null);
     try {
-      const [routinesRes, gestRes, resultsRes] = await Promise.all([
-        supabase.from('rotinas').select('*').eq('tipo', 'EXAME').order('descricao'),
+      const [routinesRes, gestRes, resultsRes, catsRes, prosRes] = await Promise.all([
+        supabase.from('rotinas').select('*').in('tipo', ['EXAME', 'VACINA']).order('descricao'),
         supabase.from('gestacoes').select(`
           sispn, dum, dpp, equipe, data_cadastro,
           pacientes (gestante, cpf)
         `),
-        supabase.from('registro_exames').select(`
+        supabase.from('registro_rotinas').select(`
           *,
           rotinas (descricao, tipo)
-        `).order('data_realizacao', { ascending: false })
+        `).order('data_realizacao', { ascending: false }),
+        supabase.from('categorias_profissionais').select('*').order('categoria'),
+        supabase.from('profissionais').select('cpf, nome, cbo').eq('situacao', 'ATIVO').order('nome')
       ]);
 
       if (routinesRes.error) throw routinesRes.error;
@@ -149,6 +179,8 @@ export default function ExamesPage() {
       if (resultsRes.error) throw resultsRes.error;
 
       setRoutines(routinesRes.data || []);
+      setCategories(catsRes.data || []);
+      setAllProfessionals(prosRes.data || []);
       
       const formattedGest = gestRes.data?.map(g => {
         let pac: any = g.pacientes;
@@ -173,6 +205,7 @@ export default function ExamesPage() {
             dum: gest.dum,
             dpp: gest.dpp,
             equipe: gest.equipe,
+            data_cadastro: gest.data_cadastro,
             pacientes: { gestante: gest.paciente_nome, cpf: gest.paciente_cpf }
           } : null
         };
@@ -199,6 +232,37 @@ export default function ExamesPage() {
     return '3º TRIMESTRE';
   };
 
+  const getStatusCaptacao = (dum: string, dataCadastro: string) => {
+    if (!dum || !dataCadastro) return '---';
+    const start = new Date(dum);
+    const registration = new Date(dataCadastro);
+    const diffWeeks = (registration.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 7);
+    return diffWeeks <= 12 ? 'PRECOCE' : 'TARDIA';
+  };
+
+  const getDppReferencia = (dpp: string) => {
+    if (!dpp) return '---';
+    const date = new Date(dpp);
+    return `${date.getFullYear()}/${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+  };
+
+  const getExameReferencia = (data: string) => {
+    if (!data) return '---';
+    const date = new Date(data);
+    return `${date.getFullYear()}/${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+  };
+
+  const selectedGestante = useMemo(() => {
+    return gestacoes.find(g => g.sispn === formData.sispn);
+  }, [formData.sispn, gestacoes]);
+
+  const selectedPatientHistory = useMemo(() => {
+    if (!formData.sispn) return [];
+    return results.filter(r => r.sispn === formData.sispn);
+  }, [formData.sispn, results]);
+
+  const uniqueEquipes = Array.from(new Set(gestacoes.map(g => g.equipe))).filter(Boolean).sort();
+
   const getGestacaoStatus = (dpp: string) => {
     if (!dpp) return '---';
     const now = new Date();
@@ -208,6 +272,16 @@ export default function ExamesPage() {
     return now >= end ? 'VENCIDA' : 'ATIVA';
   };
 
+  const professionalSearchResults = useMemo(() => {
+    if (!professionalSearch || professionalSearch.length < 2) return [];
+    const normalize = (str: string) => str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : "";
+    const queryText = normalize(professionalSearch);
+    
+    return allProfessionals.filter(p => {
+      return normalize(p.nome).includes(queryText) || p.cpf.includes(professionalSearch);
+    }).slice(0, 10);
+  }, [professionalSearch, allProfessionals]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -215,32 +289,39 @@ export default function ExamesPage() {
 
     if (!isSupabaseConfigured) return;
     if (!formData.sispn) return setError('Selecione uma gestante.');
-    if (!formData.id_rotina) return setError('Selecione o tipo de exame.');
+    if (!selectedProfessionalCpf) return setError('Selecione um profissional.');
 
     const gest = gestacoes.find(g => g.sispn === formData.sispn);
     if (!gest) return setError('Gestação não encontrada.');
     if (getGestacaoStatus(gest.dpp) === 'VENCIDA') return setError('Gestação VENCIDA.');
 
     try {
-      const trimestre = calculateTrimestre(gest.dum, formData.data_realizacao || '');
-      const payload = {
-        sispn: formData.sispn,
-        id_rotina: formData.id_rotina,
-        data_realizacao: formData.data_realizacao,
-        resultado: formData.resultado,
-        observacoes: formData.observacoes,
-        trimestre_realizacao: trimestre,
-        cpf_operador: authUser?.cpf || null
-      };
+      const professional = allProfessionals.find(p => p.cpf === selectedProfessionalCpf);
+      
+      const payloads = formEntries.map(entry => {
+        const trimestre = calculateTrimestre(gest.dum, entry.data_realizacao || '');
+        return {
+          sispn: formData.sispn,
+          id_rotina: entry.id_rotina,
+          data_realizacao: entry.data_realizacao,
+          resultado: entry.resultado,
+          trimestre_realizacao: trimestre,
+          cbo: professional?.cbo || null,
+          cpf_profissional: selectedProfessionalCpf,
+          cpf_operador: authUser?.cpf || null
+        };
+      });
+
+      if (payloads.some(p => !p.id_rotina)) return setError('Selecione o tipo de exame para todas as linhas.');
 
       if (editingId) {
-        const { error: updateError } = await supabase.from('registro_exames').update(payload).eq('id', editingId);
+        const { error: updateError } = await supabase.from('registro_rotinas').update(payloads[0]).eq('id_registro', editingId);
         if (updateError) throw updateError;
         setSuccess('Resultado atualizado!');
       } else {
-        const { error: insertError } = await supabase.from('registro_exames').insert([payload]);
+        const { error: insertError } = await supabase.from('registro_rotinas').insert(payloads);
         if (insertError) throw insertError;
-        setSuccess('Resultado registrado!');
+        setSuccess(`${payloads.length} resultados registrados!`);
       }
 
       setIsFormOpen(false);
@@ -251,27 +332,42 @@ export default function ExamesPage() {
   };
 
   const handleEdit = (res: ExamResult) => {
-    setEditingId(res.id);
+    setEditingId(res.id_registro);
     const gest = Array.isArray(res.gestacoes) ? res.gestacoes[0] : res.gestacoes;
     const pac = gest?.pacientes;
     const pacObj = Array.isArray(pac) ? pac[0] : pac;
     
     setPatientSearch((pacObj as any)?.gestante || res.sispn);
+    setSelectedProfessionalCpf(res.cpf_profissional || '');
+    
+    const prof = allProfessionals.find(p => p.cpf === res.cpf_profissional);
+    if (prof) {
+      setProfessionalSearch(prof.nome);
+      const cat = categories.find(c => prof.cbo.startsWith(c.cbo));
+      if (cat) setSelectedCategory(cat.categoria);
+    }
+
     setFormData({
       sispn: res.sispn,
-      id_rotina: res.id_rotina,
-      data_realizacao: res.data_realizacao,
-      resultado: res.resultado,
-      observacoes: res.observacoes,
-      trimestre_realizacao: res.trimestre_realizacao
     });
+    
+    setFormEntries([
+      {
+        id: Math.random().toString(36).substr(2, 9),
+        id_rotina: res.id_rotina,
+        data_realizacao: res.data_realizacao,
+        resultado: res.resultado,
+        trimestre_realizacao: res.trimestre_realizacao
+      }
+    ]);
+
     setIsFormOpen(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleDelete = async (id: string) => {
     try {
-      const { error: delError } = await supabase.from('registro_exames').delete().eq('id', id);
+      const { error: delError } = await supabase.from('registro_rotinas').delete().eq('id_registro', id);
       if (delError) throw delError;
       setSuccess('Registro excluído!');
       setDeleteConfirmId(null);
@@ -319,8 +415,12 @@ export default function ExamesPage() {
     }).slice(0, 10);
   }, [patientSearch, gestacoes]);
 
-  const selectedGestante = useMemo(() => gestacoes.find(g => g.sispn === formData.sispn), [formData.sispn, gestacoes]);
-  const uniqueEquipes = Array.from(new Set(gestacoes.map(g => g.equipe))).filter(Boolean).sort();
+  const filteredProfessionals = useMemo(() => {
+    if (!selectedCategory) return [];
+    const category = categories.find(c => c.categoria === selectedCategory);
+    if (!category) return [];
+    return allProfessionals.filter(p => p.cbo.startsWith(category.cbo));
+  }, [selectedCategory, categories, allProfessionals]);
 
   return (
     <DashboardLayout>
@@ -332,17 +432,17 @@ export default function ExamesPage() {
               <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Movimento</span>
             </div>
             <h2 className="text-5xl md:text-6xl font-black tracking-tighter font-headline text-primary uppercase leading-none">
-              Resultados de Exames
+              Rotinas de Exames e Vacinas
             </h2>
             <p className="text-lg text-on-surface-variant/60 font-body max-w-xl leading-relaxed">
-              Registre e monitore os resultados dos exames laboratoriais das gestantes.
+              Registre e monitore as rotinas de exames e vacinas das gestantes.
             </p>
           </div>
 
           <div className="flex items-center gap-3">
             <CSVImporter 
-              tableName="registro_exames"
-              expectedColumns={['sispn', 'id_rotina', 'data_realizacao', 'resultado', 'observacoes']}
+              tableName="registro_rotinas"
+              expectedColumns={['sispn', 'id_rotina', 'data_realizacao', 'resultado', 'cbo', 'cpf_profissional']}
               requiredColumns={['sispn', 'id_rotina', 'data_realizacao']}
               onSuccess={fetchData}
               title="Importar CSV"
@@ -369,98 +469,260 @@ export default function ExamesPage() {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-8">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
-                    <div className="space-y-6">
-                      <div className="space-y-2 relative" ref={patientDropdownRef}>
-                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Nome da Paciente <span className="text-error">*</span></label>
-                        <div className="relative">
-                          <input 
-                            type="text"
-                            className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none shadow-inner"
-                            placeholder="Selecione ou busque a gestante..."
-                            value={patientSearch}
-                            onChange={(e) => { setPatientSearch(e.target.value); setIsPatientDropdownOpen(true); }}
-                            onFocus={() => setIsPatientDropdownOpen(true)}
-                          />
-                          <AnimatePresence>
-                            {isPatientDropdownOpen && patientSearchResults.length > 0 && (
-                              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border-4 border-primary z-50 overflow-hidden">
-                                <div className="max-h-60 overflow-y-auto">
-                                  {patientSearchResults.map(g => (
-                                    <button key={g.sispn} type="button" onClick={() => { setFormData({ ...formData, sispn: g.sispn }); setPatientSearch(g.paciente_nome); setIsPatientDropdownOpen(false); }} className="w-full px-6 py-4 text-left hover:bg-primary/5 border-b border-outline-variant/5 last:border-0">
-                                      <p className="font-bold text-xs text-on-surface uppercase">{g.paciente_nome} ({g.sispn})</p>
-                                    </button>
-                                  ))}
-                                </div>
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Tipo de Exame <span className="text-error">*</span></label>
-                        <select 
-                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none"
-                          value={formData.id_rotina}
-                          onChange={(e) => setFormData({ ...formData, id_rotina: e.target.value })}
-                          required
-                        >
-                          <option value="">Escolha o exame</option>
-                          {routines.map(r => <option key={r.id} value={r.id}>{r.descricao}</option>)}
-                        </select>
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Trimestre (Automático)</label>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    {/* Patient Selection */}
+                    <div className="space-y-2 relative" ref={patientDropdownRef}>
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">SISPN / Gestante <span className="text-error">*</span></label>
+                      <div className="relative">
                         <input 
-                          type="text" readOnly 
-                          className="w-full bg-surface-container-low border-2 border-transparent rounded-2xl px-6 py-4 font-body text-sm outline-none text-on-surface-variant/60 uppercase"
-                          value={calculateTrimestre(selectedGestante?.dum || '', formData.data_realizacao || '')}
+                          type="text"
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none shadow-inner"
+                          placeholder="Busque a gestante..."
+                          value={patientSearch}
+                          onChange={(e) => { setPatientSearch(e.target.value); setIsPatientDropdownOpen(true); }}
+                          onFocus={() => setIsPatientDropdownOpen(true)}
                         />
+                        <AnimatePresence>
+                          {isPatientDropdownOpen && patientSearchResults.length > 0 && (
+                            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border-4 border-primary z-50 overflow-hidden">
+                              <div className="max-h-60 overflow-y-auto">
+                                {patientSearchResults.map(g => (
+                                  <button key={g.sispn} type="button" onClick={() => { setFormData({ ...formData, sispn: g.sispn }); setPatientSearch(g.paciente_nome); setIsPatientDropdownOpen(false); }} className="w-full px-6 py-4 text-left hover:bg-primary/5 border-b border-outline-variant/5 last:border-0">
+                                    <p className="font-bold text-xs text-on-surface uppercase">{g.paciente_nome} ({g.sispn})</p>
+                                  </button>
+                                ))}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
                     </div>
 
-                    <div className="space-y-6">
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Data do Exame <span className="text-error">*</span></label>
+                    {/* Professional Search */}
+                    <div className="space-y-2 relative" ref={professionalDropdownRef}>
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Profissional <span className="text-error">*</span></label>
+                      <div className="relative">
                         <input 
-                          type="date"
-                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none"
-                          value={formData.data_realizacao}
-                          onChange={(e) => setFormData({ ...formData, data_realizacao: e.target.value })}
-                          required
+                          type="text"
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none shadow-inner"
+                          placeholder="Busque o profissional..."
+                          value={professionalSearch}
+                          onChange={(e) => { setProfessionalSearch(e.target.value); setIsProfessionalDropdownOpen(true); }}
+                          onFocus={() => setIsProfessionalDropdownOpen(true)}
                         />
+                        <AnimatePresence>
+                          {isProfessionalDropdownOpen && professionalSearchResults.length > 0 && (
+                            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border-4 border-primary z-50 overflow-hidden">
+                              <div className="max-h-60 overflow-y-auto">
+                                {professionalSearchResults.map(p => (
+                                  <button key={p.cpf} type="button" onClick={() => { 
+                                    setSelectedProfessionalCpf(p.cpf); 
+                                    setProfessionalSearch(p.nome); 
+                                    setIsProfessionalDropdownOpen(false);
+                                    const cat = categories.find(c => p.cbo.startsWith(c.cbo));
+                                    if (cat) setSelectedCategory(cat.categoria);
+                                  }} className="w-full px-6 py-4 text-left hover:bg-primary/5 border-b border-outline-variant/5 last:border-0">
+                                    <p className="font-bold text-xs text-on-surface uppercase">{p.nome}</p>
+                                    <p className="text-[9px] text-on-surface-variant/60 uppercase">{p.cbo}</p>
+                                  </button>
+                                ))}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
+                    </div>
 
-                      <div className="space-y-4">
-                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Resultado</label>
-                        <div className="flex flex-wrap gap-6">
-                          {['POSITIVO / REAGENTE', 'NEGATIVO / NÃO REAGENTE'].map(res => (
-                            <label key={res} className="flex items-center gap-3 cursor-pointer group">
-                              <input 
-                                type="radio" name="resultado" value={res}
-                                checked={formData.resultado === res}
-                                onChange={(e) => setFormData({ ...formData, resultado: e.target.value })}
-                                className="w-5 h-5 accent-primary"
-                              />
-                              <span className="text-xs font-bold text-on-surface-variant group-hover:text-primary transition-colors uppercase tracking-tight">{res}</span>
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Observações</label>
-                        <textarea 
-                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none resize-none h-32"
-                          placeholder="Insira observações relevantes sobre o resultado..."
-                          value={formData.observacoes}
-                          onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
-                        />
-                      </div>
+                    {/* Category (Automatic) */}
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Categoria Profissional (Automático)</label>
+                      <input type="text" readOnly className="w-full bg-surface-container-low border-2 border-transparent rounded-2xl px-6 py-4 font-body text-sm outline-none text-primary font-bold uppercase" value={selectedCategory} />
                     </div>
                   </div>
+
+                  {/* Patient Info Header */}
+                  {selectedGestante && (
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 p-6 bg-primary/5 rounded-[32px] border border-primary/10">
+                      <div className="space-y-1">
+                        <p className="text-[9px] font-black text-primary/60 uppercase tracking-widest">Status</p>
+                        <p className="text-xs font-black text-primary uppercase">{getStatusCaptacao(selectedGestante.dum, selectedGestante.data_cadastro)}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[9px] font-black text-primary/60 uppercase tracking-widest">DUM</p>
+                        <p className="text-xs font-black text-on-surface">{new Date(selectedGestante.dum).toLocaleDateString('pt-BR')}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[9px] font-black text-primary/60 uppercase tracking-widest">DPP</p>
+                        <p className="text-xs font-black text-on-surface">{new Date(selectedGestante.dpp).toLocaleDateString('pt-BR')}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[9px] font-black text-primary/60 uppercase tracking-widest">DPP Ref.</p>
+                        <p className="text-xs font-black text-on-surface">{getDppReferencia(selectedGestante.dpp)}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[9px] font-black text-primary/60 uppercase tracking-widest">Equipe</p>
+                        <p className="text-xs font-black text-on-surface uppercase">{selectedGestante.equipe}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Spreadsheet Grid */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-black text-primary uppercase tracking-widest">Lançamento de Rotinas</h4>
+                      {!editingId && (
+                        <button 
+                          type="button" 
+                          onClick={() => {
+                            const lastEntry = formEntries[formEntries.length - 1];
+                            setFormEntries([...formEntries, {
+                              id: Math.random().toString(36).substr(2, 9),
+                              id_rotina: '',
+                              data_realizacao: lastEntry?.data_realizacao || new Date().toISOString().split('T')[0],
+                              resultado: 'NEGATIVO / NÃO REAGENTE',
+                              trimestre_realizacao: '1º TRIMESTRE'
+                            }]);
+                          }}
+                          className="flex items-center gap-2 text-primary hover:text-primary/70 transition-colors"
+                        >
+                          <span className="material-symbols-outlined text-lg">add_circle</span>
+                          <span className="text-[10px] font-black uppercase tracking-widest">Adicionar Linha</span>
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="bg-surface-container-low rounded-[32px] overflow-hidden border border-outline-variant/10">
+                      <table className="w-full text-left border-separate border-spacing-0">
+                        <thead className="bg-surface-container-high">
+                          <tr>
+                            <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Data Realização</th>
+                            <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Tipo de Rotina</th>
+                            <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Descrição + Trimestre</th>
+                            <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Resultado</th>
+                            {!editingId && <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60 text-center">Ações</th>}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-outline-variant/5">
+                          {formEntries.map((entry, index) => (
+                            <tr key={entry.id} className="hover:bg-white/50 transition-colors">
+                              <td className="px-6 py-4">
+                                <input 
+                                  type="date" 
+                                  className="bg-transparent border-none p-0 text-xs font-bold outline-none focus:ring-0 w-full"
+                                  value={entry.data_realizacao}
+                                  onChange={(e) => {
+                                    const newEntries = [...formEntries];
+                                    newEntries[index].data_realizacao = e.target.value;
+                                    setFormEntries(newEntries);
+                                  }}
+                                />
+                              </td>
+                              <td className="px-6 py-4">
+                                <select 
+                                  className="bg-transparent border-none p-0 text-xs font-bold outline-none focus:ring-0 w-full uppercase"
+                                  value={entry.tipo_temp || routines.find(r => r.id === entry.id_rotina)?.tipo || ''}
+                                  onChange={(e) => {
+                                    const newEntries = [...formEntries];
+                                    newEntries[index].tipo_temp = e.target.value;
+                                    newEntries[index].id_rotina = ''; // Reset when type changes
+                                    setFormEntries(newEntries);
+                                  }}
+                                >
+                                  <option value="">Tipo</option>
+                                  <option value="EXAME">EXAME</option>
+                                  <option value="VACINA">VACINA</option>
+                                </select>
+                              </td>
+                              <td className="px-6 py-4">
+                                <select 
+                                  className="bg-transparent border-none p-0 text-xs font-bold outline-none focus:ring-0 w-full uppercase"
+                                  value={entry.id_rotina}
+                                  onChange={(e) => {
+                                    const newEntries = [...formEntries];
+                                    newEntries[index].id_rotina = e.target.value;
+                                    setFormEntries(newEntries);
+                                  }}
+                                >
+                                  <option value="">Selecione a Rotina</option>
+                                  {routines
+                                    .filter(r => !entry.tipo_temp || r.tipo === entry.tipo_temp)
+                                    .map(r => (
+                                      <option key={r.id} value={r.id}>{r.descricao} ({r.trimestre})</option>
+                                    ))}
+                                </select>
+                              </td>
+                              <td className="px-6 py-4">
+                                <select 
+                                  className="bg-transparent border-none p-0 text-xs font-bold outline-none focus:ring-0 w-full uppercase"
+                                  value={entry.resultado}
+                                  onChange={(e) => {
+                                    const newEntries = [...formEntries];
+                                    newEntries[index].resultado = e.target.value;
+                                    setFormEntries(newEntries);
+                                  }}
+                                >
+                                  <option value="POSITIVO / REAGENTE">POSITIVO / REAGENTE</option>
+                                  <option value="NEGATIVO / NÃO REAGENTE">NEGATIVO / NÃO REAGENTE</option>
+                                </select>
+                              </td>
+                              {!editingId && (
+                                <td className="px-6 py-4 text-center">
+                                  <button 
+                                    type="button" 
+                                    onClick={() => {
+                                      if (formEntries.length > 1) {
+                                        setFormEntries(formEntries.filter((_, i) => i !== index));
+                                      }
+                                    }}
+                                    className="text-error hover:scale-110 transition-transform disabled:opacity-20"
+                                    disabled={formEntries.length === 1}
+                                  >
+                                    <span className="material-symbols-outlined text-lg">delete</span>
+                                  </button>
+                                </td>
+                              )}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Movimento de Exames da Gestante Selecionada */}
+                  {formData.sispn && selectedPatientHistory.length > 0 && (
+                    <div className="space-y-4 pt-6 border-t border-outline-variant/10">
+                      <div className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-primary text-sm">history</span>
+                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Movimento de Exames Realizados</h4>
+                      </div>
+                      <div className="bg-surface-container-low rounded-3xl overflow-hidden border border-outline-variant/5">
+                        <table className="w-full text-left text-[10px]">
+                          <thead className="bg-surface-container-high">
+                            <tr>
+                              <th className="px-4 py-3 font-black uppercase tracking-widest text-on-surface-variant/60">Exame</th>
+                              <th className="px-4 py-3 font-black uppercase tracking-widest text-on-surface-variant/60">Data</th>
+                              <th className="px-4 py-3 font-black uppercase tracking-widest text-on-surface-variant/60">Resultado</th>
+                              <th className="px-4 py-3 font-black uppercase tracking-widest text-on-surface-variant/60">Trimestre</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-outline-variant/5">
+                            {selectedPatientHistory.map((h) => (
+                              <tr key={h.id_registro} className="hover:bg-white/50 transition-colors">
+                                <td className="px-4 py-3 font-bold uppercase">{h.rotinas?.descricao}</td>
+                                <td className="px-4 py-3">{new Date(h.data_realizacao).toLocaleDateString('pt-BR')}</td>
+                                <td className="px-4 py-3">
+                                  <span className={`font-black uppercase ${h.resultado.includes('POSITIVO') || h.resultado.includes('REAGENTE') ? 'text-red-600' : 'text-green-600'}`}>
+                                    {h.resultado}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3 font-medium">{h.trimestre_realizacao}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="flex justify-end gap-4 pt-8 border-t border-outline-variant/10">
                     <button type="button" onClick={() => setIsFormOpen(false)} className="px-8 py-4 rounded-full font-black text-[10px] uppercase tracking-widest text-on-surface-variant hover:bg-surface-container-high transition-colors">Cancelar</button>
@@ -506,9 +768,11 @@ export default function ExamesPage() {
                 <thead className="sticky top-0 z-30 bg-surface-container-low">
                   <tr>
                     <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Gestante</th>
+                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">SISPN</th>
                     <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Exame</th>
                     <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Data</th>
                     <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Resultado</th>
+                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Profissional</th>
                     <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-center">Ações</th>
                   </tr>
                 </thead>
@@ -519,13 +783,14 @@ export default function ExamesPage() {
                     <tr><td colSpan={5} className="p-32 text-center opacity-20 text-xl font-black uppercase tracking-widest">Nenhum resultado encontrado</td></tr>
                   ) : (
                     filteredResults.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((res) => (
-                      <tr key={res.id} className="hover:bg-primary/[0.02] transition-colors group">
+                      <tr key={res.id_registro} className="hover:bg-primary/[0.02] transition-colors group">
                         <td className="px-8 py-6">
                           <p className="font-black text-sm text-on-surface uppercase tracking-tight group-hover:text-primary transition-colors">
                             {res.gestacoes?.pacientes?.gestante || 'NÃO INFORMADO'}
                           </p>
-                          <p className="text-[10px] font-bold text-on-surface-variant/40 font-mono">{res.sispn}</p>
+                          <span className="text-[10px] font-bold text-primary/40 uppercase tracking-widest">{res.gestacoes?.equipe}</span>
                         </td>
+                        <td className="px-8 py-6 text-[10px] font-bold text-on-surface-variant/60 font-mono">{res.sispn}</td>
                         <td className="px-8 py-6 text-xs font-bold text-on-surface uppercase">{res.rotinas?.descricao}</td>
                         <td className="px-8 py-6 text-xs font-bold text-on-surface">{new Date(res.data_realizacao).toLocaleDateString('pt-BR')}</td>
                         <td className="px-8 py-6">
@@ -534,9 +799,15 @@ export default function ExamesPage() {
                           </span>
                         </td>
                         <td className="px-8 py-6">
+                          <p className="text-xs font-bold text-on-surface uppercase">
+                            {allProfessionals.find(p => p.cpf === res.cpf_profissional)?.nome || '---'}
+                          </p>
+                          <p className="text-[10px] text-on-surface-variant/40 font-mono">{res.cbo}</p>
+                        </td>
+                        <td className="px-8 py-6">
                           <div className="flex items-center justify-center gap-3">
                             <button onClick={() => handleEdit(res)} className="p-3 rounded-2xl bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white transition-all"><span className="material-symbols-outlined text-lg">edit</span></button>
-                            <button onClick={() => setDeleteConfirmId(res.id)} className="p-3 rounded-2xl bg-surface-container-high text-on-surface-variant hover:bg-error hover:text-white transition-all"><span className="material-symbols-outlined text-lg">delete</span></button>
+                            <button onClick={() => setDeleteConfirmId(res.id_registro)} className="p-3 rounded-2xl bg-surface-container-high text-on-surface-variant hover:bg-error hover:text-white transition-all"><span className="material-symbols-outlined text-lg">delete</span></button>
                           </div>
                         </td>
                       </tr>

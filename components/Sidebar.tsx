@@ -59,7 +59,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
       icon: 'sync_alt', 
       subItems: [
         { name: 'Atendimentos', href: '/atendimentos' },
-        { name: 'Resultados de Exames', href: '/exames' },
+        { name: 'Rotinas de Exames e Vacinas', href: '/exames' },
       ]
     },
     { name: 'Dashboards', icon: 'dashboard', href: '#' },
