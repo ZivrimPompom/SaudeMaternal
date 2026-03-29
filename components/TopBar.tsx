@@ -338,6 +338,21 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
 
   const importerProps = getImporterProps();
 
+  const handleExportLayout = () => {
+    if (!importerProps || !importerProps.expectedColumns) return;
+    
+    const headers = importerProps.expectedColumns.join(',');
+    const blob = new Blob([headers], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `layout_importacao_${importerProps.tableName}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const userName = user?.nome || 'Usuário';
   const userRole = user?.nivel_acesso || 'Operador';
   const userInitials = user?.sigla || userName.substring(0, 2).toUpperCase();
@@ -386,6 +401,17 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
                     title="Importar"
                     className="flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold transition-all duration-300 bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20"
                   />
+                )}
+
+                {importerProps && (
+                  <button
+                    onClick={handleExportLayout}
+                    className="flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold transition-all duration-300 bg-white text-primary border border-primary hover:bg-primary/5 shadow-lg shadow-primary/5"
+                    title="Baixar modelo de planilha para importação"
+                  >
+                    <span className="material-symbols-outlined text-sm">download</span>
+                    <span className="hidden md:inline">Exportar Layout</span>
+                  </button>
                 )}
 
                 {(isCategoriesPage || isProfessionalsPage || isOperatorsPage || isRotinasPage || isPacientesPage || isUnidadesPage || isGestacoesPage || isAtendimentosPage || isExamesPage) && (

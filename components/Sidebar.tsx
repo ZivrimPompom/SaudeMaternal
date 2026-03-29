@@ -62,9 +62,60 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
         { name: 'Rotinas de Exames e Vacinas', href: '/exames' },
       ]
     },
-    { name: 'Dashboards', icon: 'dashboard', href: '#' },
-    { name: 'Relatórios', icon: 'analytics', href: '#' },
+    { 
+      name: 'Dashboards', 
+      icon: 'dashboard', 
+      href: '#' 
+    },
+    { 
+      name: 'Relatórios', 
+      icon: 'analytics', 
+      href: '#' 
+    },
+    {
+      name: 'Manutenção',
+      icon: 'settings',
+      subItems: [
+        { name: 'Exportar Layout Pacientes', href: 'export:pacientes' },
+        { name: 'Exportar Layout Gestações', href: 'export:gestacoes' },
+        { name: 'Exportar Layout Unidades de Saúde', href: 'export:unidades' },
+        { name: 'Exportar Layout Operadores', href: 'export:operadores' },
+        { name: 'Exportar Layout Categorias Profissionais', href: 'export:categorias' },
+        { name: 'Exportar Layout Profissionais', href: 'export:profissionais' },
+        { name: 'Exportar Layout Rotinas', href: 'export:rotinas' },
+        { name: 'Exportar Layout Atendimentos', href: 'export:atendimentos' },
+        { name: 'Exportar Layout Rotinas de Exames e Vacinas', href: 'export:exames' },
+      ]
+    }
   ];
+
+  const handleExportLayout = (table: string) => {
+    const layouts: Record<string, string[]> = {
+      pacientes: ['gestante', 'cpf', 'nome_mae', 'prontuario', 'cns', 'data_nascimento', 'logradouro', 'numero', 'complemento', 'bairro', 'contato', 'email', 'cpf_operador'],
+      profissionais: ['nome', 'cpf', 'cbo', 'cns', 'conselho', 'uf_conselho', 'numero_conselho'],
+      unidades: ['cnes', 'nome_fantasia', 'logradouro', 'numero', 'complemento', 'bairro', 'municipio', 'uf', 'cep', 'telefone'],
+      gestacoes: ['sispn', 'cpf_paciente', 'dum', 'dpp', 'data_abertura', 'data_cadastro', 'referencia_tecnica', 'acs', 'equipe', 'idade_cadastro', 'fase_vida_cadastro', 'gestacao_anterior', 'aborto', 'parto', 'sifilis', 'sifilis_tratada', 'hiv', 'hepatite_b', 'hepatite_c', 'classificacao_pn', 'alto_risco_compartilhado'],
+      atendimentos: ['sispn', 'data_consulta', 'cbo', 'cpf', 'data_proxima_consulta', 'observacoes_clinicas'],
+      exames: ['sispn', 'id_rotina', 'data_realizacao', 'resultado', 'cbo', 'cpf_profissional'],
+      operadores: ['nome', 'cpf', 'senha', 'status', 'nivel_acesso', 'sigla', 'unidade_cnes'],
+      rotinas: ['tipo', 'descricao', 'trimestre', 'categoria'],
+      categorias: ['cbo', 'categoria']
+    };
+
+    const columns = layouts[table];
+    if (!columns) return;
+
+    const csvContent = columns.join(',') + '\n';
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `layout_${table}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <>
@@ -141,6 +192,20 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
                 <div className="ml-9 space-y-1 border-l border-slate-200 dark:border-slate-800">
                   {item.subItems?.map((sub) => {
                     const isSubActive = pathname === sub.href;
+                    const isExport = sub.href.startsWith('export:');
+                    
+                    if (isExport) {
+                      return (
+                        <button
+                          key={sub.name}
+                          onClick={() => handleExportLayout(sub.href.split(':')[1])}
+                          className="w-full flex items-center gap-3 px-4 py-2 rounded-r-lg transition-all duration-200 font-headline text-[10px] font-medium tracking-tight text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary-container hover:bg-primary/5 dark:hover:bg-primary/10 text-left"
+                        >
+                          <span>{sub.name}</span>
+                        </button>
+                      );
+                    }
+
                     return (
                       <Link
                         key={sub.name}
@@ -162,10 +227,6 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
         })}
       </nav>
       <div className="mt-auto pt-8 border-t border-slate-200/50 dark:border-slate-800 space-y-1">
-        <Link href="#" className="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors duration-200 font-headline text-sm font-semibold tracking-tight">
-          <span className="material-symbols-outlined">settings</span>
-          <span>Settings</span>
-        </Link>
         <Link href="#" className="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors duration-200 font-headline text-sm font-semibold tracking-tight">
           <span className="material-symbols-outlined">help_outline</span>
           <span>Support</span>
