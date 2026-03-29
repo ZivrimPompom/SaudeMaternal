@@ -6,7 +6,6 @@ import { useSearch } from '@/context/SearchContext';
 import { useAuth } from '@/context/AuthContext';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'motion/react';
-import CSVImporter from '@/components/CSVImporter';
 import Pagination from '@/components/Pagination';
 
 interface Categoria {
@@ -25,6 +24,8 @@ interface Profissional {
   chs: 20 | 30 | 40;
   situacao: 'ATIVO' | 'INATIVO';
   unidade_cnes?: string;
+  cpf_operador?: string;
+  operador_nome?: string;
   categorias_profissionais?: Categoria;
   unidades_saude?: { nome_fantasia: string };
 }
@@ -35,7 +36,12 @@ interface HealthUnit {
 }
 
 export default function ProfissionaisPage() {
-  const { searchQuery, isFormOpen, setIsFormOpen } = useSearch();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const { searchQuery, isFormOpen, setIsFormOpen, refreshTrigger } = useSearch();
   const { user: authUser } = useAuth();
   const [professionals, setProfessionals] = useState<Profissional[]>([]);
   const [categories, setCategories] = useState<Categoria[]>([]);
@@ -65,7 +71,7 @@ export default function ProfissionaisPage() {
   useEffect(() => {
     setIsFormOpen(false);
     fetchData();
-  }, [setIsFormOpen]);
+  }, [setIsFormOpen, refreshTrigger]);
 
   const fetchData = async () => {
     if (!isSupabaseConfigured) {
@@ -290,6 +296,7 @@ export default function ProfissionaisPage() {
     }
   };
 
+  if (!mounted) return null;
   return (
     <DashboardLayout>
       <div className="p-4 md:p-8 lg:p-12 pb-32 max-w-7xl mx-auto space-y-8 md:space-y-12">
@@ -303,25 +310,6 @@ export default function ProfissionaisPage() {
             <p className="text-lg text-on-surface-variant/60 font-body max-w-xl leading-relaxed">Administração completa do corpo clínico e técnico da unidade.</p>
           </div>
           <div className="flex items-center gap-3">
-            <CSVImporter 
-              tableName="profissionais" 
-              expectedColumns={['cpf', 'nome', 'cns', 'cbo', 'equipe', 'vinculo', 'tipo_vinculo', 'chs', 'unidade_cnes', 'situacao']}
-              conflictColumn="cpf"
-              onSuccess={fetchData}
-              title="Importar Profissionais"
-              transformData={(data) => data.map(item => ({
-                ...item,
-                nome: (item.nome || '').toUpperCase(),
-                cpf: (item.cpf || '').replace(/\D/g, ''),
-                cns: (item.cns || '').replace(/\D/g, ''),
-                equipe: (item.equipe || '').toUpperCase(),
-                vinculo: (item.vinculo || 'INTERMEDIADO').toUpperCase(),
-                tipo_vinculo: (item.tipo_vinculo || 'CLT').toUpperCase(),
-                chs: parseInt(item.chs) || 20,
-                situacao: (item.situacao || 'ATIVO').toUpperCase(),
-                unidade_cnes: item.unidade_cnes || null
-              }))}
-            />
             <div className="flex items-center gap-3 bg-surface-container-high px-4 py-2 rounded-full border border-outline-variant/20 shadow-sm">
               <span className="material-symbols-outlined text-primary text-[20px]">person_check</span>
               <span className="text-sm font-bold font-label uppercase tracking-widest text-on-surface-variant">{filteredProfessionals.length} Profissionais</span>
@@ -590,6 +578,7 @@ export default function ProfissionaisPage() {
                           <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5 w-[120px]">Equipe</th>
                           <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5">Vínculo</th>
                           <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5">Situação</th>
+                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5 w-[150px]">Operador</th>
                           <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline text-center border-b border-outline-variant/5 sticky right-0 bg-surface-container-low z-40 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] w-[180px]">Ações</th>
                         </tr>
                       </thead>
@@ -651,6 +640,12 @@ export default function ProfissionaisPage() {
                                 }`}>
                                   {pro.situacao || 'ATIVO'}
                                 </span>
+                              </td>
+                              <td className="px-4 py-4">
+                                <div className="flex flex-col gap-0.5">
+                                  <span className="text-[10px] font-black text-on-surface uppercase tracking-wider">OPERADOR</span>
+                                  <span className="text-[9px] font-bold text-on-surface-variant/40">{formatCpf(pro.cpf_operador || '') || '---'}</span>
+                                </div>
                               </td>
                               <td className="px-6 py-4 sticky right-0 bg-surface-container-lowest group-hover:bg-surface-container-low transition-colors z-30 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">
                                 <div className="flex items-center justify-center gap-2">

@@ -26,7 +26,6 @@ import {
   Trash2,
   X
 } from 'lucide-react';
-import CSVImporter from '@/components/CSVImporter';
 import Pagination from '@/components/Pagination';
 
 interface HealthUnit {
@@ -40,10 +39,25 @@ interface HealthUnit {
   uf: string;
   cep: string;
   telefone: string;
+  cpf_operador?: string;
+  operador_nome?: string;
 }
 
+const formatCpf = (value: string) => {
+  const digits = value.replace(/\D/g, '').slice(0, 11);
+  return digits
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d{1,2})/, '$1-$2');
+};
+
 export default function UnidadesSaudePage() {
-  const { searchQuery, setSearchQuery, isFormOpen, setIsFormOpen } = useSearch();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const { searchQuery, setSearchQuery, isFormOpen, setIsFormOpen, refreshTrigger } = useSearch();
   const { user: authUser } = useAuth();
   const [units, setUnits] = useState<HealthUnit[]>([]);
   const [loading, setLoading] = useState(isSupabaseConfigured);
@@ -72,7 +86,7 @@ export default function UnidadesSaudePage() {
     if (isSupabaseConfigured) {
       fetchUnits();
     }
-  }, [setIsFormOpen]);
+  }, [setIsFormOpen, refreshTrigger]);
 
   const fetchUnits = async () => {
     setLoading(true);
@@ -262,6 +276,8 @@ export default function UnidadesSaudePage() {
     setCurrentPage(1);
   }, [searchQuery]);
 
+  if (!mounted) return null;
+
   return (
     <DashboardLayout>
       <div className="p-4 md:p-8 lg:p-12 pb-32 max-w-7xl mx-auto space-y-8 md:space-y-12">
@@ -276,22 +292,6 @@ export default function UnidadesSaudePage() {
             <p className="text-lg text-on-surface-variant/60 font-body max-w-2xl">Gerencie os estabelecimentos de saúde da rede.</p>
           </div>
           <div className="flex items-center gap-3">
-            <CSVImporter 
-              tableName="unidades_saude" 
-              expectedColumns={['cnes', 'nome_fantasia', 'logradouro', 'numero', 'complemento', 'bairro', 'municipio', 'uf', 'cep', 'telefone']}
-              conflictColumn="cnes"
-              onSuccess={fetchUnits}
-              title="Importar Unidades"
-              transformData={(data) => data.map(item => ({
-                ...item,
-                nome_fantasia: (item.nome_fantasia || '').toUpperCase(),
-                logradouro: (item.logradouro || '').toUpperCase(),
-                complemento: (item.complemento || '').toUpperCase(),
-                bairro: (item.bairro || '').toUpperCase(),
-                municipio: (item.municipio || 'SAO PAULO').toUpperCase(),
-                uf: (item.uf || 'SP').toUpperCase()
-              }))}
-            />
             <div className="flex items-center gap-3 bg-surface-container-high px-4 py-2 rounded-full border border-outline-variant/20 shadow-sm">
               <Building2 className="text-primary w-5 h-5" />
               <span className="text-sm font-bold font-label uppercase tracking-widest text-on-surface-variant">{filteredUnits.length} Unidades</span>
@@ -559,6 +559,7 @@ export default function UnidadesSaudePage() {
                           <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5 w-[300px]">Unidade</th>
                           <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5 w-[150px]">CNES</th>
                           <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5">Localização</th>
+                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5 w-[150px]">Operador</th>
                           <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label text-center border-b border-outline-variant/5 sticky right-0 bg-surface-container-low z-40 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] w-[180px]">Ações</th>
                         </tr>
                       </thead>
@@ -585,6 +586,12 @@ export default function UnidadesSaudePage() {
                                 <div className="flex flex-col">
                                   <span className="text-[11px] text-on-surface font-medium line-clamp-1">{unit.bairro}</span>
                                   <span className="text-[9px] text-on-surface-variant/60 font-body line-clamp-1">{unit.municipio} - {unit.uf}</span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-4">
+                                <div className="flex flex-col gap-0.5">
+                                  <span className="text-[10px] font-black text-on-surface uppercase tracking-wider">OPERADOR</span>
+                                  <span className="text-[9px] font-bold text-on-surface-variant/40">{formatCpf(unit.cpf_operador || '') || '---'}</span>
                                 </div>
                               </td>
                               <td className="px-6 py-4 sticky right-0 bg-surface-container-lowest group-hover:bg-surface-container-low transition-colors z-30 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">

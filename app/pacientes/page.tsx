@@ -6,7 +6,6 @@ import { useSearch } from '@/context/SearchContext';
 import { useAuth } from '@/context/AuthContext';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'motion/react';
-import CSVImporter from '@/components/CSVImporter';
 import Pagination from '@/components/Pagination';
 
 interface Paciente {
@@ -25,11 +24,18 @@ interface Paciente {
   cidade: string;
   uf: string;
   operador_responsavel?: string;
+  cpf_operador?: string;
+  operador_nome?: string;
   created_at?: string;
 }
 
 export default function PacientesPage() {
-  const { searchQuery, setSearchQuery, isFormOpen, setIsFormOpen } = useSearch();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const { searchQuery, setSearchQuery, isFormOpen, setIsFormOpen, refreshTrigger } = useSearch();
   const { user: authUser } = useAuth();
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,7 +67,7 @@ export default function PacientesPage() {
   useEffect(() => {
     setIsFormOpen(false);
     fetchData();
-  }, [setIsFormOpen]);
+  }, [setIsFormOpen, refreshTrigger]);
 
   const fetchData = async () => {
     if (!isSupabaseConfigured) {
@@ -295,6 +301,8 @@ export default function PacientesPage() {
     }
   };
 
+  if (!mounted) return null;
+
   return (
     <DashboardLayout>
       <div className="p-4 md:p-8 lg:p-12 pb-32 max-w-7xl mx-auto space-y-8 md:space-y-12">
@@ -308,50 +316,6 @@ export default function PacientesPage() {
             <p className="text-lg text-on-surface-variant/60 font-body max-w-xl leading-relaxed">Gerenciamento de gestantes e prontuários do sistema.</p>
           </div>
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => setIsFormOpen(!isFormOpen)}
-              className={`flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-black transition-all duration-300 shadow-lg uppercase tracking-widest font-headline w-full sm:w-auto justify-center ${
-                isFormOpen 
-                  ? 'bg-red-50 text-red-600 hover:bg-red-600 hover:text-white shadow-red-200' 
-                  : 'bg-primary text-white hover:bg-primary/90 shadow-primary/20'
-              }`}
-            >
-              <span className="material-symbols-outlined text-lg">{isFormOpen ? 'close' : 'add'}</span>
-              <span>{isFormOpen ? 'Fechar' : 'Novo Paciente'}</span>
-            </button>
-
-            <CSVImporter 
-              tableName="pacientes" 
-              expectedColumns={['gestante', 'cpf', 'nome_mae', 'prontuario', 'cns', 'data_nascimento', 'logradouro', 'numero', 'complemento', 'bairro', 'contato', 'email']}
-              conflictColumn="cpf"
-              onSuccess={fetchData}
-              title="Importar Pacientes"
-              transformData={(data) => data.map(item => {
-                // Convert DD/MM/YYYY to YYYY-MM-DD for Supabase
-                let dataNascimento = item.data_nascimento;
-                if (dataNascimento && typeof dataNascimento === 'string') {
-                  const ddmmyyyy = dataNascimento.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-                  if (ddmmyyyy) {
-                    const [_, day, month, year] = ddmmyyyy;
-                    dataNascimento = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-                  }
-                }
-
-                return {
-                  ...item,
-                  gestante: (item.gestante || '').toUpperCase(),
-                  nome_mae: (item.nome_mae || 'NÃO INFORMADO').toUpperCase(),
-                  cpf: (item.cpf || '').replace(/\D/g, ''),
-                  data_nascimento: dataNascimento,
-                  logradouro: (item.logradouro || '').toUpperCase(),
-                  complemento: (item.complemento || '').toUpperCase(),
-                  bairro: (item.bairro || '').toUpperCase(),
-                  cidade: 'SÃO PAULO',
-                  uf: 'SP',
-                  operador_responsavel: authUser?.nome || 'SISTEMA'
-                };
-              })}
-            />
             <div className="flex items-center gap-3 bg-surface-container-high px-4 py-2 rounded-full border border-outline-variant/20 shadow-sm">
               <span className="material-symbols-outlined text-primary text-[20px]">group</span>
               <span className="text-sm font-bold font-label uppercase tracking-widest text-on-surface-variant">{filteredPacientes.length} Pacientes</span>
@@ -671,6 +635,7 @@ export default function PacientesPage() {
                           <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5 w-[180px]">Prontuário / CNS</th>
                           <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5 w-[120px]">Fase / Idade</th>
                           <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5">Endereço / Contato</th>
+                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5 w-[150px]">Operador</th>
                           <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline text-center border-b border-outline-variant/5 sticky right-0 bg-surface-container-low z-40 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] w-[180px]">Ações</th>
                         </tr>
                       </thead>
@@ -729,6 +694,12 @@ export default function PacientesPage() {
                                       <span className="material-symbols-outlined text-on-surface-variant/30 text-[14px]">call</span>
                                       <span className="text-[10px] font-bold text-on-surface-variant/60">{formatPhone(pac.contato || '') || '---'}</span>
                                     </div>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-4">
+                                  <div className="flex flex-col gap-0.5">
+                                    <span className="text-[10px] font-black text-on-surface uppercase tracking-wider">{pac.operador_responsavel || 'SISTEMA'}</span>
+                                    <span className="text-[9px] font-bold text-on-surface-variant/40">{formatCpf(pac.cpf_operador || '') || '---'}</span>
                                   </div>
                                 </td>
                                 <td className="px-6 py-4 sticky right-0 bg-surface-container-lowest group-hover:bg-surface-container-low transition-colors z-30 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">

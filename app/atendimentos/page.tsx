@@ -6,7 +6,6 @@ import { useSearch } from '@/context/SearchContext';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '@/context/AuthContext';
-import CSVImporter from '@/components/CSVImporter';
 import Pagination from '@/components/Pagination';
 
 interface Categoria {
@@ -30,6 +29,7 @@ interface Atendimento {
   data_proxima_consulta?: string;
   observacoes_clinicas?: string;
   cpf_operador?: string;
+  operador_nome?: string;
   created_at?: string;
   // Joins
   gestacoes?: {
@@ -112,9 +112,15 @@ const formatCpf = (value: string) => {
 };
 
 export default function AtendimentosPage() {
-  const { searchQuery, setSearchQuery, isFormOpen, setIsFormOpen } = useSearch();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const { searchQuery, setSearchQuery, isFormOpen, setIsFormOpen, refreshTrigger } = useSearch();
   const { user: authUser } = useAuth();
   const [atendimentos, setAtendimentos] = useState<Atendimento[]>([]);
+  const [totalAtendimentosCount, setTotalAtendimentosCount] = useState(0);
   const [gestacoes, setGestacoes] = useState<Gestacao[]>([]);
   const [categories, setCategories] = useState<Categoria[]>([]);
   const [allProfessionals, setAllProfessionals] = useState<Profissional[]>([]);
@@ -159,12 +165,21 @@ export default function AtendimentosPage() {
 
   const [formData, setFormData] = useState<Partial<Atendimento>>({
     sispn: '',
-    data_consulta: new Date().toISOString().split('T')[0],
+    data_consulta: '',
     cbo: '',
     cpf: 'NÃO INFORMADO',
     data_proxima_consulta: '',
     observacoes_clinicas: ''
   });
+
+  useEffect(() => {
+    if (!formData.data_consulta) {
+      setFormData(prev => ({
+        ...prev,
+        data_consulta: new Date().toISOString().split('T')[0]
+      }));
+    }
+  }, [formData.data_consulta]);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
@@ -204,7 +219,7 @@ export default function AtendimentosPage() {
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [refreshTrigger]);
 
   const fetchData = async () => {
     if (!isSupabaseConfigured) return;
@@ -214,7 +229,7 @@ export default function AtendimentosPage() {
       // Fetch Categories, Professionals and Patients
       const [catsRes, prosRes, pacsRes] = await Promise.all([
         supabase.from('categorias_profissionais').select('*').order('categoria'),
-        supabase.from('profissionais').select('cpf, nome, cbo').eq('situacao', 'ATIVO').order('nome'),
+        supabase.from('profissionais').select('cpf, nome, cbo, situacao, equipe').order('nome'),
         supabase.from('pacientes').select('cpf, gestante')
       ]);
 
@@ -289,12 +304,13 @@ export default function AtendimentosPage() {
       }
 
       // Fetch Atendimentos
-      let { data: consData, error: consError } = await supabase
+      let { data: consData, error: consError, count: consCount } = await supabase
         .from('atendimentos')
-        .select('*')
+        .select('*', { count: 'exact' })
         .order('data_consulta', { ascending: false });
 
       if (consError) throw consError;
+      setTotalAtendimentosCount(consCount || 0);
 
       // Manually join data to avoid complex join errors
       const enrichedAtendimentos = (consData || []).map(c => {
@@ -312,7 +328,7 @@ export default function AtendimentosPage() {
           } : null,
           profissionais: prof ? {
             nome: prof.nome,
-            equipe: (prof as any).equipe
+            equipe: prof.equipe
           } : null
         };
       });
@@ -567,14 +583,15 @@ export default function AtendimentosPage() {
   }, [patientSearch, gestacoes]);
 
   const professionalSearchResults = useMemo(() => {
-    if (!professionalSearch || professionalSearch.length < 1) return allProfessionals.slice(0, 10);
+    const activePros = allProfessionals.filter(p => (p as any).situacao === 'ATIVO');
+    if (!professionalSearch || professionalSearch.length < 1) return activePros.slice(0, 10);
     
     const normalize = (str: string) => 
       str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : "";
     
     const query = normalize(professionalSearch);
     
-    return allProfessionals.filter(p => {
+    return activePros.filter(p => {
       const nome = normalize(p.nome || '');
       const cpf = p.cpf || '';
       return nome.includes(query) || cpf.includes(query);
@@ -594,6 +611,8 @@ export default function AtendimentosPage() {
 
   const uniqueEquipes = Array.from(new Set(gestacoes.map(g => g.equipe))).filter(Boolean).sort();
   const uniqueCategorias = Array.from(new Set(atendimentos.map(c => getCboCategory(c.cbo)))).filter(Boolean).sort();
+
+  if (!mounted) return null;
 
   return (
     <DashboardLayout>
@@ -615,49 +634,16 @@ export default function AtendimentosPage() {
 
           <div className="flex flex-col sm:flex-row items-center gap-4">
             <div className="flex items-center gap-3 w-full sm:w-auto">
-              <CSVImporter 
-                tableName="atendimentos"
-                expectedColumns={['sispn', 'data_consulta', 'cbo', 'cpf', 'data_proxima_consulta', 'observacoes_clinicas']}
-                requiredColumns={['sispn', 'data_consulta', 'cbo']}
-                onSuccess={fetchData}
-                title="Importar CSV"
-                transformData={(data) => {
-                  const existingSispns = new Set(gestacoes.map(g => g.sispn?.toString().replace(/\D/g, '') || ''));
-                  return data.filter(item => {
-                    const sispn = item.sispn?.toString().replace(/\D/g, '');
-                    if (!sispn || !existingSispns.has(sispn)) return false;
-
-                    // Regra: só importar atendimentos para gestações ATIVAS
-                    const gest = gestacoes.find(g => g.sispn?.toString().replace(/\D/g, '') === sispn);
-                    if (gest && getGestacaoStatus(gest.dpp) !== 'ATIVA') return false;
-
-                    return true;
-                  }).map(item => {
-                    const sispnClean = item.sispn?.toString().replace(/\D/g, '');
-                    const gest = gestacoes.find(g => g.sispn?.toString().replace(/\D/g, '') === sispnClean);
-                    const formatDate = (dateStr: string) => {
-                      if (!dateStr) return null;
-                      if (dateStr.includes('/')) {
-                        const [d, m, y] = dateStr.split('/');
-                        return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
-                      }
-                      return dateStr;
-                    };
-                    const dataConsulta = formatDate(item.data_consulta) || '';
-                    return {
-                      ...item,
-                      data_consulta: dataConsulta,
-                      data_proxima_consulta: formatDate(item.data_proxima_consulta),
-                      trimestre_consulta: calculateTrimestre(gest?.dum || '', dataConsulta),
-                      cpf: item.cpf || 'NÃO INFORMADO',
-                      observacoes_clinicas: item.observacoes_clinicas || item.observacoes || null
-                    };
-                  });
-                }}
-              />
               <div className="flex items-center gap-3 bg-surface-container-high px-4 py-2 rounded-full border border-outline-variant/20 shadow-sm">
                 <span className="material-symbols-outlined text-primary text-xl">clinical_notes</span>
-                <span className="text-sm font-bold font-label uppercase tracking-widest text-on-surface-variant">{filteredAtendimentos.length} Atendimentos</span>
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-black font-label uppercase tracking-widest text-on-surface-variant leading-none">
+                    {totalAtendimentosCount} Total
+                  </span>
+                  <span className="text-[8px] font-bold font-label uppercase tracking-[0.2em] text-primary mt-0.5">
+                    {filteredAtendimentos.length} Filtrados
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -987,14 +973,14 @@ export default function AtendimentosPage() {
         {/* Filters and Table Section */}
         <section className="space-y-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="flex flex-wrap items-center gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap items-center gap-4 w-full md:w-auto">
               <div className="flex items-center gap-2 bg-primary/5 px-5 py-2.5 rounded-full border border-primary/10 shrink-0">
                 <span className="material-symbols-outlined text-primary text-sm">filter_list</span>
                 <span className="text-[9px] font-black uppercase tracking-widest text-primary">Filtros Ativos</span>
               </div>
               
               <select 
-                className="bg-surface-container-low border-none rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
+                className="w-full lg:w-auto bg-surface-container-low border-none rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
                 value={filters.dpp}
                 onChange={(e) => setFilters({ ...filters, dpp: e.target.value })}
               >
@@ -1005,7 +991,7 @@ export default function AtendimentosPage() {
               </select>
 
               <select 
-                className="bg-surface-container-low border-none rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
+                className="w-full lg:w-auto bg-surface-container-low border-none rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
                 value={filters.trimestre}
                 onChange={(e) => setFilters({ ...filters, trimestre: e.target.value as any })}
               >
@@ -1016,7 +1002,7 @@ export default function AtendimentosPage() {
               </select>
 
               <select 
-                className="bg-surface-container-low border-none rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
+                className="w-full lg:w-auto bg-surface-container-low border-none rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
                 value={filters.categoria}
                 onChange={(e) => setFilters({ ...filters, categoria: e.target.value })}
               >
@@ -1027,7 +1013,7 @@ export default function AtendimentosPage() {
               </select>
 
               <select 
-                className="bg-surface-container-low border-none rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
+                className="w-full lg:w-auto bg-surface-container-low border-none rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
                 value={filters.equipe}
                 onChange={(e) => setFilters({ ...filters, equipe: e.target.value })}
               >
@@ -1040,14 +1026,15 @@ export default function AtendimentosPage() {
               {(filters.dpp || filters.trimestre || filters.categoria || filters.equipe) && (
                 <button 
                   onClick={() => setFilters({ dpp: '', trimestre: '', categoria: '', equipe: '' })}
-                  className="text-[9px] font-black uppercase tracking-widest text-error hover:underline shrink-0"
+                  className="w-full lg:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-primary/10 text-primary text-[9px] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all"
                 >
+                  <span className="material-symbols-outlined text-sm">filter_alt_off</span>
                   Limpar
                 </button>
               )}
             </div>
 
-            <div className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-widest">
+            <div className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-widest text-right">
               Exibindo <span className="text-primary">{filteredAtendimentos.length}</span> registros
             </div>
           </div>
@@ -1061,6 +1048,7 @@ export default function AtendimentosPage() {
                     <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Data / Período</th>
                     <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Profissional / CBO</th>
                     <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Próximo Agendamento</th>
+                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Operador</th>
                     <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-center sticky right-0 bg-surface-container-low z-40 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">Ações</th>
                   </tr>
                 </thead>
@@ -1141,6 +1129,12 @@ export default function AtendimentosPage() {
                             ) : (
                               <span className="text-[10px] font-bold text-on-surface-variant/20 italic tracking-widest uppercase">Não agendada</span>
                             )}
+                          </td>
+                          <td className="px-8 py-6">
+                            <div className="flex flex-col gap-0.5">
+                              <span className="text-[10px] font-black text-on-surface uppercase tracking-wider">OPERADOR</span>
+                              <span className="text-[9px] font-bold text-on-surface-variant/40">{formatCpf(con.cpf_operador || '') || '---'}</span>
+                            </div>
                           </td>
                           <td className="px-8 py-6">
                             <div className="flex items-center justify-center gap-3">

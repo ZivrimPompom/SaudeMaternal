@@ -15,6 +15,7 @@ interface CSVImporterProps {
   title?: string;
   conflictColumn?: string;
   transformData?: (data: any[]) => any[];
+  className?: string;
 }
 
 export default function CSVImporter({ 
@@ -24,7 +25,8 @@ export default function CSVImporter({
   onSuccess, 
   title = 'Importar CSV',
   conflictColumn,
-  transformData
+  transformData,
+  className
 }: CSVImporterProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isImporting, setIsImporting] = useState(false);
@@ -172,7 +174,7 @@ export default function CSVImporter({
     <>
       <button
         onClick={() => fileInputRef.current?.click()}
-        className="inline-flex items-center gap-2 bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white px-4 py-2 rounded-xl transition-all font-headline text-[10px] font-black uppercase tracking-widest shadow-sm"
+        className={className || "inline-flex items-center gap-2 bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white px-4 py-2 rounded-xl transition-all font-headline text-[10px] font-black uppercase tracking-widest shadow-sm"}
       >
         <FileUp className="w-4 h-4" />
         {title}

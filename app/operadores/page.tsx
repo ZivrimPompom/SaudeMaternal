@@ -32,7 +32,6 @@ import {
   FileUp,
   Building2
 } from 'lucide-react';
-import CSVImporter from '@/components/CSVImporter';
 import Pagination from '@/components/Pagination';
 
 interface Operator {
@@ -42,6 +41,8 @@ interface Operator {
   status: 'Ativo' | 'Bloqueado';
   initials: string;
   unidade_cnes?: string;
+  cpf_operador?: string;
+  operador_nome?: string;
   unidades_saude?: { nome_fantasia: string };
 }
 
@@ -50,8 +51,21 @@ interface HealthUnit {
   nome_fantasia: string;
 }
 
+const formatCpf = (value: string) => {
+  const digits = value.replace(/\D/g, '').slice(0, 11);
+  return digits
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d{1,2})/, '$1-$2');
+};
+
 export default function OperadoresPage() {
-  const { searchQuery, setSearchQuery, isFormOpen, setIsFormOpen } = useSearch();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const { searchQuery, setSearchQuery, isFormOpen, setIsFormOpen, refreshTrigger } = useSearch();
   const { user: authUser } = useAuth();
   const [operators, setOperators] = useState<Operator[]>([]);
   const [units, setUnits] = useState<HealthUnit[]>([]);
@@ -134,7 +148,7 @@ export default function OperadoresPage() {
     };
     loadData();
     return () => { isMounted = false; };
-  }, []);
+  }, [refreshTrigger]);
 
   const fetchOperators = async () => {
     if (!isSupabaseConfigured) return;
@@ -434,6 +448,8 @@ export default function OperadoresPage() {
     }
   };
 
+  if (!mounted) return null;
+
   return (
     <DashboardLayout>
       <div className="p-4 md:p-8 lg:p-12 pb-32 max-w-7xl mx-auto space-y-8 md:space-y-12">
@@ -448,26 +464,6 @@ export default function OperadoresPage() {
             <p className="text-lg text-on-surface-variant/60 font-body max-w-2xl">Gerencie os perfis de acesso e permissões clínicas do sistema.</p>
           </div>
           <div className="flex items-center gap-3">
-            <CSVImporter 
-              tableName="operadores" 
-              expectedColumns={['nome', 'cpf', 'senha', 'status', 'nivel_acesso', 'sigla', 'unidade_cnes']}
-              conflictColumn="cpf"
-              onSuccess={fetchOperators}
-              title="Importar Operadores"
-              transformData={(data) => data.map(item => {
-                const nome = item.nome || item.name || '';
-                const sigla = item.sigla || item.initials || getInitials(nome);
-                const senha = item.senha || item.password || item.senha_acesso || '123456';
-                
-                return {
-                  ...item,
-                  nome: nome,
-                  sigla: sigla,
-                  senha: senha,
-                  unidade_cnes: item.unidade_cnes || null
-                };
-              })}
-            />
             <div className="flex items-center gap-3 bg-surface-container-high px-4 py-2 rounded-full border border-outline-variant/20 shadow-sm">
               <Users className="text-primary w-5 h-5" />
               <span className="text-sm font-bold font-label uppercase tracking-widest text-on-surface-variant">{filteredOperators.length} Operadores</span>
@@ -705,6 +701,7 @@ export default function OperadoresPage() {
                         <tr>
                           <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5 w-[250px]">Profissional</th>
                           <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5 w-[180px]">Identificação</th>
+                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5 w-[150px]">Operador</th>
                           <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5 w-[120px]">Status</th>
                           <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label text-center border-b border-outline-variant/5 sticky right-0 bg-surface-container-low z-40 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] w-[180px]">Ações</th>
                         </tr>
@@ -731,6 +728,12 @@ export default function OperadoresPage() {
                                 <div className="flex flex-col">
                                   <span className="text-xs font-mono text-on-surface-variant font-medium">{op.cpf}</span>
                                   <span className="text-[8px] text-on-surface-variant/40 font-body uppercase tracking-tighter mt-0.5 whitespace-nowrap">CPF Verificado</span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-4">
+                                <div className="flex flex-col gap-0.5">
+                                  <span className="text-[10px] font-black text-on-surface uppercase tracking-wider">OPERADOR</span>
+                                  <span className="text-[9px] font-bold text-on-surface-variant/40">{formatCpf(op.cpf_operador || '') || '---'}</span>
                                 </div>
                               </td>
                               <td className="px-4 py-4">

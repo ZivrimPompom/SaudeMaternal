@@ -23,20 +23,22 @@ const publicSans = Public_Sans({
 export const metadata: Metadata = {
   title: 'Saúde Maternal',
   description: 'Sistema de curadoria clínica para saúde maternal',
+  icons: {
+    icon: '/favicon.ico',
+  },
 };
 
 import Providers from '@/components/Providers';
 
 export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
-    <html lang="pt-BR" className={`${inter.variable} ${manrope.variable} ${publicSans.variable}`}>
+    <html lang="pt-BR" className={`${inter.variable} ${manrope.variable} ${publicSans.variable}`} suppressHydrationWarning>
       <head>
-        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+        <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
       </head>
-      <body className="bg-surface text-on-surface min-h-screen">
-        <Providers>
-          {children}
-        </Providers>
+      <body className="bg-surface text-on-surface min-h-screen" suppressHydrationWarning>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

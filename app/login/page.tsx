@@ -7,6 +7,11 @@ import { motion } from 'motion/react';
 import { LucideUser, LucideLock, LucideLoader2, LucideAlertCircle } from 'lucide-react';
 
 export default function LoginPage() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const [cpf, setCpf] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -76,6 +81,8 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
+
+  if (!mounted) return null;
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 font-body">

@@ -6,7 +6,6 @@ import { useSearch } from '@/context/SearchContext';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '@/context/AuthContext';
-import CSVImporter from '@/components/CSVImporter';
 import Pagination from '@/components/Pagination';
 
 interface Routine {
@@ -82,8 +81,21 @@ const formatSispn = (value: string) => {
     .replace(/(\.\d{2})\d+?$/, '$1');
 };
 
+const formatCpf = (value: string) => {
+  const digits = value.replace(/\D/g, '').slice(0, 11);
+  return digits
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d{1,2})/, '$1-$2');
+};
+
 export default function ExamesPage() {
-  const { searchQuery, setSearchQuery, isFormOpen, setIsFormOpen } = useSearch();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const { searchQuery, setSearchQuery, isFormOpen, setIsFormOpen, refreshTrigger } = useSearch();
   const { user: authUser } = useAuth();
   const [results, setResults] = useState<ExamResult[]>([]);
   const [gestacoes, setGestacoes] = useState<Gestacao[]>([]);
@@ -107,16 +119,22 @@ export default function ExamesPage() {
   const professionalDropdownRef = useRef<HTMLDivElement>(null);
 
   // New states for multiple entries
-  const [formEntries, setFormEntries] = useState<any[]>([
-    {
-      id: Math.random().toString(36).substr(2, 9),
-      id_rotina: '',
-      tipo_temp: 'EXAME',
-      data_realizacao: new Date().toISOString().split('T')[0],
-      resultado: 'NEGATIVO / NÃO REAGENTE',
-      trimestre_realizacao: '1º TRIMESTRE'
+  const [formEntries, setFormEntries] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (mounted && formEntries.length === 0) {
+      setFormEntries([
+        {
+          id: Math.random().toString(36).substr(2, 9),
+          id_rotina: '',
+          tipo_temp: 'EXAME',
+          data_realizacao: new Date().toISOString().split('T')[0],
+          resultado: 'NEGATIVO / NÃO REAGENTE',
+          trimestre_realizacao: '1º TRIMESTRE'
+        }
+      ]);
     }
-  ]);
+  }, [mounted, formEntries.length]);
 
   // Filters
   const [filters, setFilters] = useState({
@@ -175,7 +193,7 @@ export default function ExamesPage() {
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [refreshTrigger]);
 
   const fetchData = async () => {
     if (!isSupabaseConfigured) return;
@@ -445,6 +463,8 @@ export default function ExamesPage() {
     return allProfessionals.filter(p => p.cbo.startsWith(category.cbo));
   }, [selectedCategory, categories, allProfessionals]);
 
+  if (!mounted) return null;
+
   return (
     <DashboardLayout>
       <div className="p-4 md:p-8 lg:p-10 pb-32 max-w-7xl mx-auto space-y-10">
@@ -463,13 +483,6 @@ export default function ExamesPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <CSVImporter 
-              tableName="registro_rotinas"
-              expectedColumns={['sispn', 'id_rotina', 'data_realizacao', 'resultado', 'cbo', 'cpf_profissional']}
-              requiredColumns={['sispn', 'id_rotina', 'data_realizacao']}
-              onSuccess={fetchData}
-              title="Importar CSV"
-            />
             <div className="flex items-center gap-3 bg-surface-container-high px-4 py-2 rounded-full border border-outline-variant/20 shadow-sm">
               <span className="material-symbols-outlined text-primary text-xl">lab_research</span>
               <span className="text-sm font-bold font-label uppercase tracking-widest text-on-surface-variant">{filteredResults.length} Registros</span>
@@ -819,30 +832,30 @@ export default function ExamesPage() {
 
         <section className="space-y-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="flex flex-wrap items-center gap-4">
-              <select className="bg-surface-container-low border-none rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none" value={filters.trimestre} onChange={(e) => setFilters({ ...filters, trimestre: e.target.value })}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap items-center gap-4 w-full md:w-auto">
+              <select className="w-full lg:w-auto bg-surface-container-low border-none rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none" value={filters.trimestre} onChange={(e) => setFilters({ ...filters, trimestre: e.target.value })}>
                 <option value="">Trimestre</option>
                 <option value="1º TRIMESTRE">1º TRIMESTRE</option>
                 <option value="2º TRIMESTRE">2º TRIMESTRE</option>
                 <option value="3º TRIMESTRE">3º TRIMESTRE</option>
               </select>
-              <select className="bg-surface-container-low border-none rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none" value={filters.tipo} onChange={(e) => setFilters({ ...filters, tipo: e.target.value })}>
+              <select className="w-full lg:w-auto bg-surface-container-low border-none rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none" value={filters.tipo} onChange={(e) => setFilters({ ...filters, tipo: e.target.value })}>
                 <option value="">Tipo</option>
                 <option value="EXAME">EXAME</option>
                 <option value="VACINA">VACINA</option>
               </select>
-              <select className="bg-surface-container-low border-none rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none" value={filters.rotina} onChange={(e) => setFilters({ ...filters, rotina: e.target.value })}>
+              <select className="w-full lg:w-auto bg-surface-container-low border-none rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none" value={filters.rotina} onChange={(e) => setFilters({ ...filters, rotina: e.target.value })}>
                 <option value="">Rotina</option>
                 {Array.from(new Set(routines.map(r => r.descricao))).sort().map(desc => (
                   <option key={desc} value={desc}>{desc}</option>
                 ))}
               </select>
-              <select className="bg-surface-container-low border-none rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none" value={filters.equipe} onChange={(e) => setFilters({ ...filters, equipe: e.target.value })}>
+              <select className="w-full lg:w-auto bg-surface-container-low border-none rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none" value={filters.equipe} onChange={(e) => setFilters({ ...filters, equipe: e.target.value })}>
                 <option value="">Equipe</option>
                 {uniqueEquipes.map(eq => <option key={eq} value={eq}>{eq}</option>)}
               </select>
             </div>
-            <div className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-widest">
+            <div className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-widest text-right">
               Exibindo <span className="text-primary">{filteredResults.length}</span> registros
             </div>
           </div>
@@ -858,6 +871,7 @@ export default function ExamesPage() {
                     <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Data</th>
                     <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Resultado</th>
                     <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Profissional</th>
+                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Operador</th>
                     <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-center">Ações</th>
                   </tr>
                 </thead>
@@ -891,6 +905,12 @@ export default function ExamesPage() {
                             {allProfessionals.find(p => p.cpf === res.cpf_profissional)?.nome || '---'}
                           </p>
                           <p className="text-[10px] text-on-surface-variant/40 font-mono uppercase tracking-widest font-bold">{getCboCategory(res.cbo)}</p>
+                        </td>
+                        <td className="px-8 py-6">
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-[10px] font-black text-on-surface uppercase tracking-wider">OPERADOR</span>
+                            <span className="text-[9px] font-bold text-on-surface-variant/40">{formatCpf(res.cpf_operador || '') || '---'}</span>
+                          </div>
                         </td>
                         <td className="px-8 py-6">
                           <div className="flex items-center justify-center gap-3">

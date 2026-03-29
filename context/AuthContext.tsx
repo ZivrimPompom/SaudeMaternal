@@ -23,29 +23,27 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<Operator | null>(() => {
-    if (typeof window !== 'undefined') {
-      const savedUser = localStorage.getItem('saude_maternal_user');
-      if (savedUser) {
-        try {
-          const parsed = JSON.parse(savedUser);
-          // Fallback for older versions that might have 'name' instead of 'nome'
-          if (parsed && !parsed.nome && parsed.name) {
-            parsed.nome = parsed.name;
-          }
-          return parsed;
-        } catch (e) {
-          localStorage.removeItem('saude_maternal_user');
-        }
-      }
-    }
-    return null;
-  });
-  const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState<Operator | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    // No longer need to set loading to false here
+    const savedUser = localStorage.getItem('saude_maternal_user');
+    if (savedUser) {
+      try {
+        const parsed = JSON.parse(savedUser);
+        // Fallback for older versions that might have 'name' instead of 'nome'
+        if (parsed && !parsed.nome && parsed.name) {
+          parsed.nome = parsed.name;
+        }
+        setUser(parsed);
+      } catch (e) {
+        localStorage.removeItem('saude_maternal_user');
+      }
+    }
+    setLoading(false);
+    setIsInitialized(true);
   }, []);
 
   const signInWithCpf = async (cpf: string, password: string) => {

@@ -7,19 +7,33 @@ import { useAuth } from '@/context/AuthContext';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { Briefcase, Plus, Edit2, Trash2, Search, AlertCircle, CheckCircle2, X, FileUp, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import CSVImporter from '@/components/CSVImporter';
 import Pagination from '@/components/Pagination';
 
 interface CategoriaProfissional {
   cbo: string;
   categoria: string;
+  cpf_operador?: string;
+  operador_nome?: string;
   // vinculo: 'DIRETO' | 'INTERMEDIADO';
   // tipo_vinculo: 'CLT' | 'ESTATUTARIO' | 'AUTÔNOMO';
   // chs: 20 | 30 | 40;
 }
 
+const formatCpf = (value: string) => {
+  const digits = value.replace(/\D/g, '').slice(0, 11);
+  return digits
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d{1,2})/, '$1-$2');
+};
+
 export default function CategoriasPage() {
-  const { searchQuery, isFormOpen, setIsFormOpen } = useSearch();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const { searchQuery, isFormOpen, setIsFormOpen, refreshTrigger } = useSearch();
   const { user: authUser } = useAuth();
   const [categories, setCategories] = useState<CategoriaProfissional[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,7 +56,7 @@ export default function CategoriasPage() {
   useEffect(() => {
     setIsFormOpen(false);
     fetchCategories();
-  }, [setIsFormOpen]);
+  }, [setIsFormOpen, refreshTrigger]);
 
   const fetchCategories = async () => {
     if (!isSupabaseConfigured) {
@@ -188,6 +202,8 @@ export default function CategoriasPage() {
     setIsFormOpen(false);
   };
 
+  if (!mounted) return null;
+
   return (
     <DashboardLayout>
       <div className="p-4 md:p-8 lg:p-12 pb-32 max-w-7xl mx-auto space-y-8 md:space-y-12">
@@ -201,13 +217,6 @@ export default function CategoriasPage() {
             <p className="text-lg text-on-surface-variant/60 font-body max-w-2xl">Gerenciamento de ocupações, vínculos e cargas horárias (CBO).</p>
           </div>
           <div className="flex items-center gap-3">
-            <CSVImporter 
-              tableName="categorias_profissionais" 
-              expectedColumns={['cbo', 'categoria']}
-              conflictColumn="cbo"
-              onSuccess={fetchCategories}
-              title="Importar Categorias"
-            />
             <div className="flex items-center gap-3 bg-surface-container-high px-4 py-2 rounded-full border border-outline-variant/20 shadow-sm">
               <Briefcase className="text-primary w-5 h-5" />
               <span className="text-sm font-bold font-label uppercase tracking-widest text-on-surface-variant">{filteredCategories.length} Categorias</span>
@@ -358,6 +367,7 @@ export default function CategoriasPage() {
                       <thead className="sticky top-0 z-30 bg-surface-container-low">
                         <tr>
                           <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5">CBO / Categoria</th>
+                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5 w-[150px]">Operador</th>
                           <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline text-center border-b border-outline-variant/5 sticky right-0 bg-surface-container-low z-40 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] w-[180px]">Ações</th>
                         </tr>
                       </thead>
@@ -374,6 +384,12 @@ export default function CategoriasPage() {
                               <div className="flex flex-col gap-1">
                                 <span className="text-[10px] font-black text-secondary tracking-widest">{cat.cbo}</span>
                                 <p className="font-black text-on-surface font-headline text-sm group-hover:text-secondary transition-colors uppercase">{cat.categoria}</p>
+                              </div>
+                            </td>
+                            <td className="px-4 py-4">
+                              <div className="flex flex-col gap-0.5">
+                                <span className="text-[10px] font-black text-on-surface uppercase tracking-wider">OPERADOR</span>
+                                <span className="text-[9px] font-bold text-on-surface-variant/40">{(cat as any).cpf_operador ? formatCpf((cat as any).cpf_operador) : '---'}</span>
                               </div>
                             </td>
                             <td className="px-6 py-4 sticky right-0 bg-surface-container-lowest group-hover:bg-surface-container-low transition-colors z-30 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">

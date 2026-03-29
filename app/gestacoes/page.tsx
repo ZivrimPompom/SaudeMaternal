@@ -7,7 +7,6 @@ import { useAuth } from '@/context/AuthContext';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'motion/react';
 import Pagination from '@/components/Pagination';
-import CSVImporter from '@/components/CSVImporter';
 
 interface Gestacao {
   sispn: string;
@@ -62,7 +61,12 @@ interface Profissional {
 }
 
 export default function GestacoesPage() {
-  const { searchQuery, setSearchQuery, isFormOpen, setIsFormOpen } = useSearch();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const { searchQuery, setSearchQuery, isFormOpen, setIsFormOpen, refreshTrigger } = useSearch();
   const { user: authUser } = useAuth();
   
   const [gestacoes, setGestacoes] = useState<Gestacao[]>([]);
@@ -83,7 +87,7 @@ export default function GestacoesPage() {
     dum: '',
     dpp: '',
     data_abertura: '',
-    data_cadastro: new Date().toISOString().split('T')[0],
+    data_cadastro: '',
     operador: 'NÃO INFORMADO',
     referencia_tecnica: 'NÃO INFORMADO',
     acs: 'NÃO INFORMADO',
@@ -101,6 +105,15 @@ export default function GestacoesPage() {
     classificacao_pn: 'HABITUAL',
     alto_risco_compartilhado: 'NÃO'
   });
+
+  useEffect(() => {
+    if (!formData.data_cadastro) {
+      setFormData(prev => ({
+        ...prev,
+        data_cadastro: new Date().toISOString().split('T')[0]
+      }));
+    }
+  }, [formData.data_cadastro]);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isPacienteSearchOpen, setIsPacienteSearchOpen] = useState(false);
@@ -211,7 +224,7 @@ export default function GestacoesPage() {
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [setIsFormOpen]);
+  }, [setIsFormOpen, refreshTrigger]);
 
   const fetchInitialData = async () => {
     if (!isSupabaseConfigured) {
@@ -520,6 +533,7 @@ export default function GestacoesPage() {
         sispn: formData.sispn?.replace(/\D/g, ''),
         cpf_paciente: formData.cpf_paciente?.replace(/\D/g, ''),
         operador: authUser?.cpf?.replace(/\D/g, '') || 'SISTEMA',
+        cpf_operador: authUser?.cpf || null,
         referencia_tecnica: rtCpf?.replace(/\D/g, '') || 'NÃO INFORMADO',
         acs: acsCpf?.replace(/\D/g, '') || 'NÃO INFORMADO',
       };
@@ -668,6 +682,8 @@ export default function GestacoesPage() {
     ).slice(0, 10);
   }, [acsList, acsSearchQuery]);
 
+  if (!mounted) return null;
+
   return (
     <DashboardLayout>
       <div className="p-4 md:p-8 lg:p-12 pb-32 max-w-7xl mx-auto space-y-8 md:space-y-12">
@@ -681,131 +697,6 @@ export default function GestacoesPage() {
             <p className="text-lg text-on-surface-variant/60 font-body max-w-2xl">Controle e monitoramento de ciclos gestacionais.</p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <CSVImporter 
-              tableName="gestacoes"
-              title="Importar Gestações"
-              expectedColumns={[
-                'sispn', 'cpf_paciente', 'dum', 'dpp', 'data_abertura', 'data_cadastro',
-                'referencia_tecnica', 'acs', 'equipe', 'idade_cadastro', 'fase_vida_cadastro',
-                'gestacao_anterior', 'aborto', 'parto', 'sifilis', 'sifilis_tratada',
-                'hiv', 'hepatite_b', 'hepatite_c', 'classificacao_pn', 'alto_risco_compartilhado'
-              ]}
-              requiredColumns={['sispn', 'cpf_paciente']}
-              conflictColumn="sispn"
-              onSuccess={fetchInitialData}
-              transformData={(data) => {
-                const todayStr = new Date().toISOString().split('T')[0];
-                
-                const parseDate = (dateStr: any) => {
-                  if (!dateStr || dateStr.toString().trim() === '') return null;
-                  const str = dateStr.toString().trim();
-                  // Handle DD/MM/YYYY
-                  const ddmmyyyy = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-                  if (ddmmyyyy) {
-                    const [_, day, month, year] = ddmmyyyy;
-                    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-                  }
-                  // Handle YYYY-MM-DD
-                  if (str.match(/^\d{4}-\d{2}-\d{2}$/)) return str;
-                  return null;
-                };
-
-                const calculateDPP = (dum: string | null) => {
-                  if (!dum) return null;
-                  const date = new Date(dum + 'T12:00:00');
-                  date.setDate(date.getDate() + 280);
-                  return date.toISOString().split('T')[0];
-                };
-
-                const calculateAgeAndPhase = (birthDate: string | null, refDate: string | null) => {
-                  if (!birthDate || !refDate) return { age: null, phase: null };
-                  const birth = new Date(birthDate + 'T12:00:00');
-                  const ref = new Date(refDate + 'T12:00:00');
-                  let age = ref.getFullYear() - birth.getFullYear();
-                  const m = ref.getMonth() - birth.getMonth();
-                  if (m < 0 || (m === 0 && ref.getDate() < birth.getDate())) {
-                    age--;
-                  }
-                  let phase = 'ADULTO';
-                  if (age < 20) phase = 'ADOLESCENTE';
-                  if (age >= 60) phase = 'IDOSO';
-                  return { age, phase };
-                };
-
-                return data.reduce((acc: any[], row: any) => {
-                  const sispn = row.sispn?.toString().replace(/\D/g, '');
-                  if (!sispn) return acc;
-
-                  // Pad CPF with leading zeros to 11 digits
-                  const cpf = row.cpf_paciente?.toString().replace(/\D/g, '').padStart(11, '0');
-                  
-                  // REJECTION LOGIC: Check if patient exists in the database (local state)
-                  const pac = pacientes.find(p => p.cpf === cpf);
-                  if (!pac) {
-                    console.warn(`Registro rejeitado: Paciente com CPF ${cpf} não encontrado no cadastro.`);
-                    return acc;
-                  }
-
-                  let dum = parseDate(row.dum);
-                  let dpp = parseDate(row.dpp);
-                  let data_abertura = parseDate(row.data_abertura);
-                  let data_cadastro = parseDate(row.data_cadastro);
-
-                  // Ensure no future dates for DUM, Abertura and Cadastro
-                  if (dum && dum > todayStr) dum = todayStr;
-                  if (data_abertura && data_abertura > todayStr) data_abertura = todayStr;
-                  if (data_cadastro && data_cadastro > todayStr) data_cadastro = todayStr;
-
-                  // Auto-calculate DPP if missing
-                  if (!dpp && dum) {
-                    dpp = calculateDPP(dum);
-                  }
-
-                  // Use patient data to calculate age/phase if missing
-                  const parsedIdade = parseInt(row.idade_cadastro);
-                  let idade: number | null = isNaN(parsedIdade) ? null : parsedIdade;
-                  let fase: string | null = row.fase_vida_cadastro || null;
-
-                  if ((!idade || !fase) && pac.data_nascimento && data_cadastro) {
-                    const { age, phase } = calculateAgeAndPhase(pac.data_nascimento, data_cadastro);
-                    if (!idade) idade = age;
-                    if (!fase) fase = phase;
-                  }
-
-                  const rtRaw = row.referencia_tecnica;
-                  const rtCpf = rtRaw?.toString().replace(/\D/g, '').length === 11 
-                    ? rtRaw.toString().replace(/\D/g, '') 
-                    : (profissionais.find(p => p.nome === rtRaw)?.cpf || 'NÃO INFORMADO');
-
-                  const acsRaw = row.acs;
-                  const acsCpf = acsRaw?.toString().replace(/\D/g, '').length === 11 
-                    ? acsRaw.toString().replace(/\D/g, '') 
-                    : (profissionais.find(p => p.nome === acsRaw)?.cpf || 'NÃO INFORMADO');
-
-                  const prof = profissionais.find(p => p.cpf === rtCpf);
-
-                  acc.push({
-                    ...row,
-                    sispn,
-                    cpf_paciente: cpf,
-                    dum,
-                    dpp,
-                    data_abertura,
-                    data_cadastro,
-                    idade_cadastro: idade || null,
-                    fase_vida_cadastro: fase || null,
-                    operador: authUser?.cpf?.replace(/\D/g, '') || 'IMPORTAÇÃO',
-                    gestacao_anterior: Math.max(0, parseInt(row.gestacao_anterior) || 0),
-                    aborto: Math.max(0, parseInt(row.aborto) || 0),
-                    parto: Math.max(0, parseInt(row.parto) || 0),
-                    referencia_tecnica: rtCpf,
-                    acs: acsCpf,
-                    equipe: prof?.equipe || row.equipe || 'NÃO INFORMADO',
-                  });
-                  return acc;
-                }, []);
-              }}
-            />
             <div className="flex items-center gap-3 bg-surface-container-high px-4 py-2 rounded-full border border-outline-variant/20 shadow-sm">
               <span className="material-symbols-outlined text-primary text-xl">child_care</span>
               <span className="text-sm font-bold font-label uppercase tracking-widest text-on-surface-variant">{filteredGestacoes.length} Gestações</span>
@@ -1341,6 +1232,7 @@ export default function GestacoesPage() {
                           <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5">Semanas / Captação</th>
                           <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5">Equipe / Ref. Técnica</th>
                           <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5">Status</th>
+                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5 w-[150px]">Operador</th>
                           <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline text-center border-b border-outline-variant/5 sticky right-0 bg-surface-container-low z-40 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] w-[180px]">Ações</th>
                         </tr>
                       </thead>
@@ -1392,6 +1284,12 @@ export default function GestacoesPage() {
                                   <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest ${status === 'ATIVA' ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'}`}>
                                     {status}
                                   </span>
+                                </td>
+                                <td className="px-4 py-4">
+                                  <div className="flex flex-col gap-0.5">
+                                    <span className="text-[10px] font-black text-on-surface uppercase tracking-wider">{g.operador_nome || 'SISTEMA'}</span>
+                                    <span className="text-[9px] font-bold text-on-surface-variant/40">{formatCpf(g.operador || '') || '---'}</span>
+                                  </div>
                                 </td>
                                 <td className="px-6 py-4 sticky right-0 bg-surface-container-lowest group-hover:bg-surface-container-low transition-colors z-30 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">
                                   <div className="flex items-center justify-center gap-2">

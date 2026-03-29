@@ -29,7 +29,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (!mounted || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-surface">
+      <div className="min-h-screen flex items-center justify-center bg-surface" suppressHydrationWarning>
         <span className="material-symbols-outlined w-8 h-8 animate-spin text-primary text-3xl">progress_activity</span>
       </div>
     );
@@ -40,7 +40,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="bg-surface text-on-surface min-h-screen font-body relative">
+    <div className="bg-surface text-on-surface min-h-screen font-body relative" suppressHydrationWarning>
       <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} />
       <TopBar onToggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
       
