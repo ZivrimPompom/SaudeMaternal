@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 
 interface SubItem {
   name: string;
@@ -18,7 +19,10 @@ interface MenuItem {
 
 export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const pathname = usePathname();
+  const { user } = useAuth();
   const [openMenus, setOpenMenus] = useState<string[]>([]);
+
+  const isAdministrator = user?.nivel_acesso === 'Administrador';
 
   // Close sidebar on mobile when route changes
   useEffect(() => {
@@ -48,7 +52,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
       icon: 'person_add',
       subItems: [
         { name: 'Unidades de Saúde', href: '/unidades' },
-        { name: 'Operadores', href: '/operadores' },
+        ...(isAdministrator ? [{ name: 'Operadores', href: '/operadores' }] : []),
         { name: 'Categorias Profissionais', href: '/categorias' },
         { name: 'Profissionais', href: '/profissionais' },
         { name: 'Rotinas', href: '/rotinas' },
@@ -79,7 +83,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
         { name: 'Exportar Layout Pacientes', href: 'export:pacientes' },
         { name: 'Exportar Layout Gestações', href: 'export:gestacoes' },
         { name: 'Exportar Layout Unidades de Saúde', href: 'export:unidades' },
-        { name: 'Exportar Layout Operadores', href: 'export:operadores' },
+        ...(isAdministrator ? [{ name: 'Exportar Layout Operadores', href: 'export:operadores' }] : []),
         { name: 'Exportar Layout Categorias Profissionais', href: 'export:categorias' },
         { name: 'Exportar Layout Profissionais', href: 'export:profissionais' },
         { name: 'Exportar Layout Rotinas', href: 'export:rotinas' },

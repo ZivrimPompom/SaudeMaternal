@@ -39,6 +39,7 @@ interface Operator {
   name: string;
   cpf: string;
   status: 'Ativo' | 'Bloqueado';
+  nivel_acesso: 'Administrador' | 'Operador';
   initials: string;
   unidade_cnes?: string;
   cpf_operador?: string;
@@ -133,6 +134,7 @@ export default function OperadoresPage() {
               name: item.name || item.nome || 'Sem Nome',
               cpf: item.cpf,
               status: item.status || 'Ativo',
+              nivel_acesso: item.nivel_acesso || 'Operador',
               initials: item.initials || item.sigla || (item.name || item.nome || '??').substring(0, 2).toUpperCase(),
               unidade_cnes: item.unidade_cnes,
               unidades_saude: item.unidades_saude
@@ -192,6 +194,7 @@ export default function OperadoresPage() {
           name: item.name || item.nome || 'Sem Nome',
           cpf: item.cpf,
           status: item.status || 'Ativo',
+          nivel_acesso: item.nivel_acesso || 'Operador',
           initials: item.initials || item.sigla || (item.name || item.nome || '??').substring(0, 2).toUpperCase(),
           unidade_cnes: item.unidade_cnes,
           unidades_saude: item.unidades_saude
@@ -236,6 +239,7 @@ export default function OperadoresPage() {
     cpf: '',
     password: '',
     status: 'Ativo' as 'Ativo' | 'Bloqueado',
+    nivel_acesso: 'Operador' as 'Administrador' | 'Operador',
     unidade_cnes: ''
   });
 
@@ -298,6 +302,7 @@ export default function OperadoresPage() {
     const operatorData: any = {
       cpf: formData.cpf,
       status: formData.status,
+      nivel_acesso: formData.nivel_acesso,
       unidade_cnes: formData.unidade_cnes || null,
       cpf_operador: authUser?.cpf || null
     };
@@ -404,7 +409,7 @@ export default function OperadoresPage() {
       }
     }
 
-    setFormData({ name: '', cpf: '', password: '', status: 'Ativo', unidade_cnes: '' });
+    setFormData({ name: '', cpf: '', password: '', status: 'Ativo', nivel_acesso: 'Operador', unidade_cnes: '' });
     setIsFormOpen(false);
     fetchOperators();
   };
@@ -416,6 +421,7 @@ export default function OperadoresPage() {
       cpf: op.cpf,
       password: '', // Password usually not shown
       status: op.status,
+      nivel_acesso: op.nivel_acesso || 'Operador',
       unidade_cnes: op.unidade_cnes || ''
     });
     setIsFormOpen(true);
@@ -424,7 +430,7 @@ export default function OperadoresPage() {
 
   const cancelEdit = () => {
     setEditingId(null);
-    setFormData({ name: '', cpf: '', password: '', status: 'Ativo', unidade_cnes: '' });
+    setFormData({ name: '', cpf: '', password: '', status: 'Ativo', nivel_acesso: 'Operador', unidade_cnes: '' });
     setError(null);
     setIsFormOpen(false);
   };
@@ -449,6 +455,31 @@ export default function OperadoresPage() {
   };
 
   if (!mounted) return null;
+  
+  const isAdministrator = authUser?.nivel_acesso === 'Administrador';
+
+  if (!isAdministrator) {
+    return (
+      <DashboardLayout>
+        <div className="min-h-[60vh] flex flex-col items-center justify-center p-8 text-center space-y-6">
+          <div className="w-24 h-24 bg-red-50 rounded-full flex items-center justify-center text-red-500 mb-4 shadow-sm border border-red-100">
+            <Shield className="w-12 h-12" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-3xl font-black font-headline text-slate-900 uppercase tracking-tight">Nível de acesso insuficiente</h2>
+            <p className="text-slate-500 font-body max-w-md mx-auto">Esta área é restrita apenas para administradores do sistema. Se você acredita que isso é um erro, entre em contato com o suporte.</p>
+          </div>
+          <button 
+            onClick={() => window.history.back()}
+            className="px-8 py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-all flex items-center gap-2 uppercase tracking-widest text-[10px]"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            Voltar
+          </button>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -561,7 +592,7 @@ export default function OperadoresPage() {
                         </select>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-3 gap-4">
                       <div className="space-y-2">
                         <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Status</label>
                         <div className="relative group">
@@ -573,6 +604,20 @@ export default function OperadoresPage() {
                           >
                             <option value="Ativo">Ativo</option>
                             <option value="Bloqueado">Bloqueado</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Nível de Acesso</label>
+                        <div className="relative group">
+                          <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-5 h-5" />
+                          <select 
+                            className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-12 pr-4 py-3.5 transition-all font-body outline-none text-xs appearance-none"
+                            value={formData.nivel_acesso || 'Operador'}
+                            onChange={(e) => setFormData({ ...formData, nivel_acesso: e.target.value as 'Administrador' | 'Operador' })}
+                          >
+                            <option value="Operador">Operador</option>
+                            <option value="Administrador">Administrador</option>
                           </select>
                         </div>
                       </div>
@@ -702,6 +747,7 @@ export default function OperadoresPage() {
                           <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5 w-[250px]">Profissional</th>
                           <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5 w-[180px]">Identificação</th>
                           <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5 w-[150px]">Operador</th>
+                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5 w-[120px]">Nível</th>
                           <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5 w-[120px]">Status</th>
                           <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label text-center border-b border-outline-variant/5 sticky right-0 bg-surface-container-low z-40 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] w-[180px]">Ações</th>
                         </tr>
@@ -734,6 +780,14 @@ export default function OperadoresPage() {
                                 <div className="flex flex-col gap-0.5">
                                   <span className="text-[10px] font-black text-on-surface uppercase tracking-wider">OPERADOR</span>
                                   <span className="text-[9px] font-bold text-on-surface-variant/40">{formatCpf(op.cpf_operador || '') || '---'}</span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-4">
+                                <div className="flex flex-col gap-0.5">
+                                  <span className={`text-[10px] font-black uppercase tracking-wider ${op.nivel_acesso === 'Administrador' ? 'text-primary' : 'text-on-surface'}`}>
+                                    {op.nivel_acesso || 'Operador'}
+                                  </span>
+                                  <span className="text-[8px] text-on-surface-variant/40 font-body uppercase tracking-tighter">Nível de Acesso</span>
                                 </div>
                               </td>
                               <td className="px-4 py-4">

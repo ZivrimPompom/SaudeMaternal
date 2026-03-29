@@ -60,7 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (data.status === 'Bloqueado') {
-        return { error: 'Este usuário está bloqueado.' };
+        return { error: 'Procure o Administrador do Sistema para liberar seu acesso.' };
       }
 
       const operator: Operator = {
