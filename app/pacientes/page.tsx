@@ -26,6 +26,7 @@ interface Paciente {
   operador_responsavel?: string;
   cpf_operador?: string;
   operador_nome?: string;
+  unidade_cnes?: string;
   created_at?: string;
 }
 
@@ -209,7 +210,8 @@ export default function PacientesPage() {
         cidade: 'SÃO PAULO',
         uf: 'SP',
         operador_responsavel: authUser?.nome || 'SISTEMA',
-        cpf_operador: authUser?.cpf || null
+        cpf_operador: authUser?.cpf || null,
+        unidade_cnes: authUser?.unidade_cnes || null
       };
 
       if (editingId) {

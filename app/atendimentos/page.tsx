@@ -28,6 +28,7 @@ interface Atendimento {
   cpf: string;
   data_proxima_consulta?: string;
   observacoes_clinicas?: string;
+  unidade_cnes?: string;
   cpf_operador?: string;
   operador_nome?: string;
   created_at?: string;
@@ -429,6 +430,7 @@ export default function AtendimentosPage() {
         cpf: selectedProfessionalCpf,
         data_proxima_consulta: formData.data_proxima_consulta || null,
         observacoes_clinicas: formData.observacoes_clinicas || null,
+        unidade_cnes: authUser?.unidade_cnes || null,
         cpf_operador: authUser?.cpf || null
       };
 

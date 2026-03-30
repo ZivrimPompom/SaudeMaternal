@@ -251,17 +251,23 @@ export default function Page() {
             </div>
           </Link>
 
-          <div className="bg-surface-container-lowest/50 p-7 md:p-8 rounded-[2.5rem] shadow-sm border border-outline-variant/5 opacity-60 flex flex-col h-full min-h-[286px] grayscale hover:grayscale-0 transition-all duration-500 text-on-surface/40">
-            <div className="w-18 h-18 rounded-3xl bg-surface-container-high flex items-center justify-center mb-6">
-              <Shield className="text-on-surface-variant/30 w-9 h-9" />
+          <Link href="/dashboard/overview" className="bg-surface-container-lowest p-7 md:p-8 rounded-[2.5rem] shadow-xl shadow-black/5 border border-outline-variant/10 hover:border-primary/30 hover:shadow-primary/10 transition-all group relative overflow-hidden flex flex-col h-full min-h-[286px]">
+            <div className="absolute top-0 right-0 w-20 h-20 bg-primary/5 rounded-full -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-700" />
+            <div className="w-18 h-18 rounded-3xl bg-primary/10 flex items-center justify-center mb-6 group-hover:bg-primary group-hover:rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
+              <Activity className="text-primary group-hover:text-white w-9 h-9 transition-colors" />
             </div>
-            <h3 className="text-2xl md:text-3xl font-black font-headline mb-3 tracking-tight leading-none">Segurança</h3>
-            <p className="text-sm md:text-base font-body mb-6 leading-tight line-clamp-1">Logs.</p>
-            <div className="mt-auto pt-6 border-t border-outline-variant/5 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-on-surface-variant/20"></span>
-              <span className="text-[13px] font-black uppercase tracking-widest text-on-surface-variant/20">Homologação</span>
+            <h3 className="text-2xl md:text-3xl font-black font-headline mb-3 text-on-surface tracking-tight leading-none">Dashboard</h3>
+            <p className="text-sm md:text-base text-on-surface-variant/60 font-body mb-6 leading-tight line-clamp-1">Visão analítica.</p>
+            <div className="mt-auto flex items-center justify-between pt-6 border-t border-outline-variant/10">
+              <div className="flex flex-col">
+                <span className="text-[13px] font-black uppercase tracking-[0.2em] text-on-surface-variant/40">Status</span>
+                <span className="text-3xl md:text-4xl font-black text-primary font-headline leading-none">Ativo</span>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-surface-container-low flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+                <Plus className="w-6 h-6 text-on-surface-variant/40 group-hover:text-primary transition-colors" />
+              </div>
             </div>
-          </div>
+          </Link>
         </div>
       </div>
     </DashboardLayout>

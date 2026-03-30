@@ -15,6 +15,7 @@ interface Rotina {
   descricao: string;
   trimestre: 'PRIMEIRO' | 'SEGUNDO' | 'TERCEIRO';
   categoria: 'OBRIGATORIO' | 'OPCIONAL' | 'EVENTUAL';
+  unidade_cnes?: string;
   cpf_operador?: string;
   operador_nome?: string;
   created_at?: string;
@@ -118,6 +119,7 @@ export default function RotinasPage() {
         descricao: formData.descricao?.toUpperCase(),
         trimestre: formData.trimestre,
         categoria: formData.categoria,
+        unidade_cnes: authUser?.unidade_cnes || null,
         cpf_operador: authUser?.cpf || null
       };
 

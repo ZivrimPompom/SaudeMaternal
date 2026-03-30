@@ -24,6 +24,7 @@ interface Profissional {
   chs: 20 | 30 | 40;
   situacao: 'ATIVO' | 'INATIVO';
   unidade_cnes?: string;
+  unidade_cnes_operador?: string;
   cpf_operador?: string;
   operador_nome?: string;
   categorias_profissionais?: Categoria;
@@ -195,6 +196,7 @@ export default function ProfissionaisPage() {
         chs: formData.chs,
         situacao: formData.situacao || 'ATIVO',
         unidade_cnes: formData.unidade_cnes || null,
+        unidade_cnes_operador: authUser?.unidade_cnes || null,
         cpf_operador: authUser?.cpf || null
       };
 

@@ -1,0 +1,222 @@
+-- SUPABASE FULL SCHEMA - SAÚDE MATERNAL
+-- Copy and paste this into the Supabase SQL Editor
+
+-- 1. Create the health units table (Unidades de Saúde)
+CREATE TABLE IF NOT EXISTS public.unidades_saude (
+    cnes TEXT PRIMARY KEY,
+    nome_fantasia TEXT NOT NULL,
+    logradouro TEXT,
+    numero TEXT,
+    complemento TEXT,
+    bairro TEXT,
+    municipio TEXT NOT NULL DEFAULT 'SAO PAULO',
+    uf TEXT NOT NULL DEFAULT 'SP',
+    cep TEXT,
+    telefone TEXT,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Insert sample health units
+INSERT INTO public.unidades_saude (cnes, nome_fantasia, logradouro, bairro, municipio, uf)
+VALUES 
+('2785915', 'UBS SANTA CECILIA', 'RUA VITORINO CARMILO, 599', 'SANTA CECILIA', 'SAO PAULO', 'SP'),
+('2785923', 'UBS BOM RETIRO', 'RUA TENENTE PENA, 8', 'BOM RETIRO', 'SAO PAULO', 'SP'),
+('2785931', 'UBS REPÚBLICA', 'RUA AUGUSTA, 1100', 'CONSOLAÇÃO', 'SAO PAULO', 'SP')
+ON CONFLICT (cnes) DO NOTHING;
+
+-- 2. Create the operators table (Operadores)
+CREATE TABLE IF NOT EXISTS public.operadores (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    nome TEXT NOT NULL,
+    cpf TEXT UNIQUE NOT NULL,
+    senha TEXT NOT NULL, -- In a real app, this would be hashed
+    status TEXT NOT NULL DEFAULT 'Ativo' CHECK (status IN ('Ativo', 'Bloqueado')),
+    nivel_acesso TEXT NOT NULL DEFAULT 'Usuário' CHECK (nivel_acesso IN ('Usuário', 'Administrador')),
+    sigla TEXT,
+    unidade_cnes TEXT REFERENCES public.unidades_saude(cnes),
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 3. Create the patients table (Pacientes)
+CREATE TABLE IF NOT EXISTS public.pacientes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    gestante TEXT NOT NULL,
+    cpf TEXT UNIQUE NOT NULL,
+    nome_mae TEXT DEFAULT 'NÃO INFORMADO',
+    prontuario TEXT,
+    cns TEXT,
+    data_nascimento DATE,
+    logradouro TEXT,
+    numero TEXT,
+    complemento TEXT,
+    bairro TEXT,
+    contato TEXT,
+    email TEXT,
+    cidade TEXT DEFAULT 'SÃO PAULO',
+    uf TEXT DEFAULT 'SP',
+    operador_responsavel TEXT,
+    unidade_cnes TEXT REFERENCES public.unidades_saude(cnes), -- Added for unit association
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 4. Create the professional categories table (Categorias Profissionais)
+CREATE TABLE IF NOT EXISTS public.categorias_profissionais (
+    cbo TEXT PRIMARY KEY,
+    categoria TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 5. Create the professionals table (Profissionais)
+CREATE TABLE IF NOT EXISTS public.profissionais (
+    cpf TEXT PRIMARY KEY,
+    nome TEXT NOT NULL,
+    cns TEXT,
+    cbo TEXT REFERENCES public.categorias_profissionais(cbo),
+    equipe TEXT NOT NULL DEFAULT 'SEM EQUIPE',
+    vinculo TEXT NOT NULL DEFAULT 'INTERMEDIADO' CHECK (vinculo IN ('DIRETO', 'INTERMEDIADO')),
+    tipo_vinculo TEXT NOT NULL DEFAULT 'CLT' CHECK (tipo_vinculo IN ('CLT', 'ESTATUTARIO', 'AUTÔNOMO')),
+    chs INTEGER NOT NULL DEFAULT 20 CHECK (chs IN (20, 30, 40)),
+    situacao TEXT NOT NULL DEFAULT 'ATIVO' CHECK (situacao IN ('ATIVO', 'INATIVO')),
+    unidade_cnes TEXT REFERENCES public.unidades_saude(cnes), -- Unit where the professional works
+    unidade_cnes_operador TEXT REFERENCES public.unidades_saude(cnes), -- Unit that registered the professional
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 6. Create the routines table (Rotinas)
+CREATE TABLE IF NOT EXISTS public.rotinas (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tipo TEXT NOT NULL CHECK (tipo IN ('EXAME', 'VACINA', 'MEDICACAO')),
+    descricao TEXT NOT NULL,
+    trimestre TEXT NOT NULL CHECK (trimestre IN ('PRIMEIRO', 'SEGUNDO', 'TERCEIRO')),
+    categoria TEXT NOT NULL DEFAULT 'OBRIGATORIO' CHECK (categoria IN ('OBRIGATORIO', 'OPCIONAL', 'EVENTUAL')),
+    unidade_cnes TEXT REFERENCES public.unidades_saude(cnes), -- Optional: routines can be specific to a unit
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 7. Create the pregnancies table (Gestações)
+CREATE TABLE IF NOT EXISTS public.gestacoes (
+    sispn TEXT PRIMARY KEY,
+    cpf_paciente TEXT NOT NULL REFERENCES public.pacientes(cpf),
+    dum DATE,
+    dpp DATE,
+    data_abertura DATE,
+    data_cadastro DATE,
+    operador TEXT NOT NULL DEFAULT 'NÃO INFORMADO',
+    referencia_tecnica TEXT NOT NULL DEFAULT 'NÃO INFORMADO',
+    acs TEXT NOT NULL DEFAULT 'NÃO INFORMADO',
+    equipe TEXT NOT NULL DEFAULT 'NÃO INFORMADO',
+    idade_cadastro INTEGER,
+    fase_vida_cadastro TEXT,
+    gestacao_anterior INTEGER DEFAULT 0,
+    aborto INTEGER DEFAULT 0,
+    parto INTEGER DEFAULT 0,
+    sifilis TEXT CHECK (sifilis IN ('SIM', 'NÃO', 'NÃO SABE')),
+    sifilis_tratada TEXT CHECK (sifilis_tratada IN ('SIM', 'NÃO', 'NÃO SABE')),
+    hiv TEXT CHECK (hiv IN ('POSITIVO', 'NEGATIVO')),
+    hepatite_b TEXT CHECK (hepatite_b IN ('REAGENTE', 'NÃO REAGENTE')),
+    hepatite_c TEXT CHECK (hepatite_c IN ('REAGENTE', 'NÃO REAGENTE')),
+    classificacao_pn TEXT CHECK (classificacao_pn IN ('HABITUAL', 'RISCO')),
+    alto_risco_compartilhado TEXT CHECK (alto_risco_compartilhado IN ('SIM', 'NÃO')),
+    unidade_cnes TEXT REFERENCES public.unidades_saude(cnes), -- Unit association
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 8. Create the appointments table (Atendimentos)
+CREATE TABLE IF NOT EXISTS public.atendimentos (
+    id_atendimento UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    sispn TEXT NOT NULL REFERENCES public.gestacoes(sispn) ON DELETE CASCADE,
+    data_consulta DATE NOT NULL,
+    trimestre_consulta TEXT CHECK (trimestre_consulta IN ('1º TRIMESTRE', '2º TRIMESTRE', '3º TRIMESTRE')),
+    cbo TEXT NOT NULL,
+    cpf TEXT NOT NULL DEFAULT 'NÃO INFORMADO',
+    data_proxima_consulta DATE,
+    observacoes_clinicas TEXT,
+    cpf_operador TEXT,
+    unidade_cnes TEXT REFERENCES public.unidades_saude(cnes), -- Unit association
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 9. Create the exam results table (Registro de Rotinas)
+CREATE TABLE IF NOT EXISTS public.registro_rotinas (
+    id_registro UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    sispn TEXT NOT NULL REFERENCES public.gestacoes(sispn) ON DELETE CASCADE,
+    id_rotina UUID NOT NULL REFERENCES public.rotinas(id) ON DELETE CASCADE,
+    data_realizacao DATE NOT NULL,
+    resultado TEXT,
+    observacoes TEXT,
+    trimestre_realizacao TEXT CHECK (trimestre_realizacao IN ('1º TRIMESTRE', '2º TRIMESTRE', '3º TRIMESTRE')),
+    cbo TEXT,
+    cpf_profissional TEXT,
+    cpf_operador TEXT,
+    unidade_cnes TEXT REFERENCES public.unidades_saude(cnes), -- Unit association
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 10. Enable Row Level Security (RLS) for all tables
+ALTER TABLE public.unidades_saude ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.operadores ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.pacientes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.categorias_profissionais ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.profissionais ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.rotinas ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.gestacoes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.atendimentos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.registro_rotinas ENABLE ROW LEVEL SECURITY;
+
+-- 11. Create basic policies (Allow all for development)
+-- In production, these should be restricted based on auth.uid()
+CREATE POLICY "Allow all access for development" ON public.unidades_saude FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all access for development" ON public.operadores FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all access for development" ON public.pacientes FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all access for development" ON public.categorias_profissionais FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all access for development" ON public.profissionais FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all access for development" ON public.rotinas FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all access for development" ON public.gestacoes FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all access for development" ON public.atendimentos FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all access for development" ON public.registro_rotinas FOR ALL USING (true) WITH CHECK (true);
+
+-- 12. Helper function for updated_at
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = now();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- 13. Triggers for updated_at
+DROP TRIGGER IF EXISTS update_unidades_saude_updated_at ON public.unidades_saude;
+CREATE TRIGGER update_unidades_saude_updated_at BEFORE UPDATE ON public.unidades_saude FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_operadores_updated_at ON public.operadores;
+CREATE TRIGGER update_operadores_updated_at BEFORE UPDATE ON public.operadores FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_pacientes_updated_at ON public.pacientes;
+CREATE TRIGGER update_pacientes_updated_at BEFORE UPDATE ON public.pacientes FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_categorias_profissionais_updated_at ON public.categorias_profissionais;
+CREATE TRIGGER update_categorias_profissionais_updated_at BEFORE UPDATE ON public.categorias_profissionais FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_profissionais_updated_at ON public.profissionais;
+CREATE TRIGGER update_profissionais_updated_at BEFORE UPDATE ON public.profissionais FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_rotinas_updated_at ON public.rotinas;
+CREATE TRIGGER update_rotinas_updated_at BEFORE UPDATE ON public.rotinas FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_gestacoes_updated_at ON public.gestacoes;
+CREATE TRIGGER update_gestacoes_updated_at BEFORE UPDATE ON public.gestacoes FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_atendimentos_updated_at ON public.atendimentos;
+CREATE TRIGGER update_atendimentos_updated_at BEFORE UPDATE ON public.atendimentos FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_registro_rotinas_updated_at ON public.registro_rotinas;
+CREATE TRIGGER update_registro_rotinas_updated_at BEFORE UPDATE ON public.registro_rotinas FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();

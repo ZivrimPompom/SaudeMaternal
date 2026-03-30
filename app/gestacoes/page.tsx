@@ -31,6 +31,7 @@ interface Gestacao {
   hepatite_c: string;
   classificacao_pn: string;
   alto_risco_compartilhado: string;
+  unidade_cnes?: string;
   created_at?: string;
   // Joined/Computed fields for display
   paciente_nome?: string;
@@ -534,6 +535,7 @@ export default function GestacoesPage() {
         cpf_paciente: formData.cpf_paciente?.replace(/\D/g, ''),
         operador: authUser?.cpf?.replace(/\D/g, '') || 'SISTEMA',
         cpf_operador: authUser?.cpf || null,
+        unidade_cnes: authUser?.unidade_cnes || null,
         referencia_tecnica: rtCpf?.replace(/\D/g, '') || 'NÃO INFORMADO',
         acs: acsCpf?.replace(/\D/g, '') || 'NÃO INFORMADO',
       };

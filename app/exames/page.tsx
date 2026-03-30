@@ -42,6 +42,7 @@ interface ExamResult {
   trimestre_realizacao: string;
   cbo: string;
   cpf_profissional: string;
+  unidade_cnes?: string;
   cpf_operador?: string;
   created_at?: string;
   // Joins
@@ -348,6 +349,7 @@ export default function ExamesPage() {
           trimestre_realizacao: trimestre,
           cbo: professional?.cbo || null,
           cpf_profissional: selectedProfessionalCpf,
+          unidade_cnes: authUser?.unidade_cnes || null,
           cpf_operador: authUser?.cpf || null
         };
       });
