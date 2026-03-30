@@ -354,7 +354,7 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
   };
 
   const userName = user?.nome || 'Usuário';
-  const userRole = user?.nivel_acesso || 'Operador';
+  const userRole = user?.nivel_acesso || 'Usuário';
   const userInitials = user?.sigla || userName.substring(0, 2).toUpperCase();
 
   return (

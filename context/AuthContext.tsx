@@ -11,6 +11,7 @@ interface Operator {
   status: string;
   sigla: string;
   nivel_acesso?: string;
+  unidade_cnes?: string;
 }
 
 interface AuthContextType {
@@ -69,7 +70,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         cpf: data.cpf,
         status: data.status,
         sigla: data.sigla,
-        nivel_acesso: data.nivel_acesso
+        nivel_acesso: data.nivel_acesso,
+        unidade_cnes: data.unidade_cnes
       };
 
       setUser(operator);

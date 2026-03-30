@@ -39,7 +39,7 @@ interface Operator {
   name: string;
   cpf: string;
   status: 'Ativo' | 'Bloqueado';
-  nivel_acesso: 'Administrador' | 'Operador';
+  nivel_acesso: 'Administrador' | 'Usuário';
   initials: string;
   unidade_cnes?: string;
   cpf_operador?: string;
@@ -134,7 +134,7 @@ export default function OperadoresPage() {
               name: item.name || item.nome || 'Sem Nome',
               cpf: item.cpf,
               status: item.status || 'Ativo',
-              nivel_acesso: item.nivel_acesso || 'Operador',
+              nivel_acesso: item.nivel_acesso || 'Usuário',
               initials: item.initials || item.sigla || (item.name || item.nome || '??').substring(0, 2).toUpperCase(),
               unidade_cnes: item.unidade_cnes,
               unidades_saude: item.unidades_saude
@@ -194,7 +194,7 @@ export default function OperadoresPage() {
           name: item.name || item.nome || 'Sem Nome',
           cpf: item.cpf,
           status: item.status || 'Ativo',
-          nivel_acesso: item.nivel_acesso || 'Operador',
+          nivel_acesso: item.nivel_acesso || 'Usuário',
           initials: item.initials || item.sigla || (item.name || item.nome || '??').substring(0, 2).toUpperCase(),
           unidade_cnes: item.unidade_cnes,
           unidades_saude: item.unidades_saude
@@ -239,7 +239,7 @@ export default function OperadoresPage() {
     cpf: '',
     password: '',
     status: 'Ativo' as 'Ativo' | 'Bloqueado',
-    nivel_acesso: 'Operador' as 'Administrador' | 'Operador',
+    nivel_acesso: 'Usuário' as 'Administrador' | 'Usuário',
     unidade_cnes: ''
   });
 
@@ -286,6 +286,11 @@ export default function OperadoresPage() {
 
     if (!formData.name.trim()) {
       setError('O nome é obrigatório.');
+      return;
+    }
+
+    if (!formData.unidade_cnes) {
+      setError('A Unidade de Saúde é obrigatória.');
       return;
     }
 
@@ -409,7 +414,7 @@ export default function OperadoresPage() {
       }
     }
 
-    setFormData({ name: '', cpf: '', password: '', status: 'Ativo', nivel_acesso: 'Operador', unidade_cnes: '' });
+    setFormData({ name: '', cpf: '', password: '', status: 'Ativo', nivel_acesso: 'Usuário', unidade_cnes: '' });
     setIsFormOpen(false);
     fetchOperators();
   };
@@ -421,7 +426,7 @@ export default function OperadoresPage() {
       cpf: op.cpf,
       password: '', // Password usually not shown
       status: op.status,
-      nivel_acesso: op.nivel_acesso || 'Operador',
+      nivel_acesso: op.nivel_acesso || 'Usuário',
       unidade_cnes: op.unidade_cnes || ''
     });
     setIsFormOpen(true);
@@ -430,7 +435,7 @@ export default function OperadoresPage() {
 
   const cancelEdit = () => {
     setEditingId(null);
-    setFormData({ name: '', cpf: '', password: '', status: 'Ativo', nivel_acesso: 'Operador', unidade_cnes: '' });
+    setFormData({ name: '', cpf: '', password: '', status: 'Ativo', nivel_acesso: 'Usuário', unidade_cnes: '' });
     setError(null);
     setIsFormOpen(false);
   };
@@ -584,6 +589,7 @@ export default function OperadoresPage() {
                           className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-12 pr-4 py-3.5 transition-all font-body outline-none text-xs appearance-none"
                           value={formData.unidade_cnes || ''}
                           onChange={(e) => setFormData({ ...formData, unidade_cnes: e.target.value })}
+                          required
                         >
                           <option value="">Selecione uma unidade...</option>
                           {units.map(unit => (
@@ -613,10 +619,10 @@ export default function OperadoresPage() {
                           <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-5 h-5" />
                           <select 
                             className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-12 pr-4 py-3.5 transition-all font-body outline-none text-xs appearance-none"
-                            value={formData.nivel_acesso || 'Operador'}
-                            onChange={(e) => setFormData({ ...formData, nivel_acesso: e.target.value as 'Administrador' | 'Operador' })}
+                            value={formData.nivel_acesso || 'Usuário'}
+                            onChange={(e) => setFormData({ ...formData, nivel_acesso: e.target.value as 'Administrador' | 'Usuário' })}
                           >
-                            <option value="Operador">Operador</option>
+                            <option value="Usuário">Usuário</option>
                             <option value="Administrador">Administrador</option>
                           </select>
                         </div>
@@ -785,7 +791,7 @@ export default function OperadoresPage() {
                               <td className="px-4 py-4">
                                 <div className="flex flex-col gap-0.5">
                                   <span className={`text-[10px] font-black uppercase tracking-wider ${op.nivel_acesso === 'Administrador' ? 'text-primary' : 'text-on-surface'}`}>
-                                    {op.nivel_acesso || 'Operador'}
+                                    {op.nivel_acesso || 'Usuário'}
                                   </span>
                                   <span className="text-[8px] text-on-surface-variant/40 font-body uppercase tracking-tighter">Nível de Acesso</span>
                                 </div>
