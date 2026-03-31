@@ -42,10 +42,19 @@ export default function DashboardOverview() {
   const [loading, setLoading] = useState(true);
   const [units, setUnits] = useState<any[]>([]);
   const [routineTypes, setRoutineTypes] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (user) {
+      console.log('Dashboard User Info:', {
+        cpf: user.cpf,
+        role: user.nivel_acesso,
+        unit: user.unidade_cnes
+      });
+    }
+  }, [user]);
   
   // Global Filters
   const [filterUnit, setFilterUnit] = useState('all');
-  const [filterPeriod, setFilterPeriod] = useState('30d');
   const [filterRisk, setFilterRisk] = useState('all');
   const [filterTrimester, setFilterTrimester] = useState('all');
   const [filterRoutine, setFilterRoutine] = useState('all');
@@ -57,9 +66,35 @@ export default function DashboardOverview() {
     }
   }, [user]);
 
+  const fetchAll = async (table: string, select: string = '*', filter: string | null = null) => {
+    let allData: any[] = [];
+    let from = 0;
+    const step = 1000;
+    let hasMore = true;
+
+    while (hasMore) {
+      let query = supabase.from(table).select(select).range(from, from + step - 1);
+      if (filter) {
+        query = query.or(filter);
+      }
+      
+      const { data, error } = await query;
+      if (error) throw error;
+      if (data) {
+        allData = [...allData, ...data];
+        if (data.length < step) hasMore = false;
+        else from += step;
+      } else {
+        hasMore = false;
+      }
+    }
+    return allData;
+  };
+
   const [gestacoesData, setGestacoesData] = useState<any[]>([]);
   const [atendimentosData, setAtendimentosData] = useState<any[]>([]);
   const [examesData, setExamesData] = useState<any[]>([]);
+  const [patientsData, setPatientsData] = useState<any[]>([]);
   const [stats, setStats] = useState({
     patients: 0,
     gestations: 0,
@@ -75,40 +110,82 @@ export default function DashboardOverview() {
     if (isSupabaseConfigured) {
       setLoading(true);
 
-      // Prepare queries
-      let gestsQuery = supabase.from('gestacoes').select('*');
-      let consQuery = supabase.from('atendimentos').select('*');
-      let examsQuery = supabase.from('registro_rotinas').select('*');
-      let unitsQuery = supabase.from('unidades_saude').select('*');
-      let pacsQuery = supabase.from('pacientes').select('*', { count: 'exact', head: true });
-      
-      // Apply unit filter at database level for non-admins
-      if (user?.nivel_acesso !== 'Administrador' && user?.unidade_cnes) {
-        gestsQuery = gestsQuery.eq('unidade_cnes', user.unidade_cnes);
-        consQuery = consQuery.eq('unidade_cnes', user.unidade_cnes);
-        examsQuery = examsQuery.eq('unidade_cnes', user.unidade_cnes);
-        unitsQuery = unitsQuery.eq('cnes', user.unidade_cnes);
-        pacsQuery = pacsQuery.eq('unidade_cnes', user.unidade_cnes);
-      }
+      const loadData = async () => {
+        try {
+          const unitFilter = (user?.nivel_acesso !== 'Administrador' && user?.unidade_cnes) 
+            ? `unidade_cnes.eq.${user.unidade_cnes},unidade_cnes.is.null` 
+            : null;
 
-      Promise.all([
-        gestsQuery,
-        consQuery,
-        examsQuery,
-        unitsQuery,
-        supabase.from('rotinas').select('*'),
-        pacsQuery
-      ]).then(([gests, cons, exams, unitsRes, routinesRes, pacs]) => {
-        setGestacoesData(gests.data || []);
-        setAtendimentosData(cons.data || []);
-        setExamesData(exams.data || []);
-        setUnits(unitsRes.data || []);
-        setRoutineTypes(routinesRes.data || []);
-        setStats(prev => ({ ...prev, patients: pacs.count || 0, units: unitsRes.count || 0 }));
-      }).finally(() => setLoading(false));
+          const [gests, cons, exams, unitsRes, routinesRes, pacsRes] = await Promise.all([
+            fetchAll('gestacoes', '*', unitFilter),
+            fetchAll('atendimentos', '*', unitFilter),
+            fetchAll('registro_rotinas', '*, rotinas(tipo)', unitFilter),
+            user?.nivel_acesso !== 'Administrador' && user?.unidade_cnes 
+              ? supabase.from('unidades_saude').select('*').eq('cnes', user.unidade_cnes)
+              : supabase.from('unidades_saude').select('*'),
+            supabase.from('rotinas').select('*'),
+            fetchAll('pacientes', '*', unitFilter)
+          ]);
+
+          console.log('Dashboard Data Raw (Full):', {
+            gestacoes: gests.length,
+            atendimentos: cons.length,
+            exames: exams.length,
+            patients: pacsRes.length
+          });
+
+          setGestacoesData(gests);
+          setAtendimentosData(cons);
+          setExamesData(exams);
+          setUnits(Array.isArray(unitsRes) ? unitsRes : (unitsRes.data || []));
+          setRoutineTypes(routinesRes.data || []);
+          setPatientsData(pacsRes);
+          setStats({ 
+            patients: pacsRes.length, 
+            gestations: gests.length,
+            consultations: cons.length,
+            exams: exams.length,
+            units: Array.isArray(unitsRes) ? unitsRes.length : (unitsRes.data?.length || 0)
+          });
+        } catch (err) {
+          console.error('Critical error in dashboard data fetching:', err);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      loadData();
     } else {
-      // Mock data for demo
+      // Mock data for demo - populate arrays so filters work
       setTimeout(() => {
+        const mockGestacoes = Array.from({ length: 86 }).map((_, i) => ({
+          id: `g-${i}`,
+          sispn: `sis-${i}`,
+          classificacao_pn: i % 3 === 0 ? 'RISCO' : 'HABITUAL',
+          data_cadastro: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
+          unidade_cnes: '1'
+        }));
+
+        const mockAtendimentos = Array.from({ length: 150 }).map((_, i) => ({
+          id: `c-${i}`,
+          sispn: `sis-${Math.floor(Math.random() * 86)}`,
+          data_consulta: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
+          trimestre_consulta: i % 3 === 0 ? '1º TRIMESTRE' : i % 3 === 1 ? '2º TRIMESTRE' : '3º TRIMESTRE',
+          unidade_cnes: '1'
+        }));
+
+        const mockExames = Array.from({ length: 120 }).map((_, i) => ({
+          id_registro: `e-${i}`,
+          sispn: `sis-${Math.floor(Math.random() * 86)}`,
+          data_realizacao: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
+          trimestre_realizacao: i % 3 === 0 ? '1º TRIMESTRE' : i % 3 === 1 ? '2º TRIMESTRE' : '3º TRIMESTRE',
+          id_rotina: '1',
+          unidade_cnes: '1'
+        }));
+
+        setGestacoesData(mockGestacoes);
+        setAtendimentosData(mockAtendimentos);
+        setExamesData(mockExames);
         setStats({
           patients: 124,
           gestations: 86,
@@ -133,31 +210,40 @@ export default function DashboardOverview() {
 
   // Real filtering logic
   const filteredData = useMemo(() => {
-    if (!mounted || loading) return { gestacoes: [], atendimentos: [], exames: [] };
+    if (!mounted || loading) return { gestacoes: [], atendimentos: [], exames: [], pacientes: [] };
 
-    const now = new Date();
-    const periodLimit = new Date();
-    if (filterPeriod === '30d') periodLimit.setDate(now.getDate() - 30);
-    else if (filterPeriod === '90d') periodLimit.setDate(now.getDate() - 90);
-    else if (filterPeriod === 'ytd') periodLimit.setMonth(0, 1); // Jan 1st
-
-    const filterByUnit = (item: any) => filterUnit === 'all' || item.unidade_cnes === filterUnit;
-    const filterByPeriod = (dateStr: string) => !dateStr || new Date(dateStr) >= periodLimit;
+    const filterByUnit = (item: any) => {
+      if (filterUnit === 'all') return true;
+      if (!item.unidade_cnes) return false;
+      return String(item.unidade_cnes).trim() === String(filterUnit).trim();
+    };
     const filterByRisk = (item: any) => filterRisk === 'all' || item.classificacao_pn === filterRisk;
     const filterByTrimester = (trim: string) => filterTrimester === 'all' || trim === filterTrimester;
+    const filterByRoutine = (item: any) => {
+      if (filterRoutine === 'all') return true;
+      // Handle both joined data and legacy data
+      const itemType = item.rotinas?.tipo || item.tipo_rotina; 
+      return itemType === filterRoutine;
+    };
 
     // Filter Gestations
     const gests = gestacoesData.filter(g => {
       const matchesUnit = filterByUnit(g);
-      const matchesPeriod = filterByPeriod(g.data_cadastro);
       const matchesRisk = filterByRisk(g);
-      return matchesUnit && matchesPeriod && matchesRisk;
+      
+      let matchesTrimester = true;
+      if (filterTrimester !== 'all') {
+        const hasAtendimento = atendimentosData.some(c => c.sispn === g.sispn && c.trimestre_consulta === filterTrimester);
+        const hasExam = examesData.some(e => e.sispn === g.sispn && e.trimestre_realizacao === filterTrimester);
+        matchesTrimester = hasAtendimento || hasExam;
+      }
+
+      return matchesUnit && matchesRisk && matchesTrimester;
     });
 
     // Filter Atendimentos
     const cons = atendimentosData.filter(c => {
       const matchesUnit = filterByUnit(c);
-      const matchesPeriod = filterByPeriod(c.data_consulta);
       const matchesTrimester = filterByTrimester(c.trimestre_consulta);
       
       // If filtering by risk, we need to find the gestation for this atendimento
@@ -167,15 +253,14 @@ export default function DashboardOverview() {
         matchesRisk = gest ? gest.classificacao_pn === filterRisk : false;
       }
 
-      return matchesUnit && matchesPeriod && matchesTrimester && matchesRisk;
+      return matchesUnit && matchesTrimester && matchesRisk;
     });
 
     // Filter Exames
     const exams = examesData.filter(e => {
       const matchesUnit = filterByUnit(e);
-      const matchesPeriod = filterByPeriod(e.data_realizacao);
       const matchesTrimester = filterByTrimester(e.trimestre_realizacao);
-      const matchesRoutine = filterRoutine === 'all' || e.id_rotina === filterRoutine || (filterRoutine === 'Exames' && e.id_rotina);
+      const matchesRoutine = filterByRoutine(e);
       
       let matchesRisk = true;
       if (filterRisk !== 'all') {
@@ -183,17 +268,39 @@ export default function DashboardOverview() {
         matchesRisk = gest ? gest.classificacao_pn === filterRisk : false;
       }
 
-      return matchesUnit && matchesPeriod && matchesTrimester && matchesRoutine && matchesRisk;
+      return matchesUnit && matchesTrimester && matchesRoutine && matchesRisk;
     });
 
-    return { gestacoes: gests, atendimentos: cons, exames: exams };
-  }, [mounted, loading, gestacoesData, atendimentosData, examesData, filterUnit, filterPeriod, filterRisk, filterTrimester, filterRoutine]);
+    // Filter Patients
+    const pacs = patientsData.filter(p => {
+      const matchesUnit = filterByUnit(p);
+      
+      // Find activity for this patient
+      const patientGests = gestacoesData.filter(g => g.cpf_paciente === p.cpf);
+      
+      let matchesTrimester = true;
+      if (filterTrimester !== 'all') {
+        const hasActivity = patientGests.some(g => 
+          atendimentosData.some(c => c.sispn === g.sispn && c.trimestre_consulta === filterTrimester) ||
+          examesData.some(e => e.sispn === g.sispn && e.trimestre_realizacao === filterTrimester)
+        );
+        matchesTrimester = hasActivity;
+      }
 
-  if (!mounted) return null;
+      return matchesUnit && matchesTrimester;
+    });
+
+    return { gestacoes: gests, atendimentos: cons, exames: exams, pacientes: pacs };
+  }, [mounted, loading, gestacoesData, atendimentosData, examesData, patientsData, filterUnit, filterRisk, filterTrimester, filterRoutine]);
+
+  const routineOptions = useMemo(() => {
+    const types = routineTypes.map(r => r.tipo).filter(Boolean);
+    return Array.from(new Set(types)).sort();
+  }, [routineTypes]);
 
   const filteredStats = {
     gestations: filteredData.gestacoes.length,
-    patients: filteredData.gestacoes.length, // Based on gestations as requested
+    patients: filteredData.pacientes.length,
     consultations: filteredData.atendimentos.length,
     exams: filteredData.exames.length
   };
@@ -206,26 +313,16 @@ export default function DashboardOverview() {
     const groups: Record<string, { name: string, atendimentos: number, exames: number }> = {};
     
     const formatDate = (dateStr: string) => {
+      if (!dateStr) return '';
       const d = new Date(dateStr);
-      if (filterPeriod === '30d') return `Semana ${Math.ceil(d.getDate() / 7)}`;
-      if (filterPeriod === '90d') return d.toLocaleDateString('pt-BR', { month: 'short' });
-      return d.toLocaleDateString('pt-BR', { month: 'short' });
+      if (isNaN(d.getTime())) return '';
+      const months = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+      return months[d.getMonth()];
     };
 
-    // Initialize groups for the period to ensure all months/weeks are shown
-    const now = new Date();
-    if (filterPeriod === '30d') {
-      for (let i = 1; i <= 4; i++) groups[`Semana ${i}`] = { name: `Semana ${i}`, atendimentos: 0, exames: 0 };
-    } else if (filterPeriod === '90d') {
-      for (let i = 2; i >= 0; i--) {
-        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        const name = d.toLocaleDateString('pt-BR', { month: 'short' });
-        groups[name] = { name, atendimentos: 0, exames: 0 };
-      }
-    } else {
-      const months = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
-      months.forEach(m => groups[m] = { name: m, atendimentos: 0, exames: 0 });
-    }
+    // Initialize groups for the period to ensure all months are shown
+    const months = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+    months.forEach(m => groups[m] = { name: m, atendimentos: 0, exames: 0 });
 
     filteredData.atendimentos.forEach(c => {
       const key = formatDate(c.data_consulta);
@@ -272,6 +369,8 @@ export default function DashboardOverview() {
   const gestationStatus = getFilteredGestationStatus();
   const trimesterData = getFilteredTrimesterData();
 
+  if (!mounted) return null;
+
   return (
     <DashboardLayout>
       <div className="p-4 md:p-8 lg:p-12 pb-32 max-w-7xl mx-auto space-y-10">
@@ -306,19 +405,6 @@ export default function DashboardOverview() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant/50 ml-2">Período</label>
-              <select 
-                value={filterPeriod}
-                onChange={(e) => setFilterPeriod(e.target.value)}
-                className="bg-surface-container-lowest border border-outline-variant/20 rounded-xl px-4 py-2 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-              >
-                <option key="per-30" value="30d">Últimos 30 dias</option>
-                <option key="per-90" value="90d">Últimos 90 dias</option>
-                <option key="per-ytd" value="ytd">Este Ano</option>
-              </select>
-            </div>
-
-            <div className="flex flex-col gap-1.5">
               <label className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant/50 ml-2">Rotina</label>
               <select 
                 value={filterRoutine}
@@ -326,13 +412,9 @@ export default function DashboardOverview() {
                 className="bg-surface-container-lowest border border-outline-variant/20 rounded-xl px-4 py-2 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
               >
                 <option key="routine-all" value="all">Todas as Rotinas</option>
-                {routineTypes.map((r) => (
-                  <option key={`routine-opt-${r.id}`} value={r.id || r.descricao}>{r.descricao}</option>
+                {routineOptions.map((type) => (
+                  <option key={`routine-opt-${type}`} value={type}>{type}</option>
                 ))}
-                {/* Ensure "Exames" is visible if not in database */}
-                {!routineTypes.find(r => r.descricao === 'Exames') && (
-                  <option key="routine-exames-opt" value="Exames">Exames</option>
-                )}
               </select>
             </div>
 
@@ -369,11 +451,10 @@ export default function DashboardOverview() {
               </div>
             </div>
 
-            {(filterUnit !== 'all' || filterPeriod !== '30d' || filterRisk !== 'all' || filterTrimester !== 'all' || filterRoutine !== 'all') && (
+            {(filterUnit !== 'all' || filterRisk !== 'all' || filterTrimester !== 'all' || filterRoutine !== 'all') && (
               <button 
                 onClick={() => {
                   setFilterUnit('all');
-                  setFilterPeriod('30d');
                   setFilterRisk('all');
                   setFilterTrimester('all');
                   setFilterRoutine('all');
@@ -609,6 +690,58 @@ export default function DashboardOverview() {
           </div>
         </div>
       </div>
+      
+      {/* Debug Info - Only visible for developers/admins */}
+      {user?.nivel_acesso === 'Administrador' && (
+        <div className="mt-20 p-8 bg-surface-container-high rounded-[2.5rem] border border-outline-variant/20 max-w-7xl mx-auto">
+          <h3 className="text-xl font-black uppercase tracking-tight mb-4">Debug Dashboard Data</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-[10px] font-mono">
+            <div className="p-4 bg-surface-container-lowest rounded-xl">
+              <p className="opacity-50 mb-1">RAW GESTACOES</p>
+              <p className="text-lg font-bold">{gestacoesData.length}</p>
+            </div>
+            <div className="p-4 bg-surface-container-lowest rounded-xl">
+              <p className="opacity-50 mb-1">RAW ATENDIMENTOS</p>
+              <p className="text-lg font-bold">{atendimentosData.length}</p>
+            </div>
+            <div className="p-4 bg-surface-container-lowest rounded-xl">
+              <p className="opacity-50 mb-1">RAW EXAMES</p>
+              <p className="text-lg font-bold">{examesData.length}</p>
+            </div>
+            <div className="p-4 bg-surface-container-lowest rounded-xl">
+              <p className="opacity-50 mb-1">RAW PACIENTES</p>
+              <p className="text-lg font-bold">{patientsData.length}</p>
+            </div>
+            <div className="p-4 bg-surface-container-lowest rounded-xl">
+              <p className="opacity-50 mb-1">FILTERED GESTACOES</p>
+              <p className="text-lg font-bold">{filteredData.gestacoes.length}</p>
+            </div>
+            <div className="p-4 bg-surface-container-lowest rounded-xl">
+              <p className="opacity-50 mb-1">FILTERED ATENDIMENTOS</p>
+              <p className="text-lg font-bold">{filteredData.atendimentos.length}</p>
+            </div>
+            <div className="p-4 bg-surface-container-lowest rounded-xl">
+              <p className="opacity-50 mb-1">FILTERED EXAMES</p>
+              <p className="text-lg font-bold">{filteredData.exames.length}</p>
+            </div>
+            <div className="p-4 bg-surface-container-lowest rounded-xl">
+              <p className="opacity-50 mb-1">FILTERED PACIENTES</p>
+              <p className="text-lg font-bold">{filteredData.pacientes.length}</p>
+            </div>
+          </div>
+          <div className="mt-4 p-4 bg-surface-container-lowest rounded-xl text-[10px] font-mono">
+            <p className="opacity-50 mb-1">CURRENT FILTERS</p>
+            <p>Unit: {filterUnit} | Risk: {filterRisk} | Trimester: {filterTrimester} | Routine: {filterRoutine}</p>
+            <p className="mt-2 opacity-50 mb-1">UNIQUE CNES IN DATA</p>
+            <p>Gestacoes: {Array.from(new Set(gestacoesData.map(g => g.unidade_cnes))).join(', ') || 'None'}</p>
+            <p>Atendimentos: {Array.from(new Set(atendimentosData.map(c => c.unidade_cnes))).join(', ') || 'None'}</p>
+            <p className="mt-2 opacity-50 mb-1">AVAILABLE UNITS IN DROPDOWN</p>
+            <p>{units.map(u => `${u.nome_fantasia} (${u.cnes})`).join(' | ')}</p>
+            <p className="mt-2 opacity-50 mb-1">USER INFO</p>
+            <p>Role: {user?.nivel_acesso} | Unit: {user?.unidade_cnes}</p>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }
