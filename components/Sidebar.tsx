@@ -63,7 +63,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
       icon: 'sync_alt', 
       subItems: [
         { name: 'Atendimentos', href: '/atendimentos' },
-        { name: 'Rotinas de Exames e Vacinas', href: '/exames' },
+        { name: 'Exames e Vacinas', href: '/exames' },
       ]
     },
     { 
@@ -90,7 +90,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
         { name: 'Exportar Layout Profissionais', href: 'export:profissionais' },
         { name: 'Exportar Layout Rotinas', href: 'export:rotinas' },
         { name: 'Exportar Layout Atendimentos', href: 'export:atendimentos' },
-        { name: 'Exportar Layout Rotinas de Exames e Vacinas', href: 'export:exames' },
+        { name: 'Exportar Layout Exames e Vacinas', href: 'export:exames' },
       ]
     }
   ];

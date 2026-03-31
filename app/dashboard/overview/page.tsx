@@ -3,16 +3,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { 
-  Users, 
-  HeartPulse, 
-  Stethoscope, 
-  FlaskConical, 
-  TrendingUp, 
-  Calendar,
-  ArrowUpRight,
-  ArrowDownRight,
-  Activity,
-  Building2
+  TrendingUp
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -472,7 +463,7 @@ export default function DashboardOverview() {
           <StatCard 
             title="Gestações" 
             value={filteredStats.gestations} 
-            icon={<HeartPulse className="w-6 h-6" />} 
+            icon="ecg" 
             trend="+12%" 
             isUp={true} 
             loading={loading}
@@ -480,7 +471,7 @@ export default function DashboardOverview() {
           <StatCard 
             title="Pacientes" 
             value={filteredStats.patients} 
-            icon={<Users className="w-6 h-6" />} 
+            icon="group" 
             trend="+5%" 
             isUp={true} 
             loading={loading}
@@ -488,7 +479,7 @@ export default function DashboardOverview() {
           <StatCard 
             title="Atendimentos" 
             value={filteredStats.consultations} 
-            icon={<Stethoscope className="w-6 h-6" />} 
+            icon="medical_services" 
             trend="+18%" 
             isUp={true} 
             loading={loading}
@@ -496,7 +487,7 @@ export default function DashboardOverview() {
           <StatCard 
             title="Exames Realizados" 
             value={filteredStats.exams} 
-            icon={<FlaskConical className="w-6 h-6" />} 
+            icon="lab_profile" 
             trend="-2%" 
             isUp={false} 
             loading={loading}
@@ -666,7 +657,7 @@ export default function DashboardOverview() {
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 group-hover:scale-110 transition-transform duration-700"></div>
             <div className="relative z-10 space-y-6 h-full flex flex-col">
               <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center">
-                <TrendingUp className="w-8 h-8" />
+                <span className="material-symbols-outlined text-4xl">trending_up</span>
               </div>
               <div>
                 <h3 className="text-3xl font-black font-headline uppercase tracking-tight leading-none mb-2">Meta de Cobertura</h3>
@@ -690,71 +681,19 @@ export default function DashboardOverview() {
           </div>
         </div>
       </div>
-      
-      {/* Debug Info - Only visible for developers/admins */}
-      {user?.nivel_acesso === 'Administrador' && (
-        <div className="mt-20 p-8 bg-surface-container-high rounded-[2.5rem] border border-outline-variant/20 max-w-7xl mx-auto">
-          <h3 className="text-xl font-black uppercase tracking-tight mb-4">Debug Dashboard Data</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-[10px] font-mono">
-            <div className="p-4 bg-surface-container-lowest rounded-xl">
-              <p className="opacity-50 mb-1">RAW GESTACOES</p>
-              <p className="text-lg font-bold">{gestacoesData.length}</p>
-            </div>
-            <div className="p-4 bg-surface-container-lowest rounded-xl">
-              <p className="opacity-50 mb-1">RAW ATENDIMENTOS</p>
-              <p className="text-lg font-bold">{atendimentosData.length}</p>
-            </div>
-            <div className="p-4 bg-surface-container-lowest rounded-xl">
-              <p className="opacity-50 mb-1">RAW EXAMES</p>
-              <p className="text-lg font-bold">{examesData.length}</p>
-            </div>
-            <div className="p-4 bg-surface-container-lowest rounded-xl">
-              <p className="opacity-50 mb-1">RAW PACIENTES</p>
-              <p className="text-lg font-bold">{patientsData.length}</p>
-            </div>
-            <div className="p-4 bg-surface-container-lowest rounded-xl">
-              <p className="opacity-50 mb-1">FILTERED GESTACOES</p>
-              <p className="text-lg font-bold">{filteredData.gestacoes.length}</p>
-            </div>
-            <div className="p-4 bg-surface-container-lowest rounded-xl">
-              <p className="opacity-50 mb-1">FILTERED ATENDIMENTOS</p>
-              <p className="text-lg font-bold">{filteredData.atendimentos.length}</p>
-            </div>
-            <div className="p-4 bg-surface-container-lowest rounded-xl">
-              <p className="opacity-50 mb-1">FILTERED EXAMES</p>
-              <p className="text-lg font-bold">{filteredData.exames.length}</p>
-            </div>
-            <div className="p-4 bg-surface-container-lowest rounded-xl">
-              <p className="opacity-50 mb-1">FILTERED PACIENTES</p>
-              <p className="text-lg font-bold">{filteredData.pacientes.length}</p>
-            </div>
-          </div>
-          <div className="mt-4 p-4 bg-surface-container-lowest rounded-xl text-[10px] font-mono">
-            <p className="opacity-50 mb-1">CURRENT FILTERS</p>
-            <p>Unit: {filterUnit} | Risk: {filterRisk} | Trimester: {filterTrimester} | Routine: {filterRoutine}</p>
-            <p className="mt-2 opacity-50 mb-1">UNIQUE CNES IN DATA</p>
-            <p>Gestacoes: {Array.from(new Set(gestacoesData.map(g => g.unidade_cnes))).join(', ') || 'None'}</p>
-            <p>Atendimentos: {Array.from(new Set(atendimentosData.map(c => c.unidade_cnes))).join(', ') || 'None'}</p>
-            <p className="mt-2 opacity-50 mb-1">AVAILABLE UNITS IN DROPDOWN</p>
-            <p>{units.map(u => `${u.nome_fantasia} (${u.cnes})`).join(' | ')}</p>
-            <p className="mt-2 opacity-50 mb-1">USER INFO</p>
-            <p>Role: {user?.nivel_acesso} | Unit: {user?.unidade_cnes}</p>
-          </div>
-        </div>
-      )}
     </DashboardLayout>
   );
 }
 
-function StatCard({ title, value, icon, trend, isUp, loading }: { title: string, value: number | string, icon: React.ReactNode, trend: string, isUp: boolean, loading: boolean }) {
+function StatCard({ title, value, icon, trend, isUp, loading }: { title: string, value: number | string, icon: string, trend: string, isUp: boolean, loading: boolean }) {
   return (
     <div className="bg-surface-container-lowest p-6 rounded-[2rem] shadow-lg shadow-black/5 border border-outline-variant/10 hover:border-primary/30 transition-all group">
       <div className="flex items-start justify-between mb-4">
         <div className="w-12 h-12 rounded-2xl bg-primary/5 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all duration-300">
-          {icon}
+          <span className="material-symbols-outlined text-2xl">{icon}</span>
         </div>
         <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-black ${isUp ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
-          {isUp ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+          <span className="material-symbols-outlined text-[14px]">{isUp ? 'arrow_outward' : 'south_east'}</span>
           {trend}
         </div>
       </div>

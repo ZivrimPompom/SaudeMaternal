@@ -128,10 +128,11 @@ export default function ExamesPage() {
         {
           id: Math.random().toString(36).substr(2, 9),
           id_rotina: '',
+          descricao: '',
           tipo_temp: 'EXAME',
-          data_realizacao: new Date().toISOString().split('T')[0],
+          data_realizacao: '',
           resultado: 'NEGATIVO / NÃO REAGENTE',
-          trimestre_realizacao: '1º TRIMESTRE'
+          trimestre_realizacao: '---'
         }
       ]);
     }
@@ -166,6 +167,7 @@ export default function ExamesPage() {
         {
           id: Math.random().toString(36).substr(2, 9),
           id_rotina: '',
+          descricao: '',
           tipo_temp: 'EXAME',
           data_realizacao: today,
           resultado: 'NEGATIVO / NÃO REAGENTE',
@@ -262,12 +264,13 @@ export default function ExamesPage() {
   };
 
   const calculateTrimestre = (dum: string, dataRotina: string) => {
-    if (!dum || !dataRotina) return '1º TRIMESTRE';
-    const start = new Date(dum);
-    const rotinaDate = new Date(dataRotina);
+    if (!dum || !dataRotina) return '---';
+    const start = new Date(dum + 'T12:00:00');
+    const rotinaDate = new Date(dataRotina + 'T12:00:00');
     const diffTime = rotinaDate.getTime() - start.getTime();
-    const diffWeeks = diffTime / (1000 * 60 * 60 * 24 * 7);
+    const diffWeeks = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 7));
 
+    if (diffWeeks < 0 || diffWeeks > 42) return 'FORA DO PERÍODO';
     if (diffWeeks <= 13) return '1º TRIMESTRE';
     if (diffWeeks <= 27) return '2º TRIMESTRE';
     return '3º TRIMESTRE';
@@ -341,9 +344,24 @@ export default function ExamesPage() {
       
       const payloads = formEntries.map(entry => {
         const trimestre = calculateTrimestre(gest.dum, entry.data_realizacao || '');
+        
+        if (trimestre === 'FORA DO PERÍODO') {
+          throw new Error(`Data de realização (${entry.data_realizacao}) está fora do período gestacional (0-42 semanas).`);
+        }
+
+        // Find the routine ID that matches description and calculated trimester
+        const routine = routines.find(r => 
+          r.descricao === entry.descricao && 
+          r.trimestre === trimestre &&
+          (!entry.tipo_temp || r.tipo === entry.tipo_temp)
+        ) || routines.find(r => 
+          r.descricao === entry.descricao && 
+          (!entry.tipo_temp || r.tipo === entry.tipo_temp)
+        );
+
         return {
           sispn: formData.sispn,
-          id_rotina: entry.id_rotina,
+          id_rotina: routine?.id || entry.id_rotina,
           data_realizacao: entry.data_realizacao,
           resultado: entry.resultado,
           trimestre_realizacao: trimestre,
@@ -354,7 +372,7 @@ export default function ExamesPage() {
         };
       });
 
-      if (payloads.some(p => !p.id_rotina)) return setError('Selecione o tipo de exame para todas as linhas.');
+      if (payloads.some(p => !p.id_rotina)) return setError('Selecione uma descrição válida para todas as linhas.');
 
       if (editingId) {
         const { error: updateError } = await supabase.from('registro_rotinas').update(payloads[0]).eq('id_registro', editingId);
@@ -397,6 +415,7 @@ export default function ExamesPage() {
       {
         id: Math.random().toString(36).substr(2, 9),
         id_rotina: res.id_rotina,
+        descricao: res.rotinas?.descricao || '',
         data_realizacao: res.data_realizacao,
         resultado: res.resultado,
         trimestre_realizacao: res.trimestre_realizacao
@@ -477,7 +496,7 @@ export default function ExamesPage() {
               <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Movimento</span>
             </div>
             <h2 className="text-5xl md:text-6xl font-black tracking-tighter font-headline text-primary uppercase leading-none">
-              Rotinas de Exames e Vacinas
+              Exames e Vacinas
             </h2>
             <p className="text-lg text-on-surface-variant/60 font-body max-w-xl leading-relaxed">
               Registre e monitore as rotinas de exames e vacinas das gestantes.
@@ -658,10 +677,11 @@ export default function ExamesPage() {
                             setFormEntries([...formEntries, {
                               id: Math.random().toString(36).substr(2, 9),
                               id_rotina: '',
+                              descricao: '',
                               tipo_temp: 'EXAME',
-                              data_realizacao: new Date().toISOString().split('T')[0],
+                              data_realizacao: '',
                               resultado: 'NEGATIVO / NÃO REAGENTE',
-                              trimestre_realizacao: '1º TRIMESTRE'
+                              trimestre_realizacao: '---'
                             }]);
                           }}
                           className="flex items-center gap-2 text-primary hover:text-primary/70 transition-colors"
@@ -677,8 +697,9 @@ export default function ExamesPage() {
                         <thead className="bg-surface-container-high">
                           <tr>
                             <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Data Realização</th>
+                            <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Trimestre</th>
                             <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Rotina</th>
-                            <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Descrição + Trimestre</th>
+                            <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Descrição</th>
                             <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Resultado</th>
                             {!editingId && <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60 text-center">Ações</th>}
                           </tr>
@@ -698,6 +719,13 @@ export default function ExamesPage() {
                                       setFormEntries(newEntries);
                                     }}
                                   />
+                                </div>
+                              </td>
+                               <td className="px-6 py-4">
+                                <div className="bg-surface-container-low/50 rounded-xl px-3 py-2">
+                                  <span className={`text-[11px] font-bold ${selectedGestante && calculateTrimestre(selectedGestante.dum, entry.data_realizacao) === 'FORA DO PERÍODO' ? 'text-error' : 'text-on-surface'}`}>
+                                    {selectedGestante ? calculateTrimestre(selectedGestante.dum, entry.data_realizacao) : '---'}
+                                  </span>
                                 </div>
                               </td>
                               <td className="px-6 py-4">
@@ -722,22 +750,20 @@ export default function ExamesPage() {
                                 <div className="bg-surface-container-low/50 rounded-xl px-3 py-2">
                                   <select 
                                     className="bg-transparent border-none p-0 text-[11px] font-bold outline-none focus:ring-0 w-full uppercase text-on-surface cursor-pointer appearance-none"
-                                    value={entry.id_rotina}
+                                    value={entry.descricao || ''}
                                     onChange={(e) => {
                                       const newEntries = [...formEntries];
-                                      newEntries[index].id_rotina = e.target.value;
+                                      newEntries[index].descricao = e.target.value;
                                       setFormEntries(newEntries);
                                     }}
                                   >
                                     <option value="">Selecione a Rotina</option>
-                                    {routines
+                                    {Array.from(new Set(routines
                                       .filter(r => !entry.tipo_temp || r.tipo === entry.tipo_temp)
-                                      .sort((a, b) => {
-                                        if (a.descricao !== b.descricao) return a.descricao.localeCompare(b.descricao);
-                                        return a.trimestre.localeCompare(b.trimestre);
-                                      })
-                                      .map(r => (
-                                        <option key={r.id} value={r.id}>{r.descricao} ({r.trimestre})</option>
+                                      .map(r => r.descricao)))
+                                      .sort()
+                                      .map(desc => (
+                                        <option key={desc} value={desc}>{desc}</option>
                                       ))}
                                   </select>
                                 </div>
@@ -894,7 +920,7 @@ export default function ExamesPage() {
                         <td className="px-8 py-6 text-[10px] font-bold text-on-surface-variant/60 font-mono">{res.sispn}</td>
                         <td className="px-8 py-6">
                           <p className="text-xs font-bold text-on-surface uppercase">{res.rotinas?.descricao}</p>
-                          <span className="text-[10px] font-bold text-primary/40 uppercase tracking-widest">{res.rotinas?.trimestre}</span>
+                          <span className="text-[10px] font-bold text-primary/40 uppercase tracking-widest">{res.trimestre_realizacao || res.rotinas?.trimestre}</span>
                         </td>
                         <td className="px-8 py-6 text-xs font-bold text-on-surface">{new Date(res.data_realizacao).toLocaleDateString('pt-BR')}</td>
                         <td className="px-8 py-6">

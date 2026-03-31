@@ -55,7 +55,7 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
     if (isUnidadesPage) return 'Unidades de Saúde';
     if (isGestacoesPage) return 'Gestações';
     if (isAtendimentosPage) return 'Atendimentos';
-    if (isExamesPage) return 'Rotinas de Exames e Vacinas';
+    if (isExamesPage) return 'Exames e Vacinas';
     return 'Busca';
   };
 
