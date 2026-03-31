@@ -235,9 +235,20 @@ export default function GestacoesPage() {
     setLoading(true);
     
     try {
-      // Fetch Pacientes for lookup first to use as fallback
-      const { data: pacData } = await supabase.from('pacientes').select('cpf, gestante, data_nascimento').order('gestante');
-      const pacientesList = pacData || [];
+      // Fetch Pacientes in chunks
+      let pacientesList: any[] = [];
+      let pacFrom = 0;
+      let pacHasMore = true;
+      while (pacHasMore) {
+        const { data, error } = await supabase.from('pacientes').select('cpf, gestante, data_nascimento').order('gestante').range(pacFrom, pacFrom + 999);
+        if (error) throw error;
+        if (data && data.length > 0) {
+          pacientesList = [...pacientesList, ...data];
+          if (data.length < 1000) pacHasMore = false;
+          else pacFrom += 1000;
+        } else pacHasMore = false;
+        if (pacFrom > 50000) break;
+      }
       setPacientes(pacientesList);
 
       // Fetch Operadores (Ativos)
@@ -253,7 +264,7 @@ export default function GestacoesPage() {
           cbo,
           equipe,
           categorias_profissionais (categoria)
-        `);
+        `).limit(1000);
       
       const formattedProf = profData?.map(p => {
         const cat = Array.isArray(p.categorias_profissionais) 
@@ -269,18 +280,30 @@ export default function GestacoesPage() {
       }) || [];
       setProfissionais(formattedProf);
 
-      // Fetch Gestacoes with patient names
-      const { data: gestData, error: gestError } = await supabase
-        .from('gestacoes')
-        .select(`
-          *,
-          pacientes (gestante)
-        `)
-        .order('created_at', { ascending: false });
-
-      if (gestError) throw gestError;
+      // Fetch Gestacoes in chunks
+      let gestacoesData: any[] = [];
+      let gestFrom = 0;
+      let gestHasMore = true;
+      while (gestHasMore) {
+        const { data, error } = await supabase
+          .from('gestacoes')
+          .select(`
+            *,
+            pacientes (gestante)
+          `)
+          .order('created_at', { ascending: false })
+          .range(gestFrom, gestFrom + 999);
+        
+        if (error) throw error;
+        if (data && data.length > 0) {
+          gestacoesData = [...gestacoesData, ...data];
+          if (data.length < 1000) gestHasMore = false;
+          else gestFrom += 1000;
+        } else gestHasMore = false;
+        if (gestFrom > 50000) break;
+      }
       
-      const formattedGest = gestData.map(g => {
+      const formattedGest = gestacoesData.map(g => {
         // Handle both object and array response from Supabase join
         const pacienteData = Array.isArray(g.pacientes) ? g.pacientes[0] : g.pacientes;
         let nome = pacienteData?.gestante;

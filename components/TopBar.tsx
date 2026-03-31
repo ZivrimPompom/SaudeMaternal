@@ -49,18 +49,35 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
   const [isSearchMobileOpen, setIsSearchMobileOpen] = useState(false);
   const [pacientes, setPacientes] = useState<any[]>([]);
   const [profissionais, setProfissionais] = useState<any[]>([]);
+  const [rotinas, setRotinas] = useState<any[]>([]);
+  const [gestacoes, setGestacoes] = useState<any[]>([]);
 
   useEffect(() => {
-    if (isGestacoesPage) {
+    if (isGestacoesPage || isExamesPage || isAtendimentosPage) {
       const fetchData = async () => {
-        const { data: pacData } = await supabase.from('pacientes').select('cpf, gestante, data_nascimento');
-        const { data: profData } = await supabase.from('profissionais').select('cpf, nome, equipe, cbo');
-        setPacientes(pacData || []);
-        setProfissionais(profData || []);
+        console.log('Fetching data for import validation...', { isGestacoesPage, isExamesPage, isAtendimentosPage });
+        if (isGestacoesPage) {
+          const { data: pacData, error: pacErr } = await supabase.from('pacientes').select('cpf, gestante, data_nascimento');
+          const { data: profData, error: profErr } = await supabase.from('profissionais').select('cpf, nome, equipe, cbo');
+          if (pacErr) console.error('Error fetching pacientes:', pacErr);
+          if (profErr) console.error('Error fetching profissionais:', profErr);
+          setPacientes(pacData || []);
+          setProfissionais(profData || []);
+          console.log('Fetched', (pacData || []).length, 'pacientes and', (profData || []).length, 'profissionais');
+        }
+        if (isExamesPage || isAtendimentosPage) {
+          const { data: rotData, error: rotErr } = await supabase.from('rotinas').select('id, descricao, tipo, trimestre');
+          const { data: gestData, error: gestErr } = await supabase.from('gestacoes').select('sispn, dum');
+          if (rotErr) console.error('Error fetching rotinas:', rotErr);
+          if (gestErr) console.error('Error fetching gestacoes:', gestErr);
+          setRotinas(rotData || []);
+          setGestacoes(gestData || []);
+          console.log('Fetched', (rotData || []).length, 'rotinas and', (gestData || []).length, 'gestacoes');
+        }
       };
       fetchData();
     }
-  }, [isGestacoesPage]);
+  }, [isGestacoesPage, isExamesPage, isAtendimentosPage, triggerRefresh]);
 
   const getSearchLabel = () => {
     if (isCategoriesPage) return 'Categorias Profissionais';
@@ -94,62 +111,87 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
       expectedColumns: ['gestante', 'cpf', 'nome_mae', 'prontuario', 'cns', 'data_nascimento', 'logradouro', 'numero', 'complemento', 'bairro', 'contato', 'email', 'cpf_operador'],
       requiredColumns: ['nome', 'cpf'],
       conflictColumn: "cpf",
-      transformData: (data: any[]) => data.map(item => {
-        // Convert DD/MM/YYYY to YYYY-MM-DD for Supabase
-        let dataNascimento = item.data_nascimento;
-        if (dataNascimento && typeof dataNascimento === 'string') {
-          const ddmmyyyy = dataNascimento.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-          if (ddmmyyyy) {
-            const [_, day, month, year] = ddmmyyyy;
-            dataNascimento = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      transformData: (data: any[]) => {
+        const valid: any[] = [];
+        const rejected: any[] = [];
+        data.forEach(item => {
+          const cpf = (item.cpf || '').replace(/\D/g, '');
+          if (cpf.length !== 11) {
+            rejected.push({ ...item, MOTIVO_REJEICAO: 'CPF inválido (deve ter 11 dígitos)' });
+            return;
           }
-        }
 
-        return {
-          ...item,
-          gestante: (item.gestante || '').toUpperCase(),
-          nome_mae: (item.nome_mae || 'NÃO INFORMADO').toUpperCase(),
-          cpf: (item.cpf || '').replace(/\D/g, ''),
-          data_nascimento: dataNascimento,
-          logradouro: (item.logradouro || '').toUpperCase(),
-          complemento: (item.complemento || '').toUpperCase(),
-          bairro: (item.bairro || '').toUpperCase(),
-          cidade: 'SÃO PAULO',
-          uf: 'SP',
-          operador_responsavel: user?.nome || 'SISTEMA',
-          cpf_operador: item.cpf_operador || user?.cpf || null
-        };
-      })
+          let dataNascimento = item.data_nascimento;
+          if (dataNascimento && typeof dataNascimento === 'string') {
+            const ddmmyyyy = dataNascimento.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+            if (ddmmyyyy) {
+              const [_, day, month, year] = ddmmyyyy;
+              dataNascimento = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+            }
+          }
+
+          valid.push({
+            ...item,
+            gestante: (item.gestante || '').toUpperCase(),
+            nome_mae: (item.nome_mae || 'NÃO INFORMADO').toUpperCase(),
+            cpf,
+            data_nascimento: dataNascimento,
+            logradouro: (item.logradouro || '').toUpperCase(),
+            complemento: (item.complemento || '').toUpperCase(),
+            bairro: (item.bairro || '').toUpperCase(),
+            cidade: 'SÃO PAULO',
+            uf: 'SP',
+            operador_responsavel: user?.nome || 'SISTEMA',
+            cpf_operador: item.cpf_operador || user?.cpf || null
+          });
+        });
+        return { valid, rejected };
+      }
     };
     if (isProfessionalsPage) return {
       tableName: "profissionais",
       expectedColumns: ['nome', 'cpf', 'cbo', 'cns', 'conselho', 'uf_conselho', 'numero_conselho'],
       requiredColumns: ['nome', 'cpf', 'cbo'],
       conflictColumn: "cpf",
-      transformData: (data: any[]) => data.map(item => ({
-        ...item,
-        nome: (item.nome || '').toUpperCase(),
-        cpf: (item.cpf || '').replace(/\D/g, ''),
-        cbo: (item.cbo || '').replace(/\D/g, ''),
-        cns: (item.cns || '').replace(/\D/g, ''),
-        conselho: (item.conselho || '').toUpperCase(),
-        uf_conselho: (item.uf_conselho || 'SP').toUpperCase()
-      }))
+      transformData: (data: any[]) => {
+        const valid: any[] = [];
+        const rejected: any[] = [];
+        data.forEach(item => {
+          const cpf = (item.cpf || '').replace(/\D/g, '');
+          if (cpf.length !== 11) {
+            rejected.push({ ...item, MOTIVO_REJEICAO: 'CPF inválido' });
+          } else {
+            valid.push({
+              ...item,
+              nome: (item.nome || '').toUpperCase(),
+              cpf,
+              cbo: (item.cbo || '').replace(/\D/g, ''),
+              cns: (item.cns || '').replace(/\D/g, ''),
+              conselho: (item.conselho || '').toUpperCase(),
+              uf_conselho: (item.uf_conselho || 'SP').toUpperCase()
+            });
+          }
+        });
+        return { valid, rejected };
+      }
     };
     if (isUnidadesPage) return {
       tableName: "unidades_saude",
       expectedColumns: ['cnes', 'nome_fantasia', 'logradouro', 'numero', 'complemento', 'bairro', 'municipio', 'uf', 'cep', 'telefone'],
       requiredColumns: ['cnes', 'nome_fantasia'],
       conflictColumn: "cnes",
-      transformData: (data: any[]) => data.map(item => ({
-        ...item,
-        nome_fantasia: (item.nome_fantasia || '').toUpperCase(),
-        logradouro: (item.logradouro || '').toUpperCase(),
-        complemento: (item.complemento || '').toUpperCase(),
-        bairro: (item.bairro || '').toUpperCase(),
-        municipio: (item.municipio || 'SAO PAULO').toUpperCase(),
-        uf: (item.uf || 'SP').toUpperCase()
-      }))
+      transformData: (data: any[]) => {
+        const valid = data.map(item => ({
+          ...item,
+          nome_fantasia: (item.nome_fantasia || '').toUpperCase(),
+          logradouro: (item.logradouro || '').toUpperCase(),
+          complemento: (item.complemento || '').toUpperCase(),
+          bairro: (item.bairro || '').toUpperCase(),
+          municipio: (item.municipio || 'SAO PAULO').toUpperCase(),
+          uf: (item.uf || 'SP').toUpperCase()
+        }));
+        return { valid, rejected: [] };
+      }
     };
     if (isGestacoesPage) return {
       tableName: "gestacoes",
@@ -163,6 +205,8 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
       conflictColumn: "sispn",
       transformData: (data: any[]) => {
         const todayStr = new Date().toISOString().split('T')[0];
+        const valid: any[] = [];
+        const rejected: any[] = [];
         
         const parseDate = (dateStr: any) => {
           if (!dateStr || dateStr.toString().trim() === '') return null;
@@ -198,13 +242,24 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
           return { age, phase };
         };
 
-        return data.reduce((acc: any[], row: any) => {
-          const sispn = row.sispn?.toString().replace(/\D/g, '');
-          if (!sispn) return acc;
+        const normalizeSispn = (val: any) => {
+          if (!val) return '';
+          return val.toString().replace(/\D/g, '').replace(/^0+/, '');
+        };
+
+        data.forEach(row => {
+          const sispn = normalizeSispn(row.sispn);
+          if (!sispn) {
+            rejected.push({ ...row, MOTIVO_REJEICAO: 'SISPN ausente' });
+            return;
+          }
 
           const cpf = row.cpf_paciente?.toString().replace(/\D/g, '').padStart(11, '0');
-          const pac = pacientes.find(p => p.cpf === cpf);
-          if (!pac) return acc;
+          const pac = pacientes.find(p => (p.cpf || '').toString().replace(/\D/g, '') === cpf);
+          if (!pac) {
+            rejected.push({ ...row, MOTIVO_REJEICAO: `Paciente com CPF ${cpf} não encontrada no Cadastro de Pacientes.` });
+            return;
+          }
 
           let dum = parseDate(row.dum);
           let dpp = parseDate(row.dpp);
@@ -239,7 +294,7 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
 
           const prof = profissionais.find(p => p.cpf === rtCpf);
 
-          acc.push({
+          valid.push({
             ...row,
             sispn,
             cpf_paciente: cpf,
@@ -257,8 +312,9 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
             acs: acsCpf,
             equipe: prof?.equipe || row.equipe || 'NÃO INFORMADO',
           });
-          return acc;
-        }, []);
+        });
+
+        return { valid, rejected };
       }
     };
     if (isAtendimentosPage) return {
@@ -266,7 +322,10 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
       expectedColumns: ['sispn', 'data_consulta', 'cbo', 'cpf', 'data_proxima_consulta', 'observacoes_clinicas'],
       requiredColumns: ['sispn', 'data_consulta', 'cbo'],
       conflictColumn: "id_atendimento",
-      transformData: (data: any[]) => data.map(item => {
+      transformData: (data: any[]) => {
+        const valid: any[] = [];
+        const rejected: any[] = [];
+        
         const formatDate = (dateStr: string) => {
           if (!dateStr) return null;
           if (dateStr.includes('/')) {
@@ -275,81 +334,222 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
           }
           return dateStr;
         };
-        return {
-          ...item,
-          sispn: (item.sispn || '').replace(/\D/g, ''),
-          cpf: (item.cpf || '').replace(/\D/g, ''),
-          data_consulta: formatDate(item.data_consulta),
-          data_proxima_consulta: formatDate(item.data_proxima_consulta),
-          cbo: (item.cbo || '').replace(/\D/g, ''),
-          cpf_operador: user?.cpf || null,
-          observacoes_clinicas: (item.observacoes_clinicas || '').toUpperCase()
+
+        const normalizeSispn = (val: any) => {
+          if (!val) return '';
+          return val.toString().replace(/\D/g, '').replace(/^0+/, '');
         };
-      })
+
+        data.forEach(item => {
+          const sispn = normalizeSispn(item.sispn);
+          let rejectionReason = '';
+
+          if (!sispn) {
+            rejectionReason = 'SISPN ausente';
+          } else {
+            const gestacao = gestacoes.find(g => normalizeSispn(g.sispn) === sispn);
+            if (!gestacao) {
+              rejectionReason = `Gestação com SISPN ${sispn} não encontrada no Cadastro de Gestações.`;
+            }
+          }
+
+          if (rejectionReason) {
+            rejected.push({ ...item, MOTIVO_REJEICAO: rejectionReason });
+          } else {
+            valid.push({
+              ...item,
+              sispn,
+              cpf: (item.cpf || '').replace(/\D/g, ''),
+              data_consulta: formatDate(item.data_consulta),
+              data_proxima_consulta: formatDate(item.data_proxima_consulta),
+              cbo: (item.cbo || '').replace(/\D/g, ''),
+              cpf_operador: user?.cpf || null,
+              observacoes_clinicas: (item.observacoes_clinicas || '').toUpperCase()
+            });
+          }
+        });
+        return { valid, rejected };
+      }
     };
     if (isExamesPage) return {
       tableName: "registro_rotinas",
-      expectedColumns: ['sispn', 'id_rotina', 'tipo', 'data_realizacao', 'resultado', 'cbo', 'cpf_profissional'],
-      requiredColumns: ['sispn', 'id_rotina', 'tipo', 'data_realizacao'],
+      expectedColumns: ['sispn', 'id_rotina', 'data_realizacao', 'resultado', 'cbo', 'cpf_profissional'],
+      requiredColumns: ['sispn', 'id_rotina', 'data_realizacao'],
       conflictColumn: "id_registro",
-      transformData: (data: any[]) => data.map(item => {
-        const formatDate = (dateStr: string) => {
-          if (!dateStr) return null;
-          if (dateStr.includes('/')) {
-            const [d, m, y] = dateStr.split('/');
-            return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+      transformData: (data: any[]) => {
+        console.log('Starting transformation for', data.length, 'rows');
+        const valid: any[] = [];
+        const rejected: any[] = [];
+
+        data.forEach((item, index) => {
+          const formatDate = (dateStr: string) => {
+            if (!dateStr) return null;
+            if (dateStr.includes('/')) {
+              const [d, m, y] = dateStr.split('/');
+              return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+            }
+            return dateStr;
+          };
+
+          const calculateTrimestre = (dumStr: string, realizacaoStr: string) => {
+            if (!dumStr || !realizacaoStr) return '1º TRIMESTRE';
+            const dum = new Date(dumStr);
+            const realizacao = new Date(realizacaoStr);
+            if (isNaN(dum.getTime()) || isNaN(realizacao.getTime())) return '1º TRIMESTRE';
+            const diffTime = realizacao.getTime() - dum.getTime();
+            const diffWeeks = Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 7));
+            if (diffWeeks <= 13) return '1º TRIMESTRE';
+            if (diffWeeks <= 27) return '2º TRIMESTRE';
+            return '3º TRIMESTRE';
+          };
+
+          const mapToRotinaTrimestre = (trim: string) => {
+            if (trim === '1º TRIMESTRE') return 'PRIMEIRO';
+            if (trim === '2º TRIMESTRE') return 'SEGUNDO';
+            return 'TERCEIRO';
+          };
+
+          const normalizeSispn = (val: any) => {
+            if (!val) return '';
+            return val.toString().replace(/\D/g, '').replace(/^0+/, '');
+          };
+
+          const sispn = normalizeSispn(item.sispn);
+          const dataRealizacao = formatDate(item.data_realizacao);
+          const gestacao = gestacoes.find(g => normalizeSispn(g.sispn) === sispn);
+          
+          let rejectionReason = '';
+          if (!gestacao) {
+            rejectionReason = `Gestação com SISPN ${sispn} não encontrada no Cadastro de Gestações.`;
           }
-          return dateStr;
-        };
-        const cpfProf = (item.cpf_profissional || '').replace(/\D/g, '');
-        return {
-          ...item,
-          sispn: (item.sispn || '').replace(/\D/g, ''),
-          tipo: (item.tipo || 'EXAME').toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""),
-          cpf_profissional: cpfProf || 'NÃO INFORMADO',
-          data_realizacao: formatDate(item.data_realizacao),
-          resultado: (item.resultado || '').toUpperCase(),
-          cbo: (item.cbo || '').replace(/\D/g, ''),
-          cpf_operador: user?.cpf || null
-        };
-      })
+
+          const calculatedTrimestre = calculateTrimestre(gestacao?.dum || '', dataRealizacao || '');
+          const rotinaTrimestre = mapToRotinaTrimestre(calculatedTrimestre);
+
+          const normalizeDescription = (desc: string) => {
+            if (!desc) return '';
+            return desc
+              .toUpperCase()
+              .replace(/\uFFFD/g, 'A')
+              .normalize("NFD")
+              .replace(/[\u0300-\u036f]/g, "")
+              .trim();
+          };
+
+          const descricaoCsv = normalizeDescription(item.id_rotina || '');
+
+          let rotina = rotinas.find(r =>
+            normalizeDescription(r.descricao) === descricaoCsv &&
+            r.trimestre === rotinaTrimestre
+          );
+
+          if (!rotina) {
+            rotina = rotinas.find(r =>
+              normalizeDescription(r.descricao) === descricaoCsv
+            );
+          }
+
+          // Partial match if exact match fails
+          if (!rotina) {
+            rotina = rotinas.find(r => {
+              const dbDesc = normalizeDescription(r.descricao);
+              return (dbDesc.includes(descricaoCsv) || descricaoCsv.includes(dbDesc));
+            });
+          }
+
+          if (!rotina) {
+            rejectionReason = rejectionReason ? `${rejectionReason} | ` : '';
+            rejectionReason += `Rotina "${descricaoCsv}" não encontrada.`;
+          }
+
+          const cpfProf = (item.cpf_profissional || '').replace(/\D/g, '');
+          const transformedItem = {
+            ...item,
+            sispn,
+            id_rotina: rotina?.id || item.id_rotina,
+            cpf_profissional: cpfProf || 'NÃO INFORMADO',
+            data_realizacao: dataRealizacao,
+            resultado: (item.resultado || '').toUpperCase(),
+            trimestre_realizacao: calculatedTrimestre,
+            cbo: (item.cbo || '').replace(/\D/g, ''),
+            cpf_operador: user?.cpf || null
+          };
+
+          const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(transformedItem.id_rotina);
+          if (!isUuid) {
+            rejectionReason = rejectionReason ? `${rejectionReason} | ` : '';
+            rejectionReason += `ID da Rotina inválido (${transformedItem.id_rotina}).`;
+          }
+          if (!transformedItem.sispn) {
+            rejectionReason = rejectionReason ? `${rejectionReason} | ` : '';
+            rejectionReason += `SISPN ausente.`;
+          }
+
+          if (rejectionReason) {
+            rejected.push({ ...item, MOTIVO_REJEICAO: rejectionReason });
+          } else {
+            valid.push(transformedItem);
+          }
+        });
+
+        console.log('Transformation complete.', valid.length, 'valid,', rejected.length, 'rejected');
+        return { valid, rejected };
+      }
     };
     if (isOperatorsPage) return {
       tableName: "operadores",
       expectedColumns: ['nome', 'cpf', 'senha', 'status', 'nivel_acesso', 'sigla', 'unidade_cnes'],
       requiredColumns: ['nome', 'cpf', 'senha'],
       conflictColumn: "cpf",
-      transformData: (data: any[]) => data.map(item => ({
-        ...item,
-        nome: (item.nome || '').toUpperCase(),
-        cpf: (item.cpf || '').replace(/\D/g, ''),
-        status: item.status || 'Ativo',
-        unidade_cnes: item.unidade_cnes || null
-      }))
+      transformData: (data: any[]) => {
+        const valid: any[] = [];
+        const rejected: any[] = [];
+        data.forEach(item => {
+          const cpf = (item.cpf || '').replace(/\D/g, '');
+          if (cpf.length !== 11) {
+            rejected.push({ ...item, MOTIVO_REJEICAO: 'CPF inválido (deve ter 11 dígitos)' });
+          } else {
+            valid.push({
+              ...item,
+              nome: (item.nome || '').toUpperCase(),
+              cpf,
+              status: item.status || 'Ativo',
+              unidade_cnes: item.unidade_cnes || null
+            });
+          }
+        });
+        return { valid, rejected };
+      }
     };
     if (isRotinasPage) return {
       tableName: "rotinas",
       expectedColumns: ['tipo', 'descricao', 'trimestre', 'categoria'],
       requiredColumns: ['tipo', 'descricao'],
       conflictColumn: "id",
-      transformData: (data: any[]) => data.map(item => ({
-        ...item,
-        tipo: (item.tipo || 'EXAME').toUpperCase(),
-        descricao: (item.descricao || '').toUpperCase(),
-        trimestre: (item.trimestre || 'PRIMEIRO').toUpperCase(),
-        categoria: (item.categoria || 'OBRIGATORIO').toUpperCase()
-      }))
+      transformData: (data: any[]) => {
+        const valid = data.map(item => ({
+          ...item,
+          tipo: (item.tipo || 'EXAME').toUpperCase(),
+          descricao: (item.descricao || '').toUpperCase(),
+          trimestre: (item.trimestre || 'PRIMEIRO').toUpperCase(),
+          categoria: (item.categoria || 'OBRIGATORIO').toUpperCase()
+        }));
+        return { valid, rejected: [] };
+      }
     };
     if (isCategoriesPage) return {
       tableName: "categorias_profissionais",
       expectedColumns: ['cbo', 'categoria'],
       requiredColumns: ['cbo', 'categoria'],
       conflictColumn: "cbo",
-      transformData: (data: any[]) => data.map(item => ({
-        ...item,
-        cbo: (item.cbo || '').replace(/\D/g, ''),
-        categoria: (item.categoria || '').toUpperCase()
-      }))
+      transformData: (data: any[]) => {
+        const valid = data.map(item => ({
+          ...item,
+          cbo: (item.cbo || '').replace(/\D/g, ''),
+          categoria: (item.categoria || '').toUpperCase()
+        }));
+        return { valid, rejected: [] };
+      }
     };
     return null;
   };

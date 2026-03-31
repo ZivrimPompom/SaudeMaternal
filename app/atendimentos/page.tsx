@@ -218,94 +218,129 @@ export default function AtendimentosPage() {
     setLoading(true);
     setError(null);
     try {
-      // Fetch Categories, Professionals and Patients
-      const [catsRes, prosRes, pacsRes] = await Promise.all([
-        supabase.from('categorias_profissionais').select('*').order('categoria'),
-        supabase.from('profissionais').select('cpf, nome, cbo, situacao, equipe').order('nome'),
-        supabase.from('pacientes').select('cpf, gestante')
+      // Fetch Categories and Professionals
+      const [catsRes, prosRes] = await Promise.all([
+        supabase.from('categorias_profissionais').select('*').order('categoria').limit(1000),
+        supabase.from('profissionais').select('cpf, nome, cbo, situacao, equipe').order('nome').limit(1000)
       ]);
 
       const professionalsData = prosRes.data || [];
-      const patientsList = pacsRes.data || [];
       if (catsRes.data) setCategories(catsRes.data);
       if (prosRes.data) setAllProfessionals(professionalsData);
 
-      // Fetch Gestacoes with more details
-      const { data: gestData, error: gestError } = await supabase
-        .from('gestacoes')
-        .select(`
-          sispn,
-          dum,
-          dpp,
-          equipe,
-          referencia_tecnica,
-          acs,
-          data_cadastro,
-          classificacao_pn,
-          alto_risco_compartilhado,
-          sifilis,
-          hiv,
-          hepatite_b,
-          hepatite_c,
-          pacientes (gestante, cpf)
-        `);
-      
-      let formattedGest: any[] = [];
-      if (gestError) {
-        console.warn('Erro ao buscar gestações:', gestError);
-      } else {
-        formattedGest = gestData?.map(g => {
-          // Handle both object and array response from Supabase join
-          let pac: any = g.pacientes;
-          if (Array.isArray(pac)) pac = pac[0];
-          
-          let nome = (pac as any)?.gestante;
-          let cpf = (pac as any)?.cpf;
-
-          // Fallback: if join failed, try to find in the fetched patients list
-          if (!nome) {
-            const found = patientsList.find(p => p.cpf === (g as any).cpf_paciente);
-            if (found) {
-              nome = found.gestante;
-              cpf = found.cpf;
-            }
-          }
-
-          const rtNome = professionalsData.find(p => p.cpf === (g as any).referencia_tecnica)?.nome || (g as any).referencia_tecnica || 'NÃO INFORMADO';
-          const acsNome = professionalsData.find(p => p.cpf === (g as any).acs)?.nome || (g as any).acs || 'NÃO INFORMADO';
-          
-          return {
-            sispn: String(g.sispn || ''),
-            dum: g.dum,
-            dpp: g.dpp,
-            equipe: g.equipe,
-            rt_nome: rtNome,
-            acs_nome: acsNome,
-            data_cadastro: g.data_cadastro,
-            classificacao_pn: g.classificacao_pn || 'HABITUAL',
-            alto_risco_compartilhado: g.alto_risco_compartilhado || 'NÃO',
-            sifilis: g.sifilis || 'NÃO',
-            hiv: g.hiv || 'NEGATIVO',
-            hepatite_b: g.hepatite_b || 'NÃO REAGENTE',
-            hepatite_c: g.hepatite_c || 'NÃO REAGENTE',
-            paciente_nome: nome || 'NÃO INFORMADO',
-            paciente_cpf: String(cpf || 'NÃO INFORMADO')
-          };
-        }) || [];
-        setGestacoes(formattedGest);
+      // Fetch Patients in chunks
+      let patientsList: any[] = [];
+      let pacFrom = 0;
+      let pacHasMore = true;
+      while (pacHasMore) {
+        const { data, error } = await supabase.from('pacientes').select('cpf, gestante').range(pacFrom, pacFrom + 999);
+        if (error) throw error;
+        if (data && data.length > 0) {
+          patientsList = [...patientsList, ...data];
+          if (data.length < 1000) pacHasMore = false;
+          else pacFrom += 1000;
+        } else pacHasMore = false;
+        if (pacFrom > 50000) break;
       }
 
-      // Fetch Atendimentos
-      let { data: consData, error: consError, count: consCount } = await supabase
-        .from('atendimentos')
-        .select('*', { count: 'exact' })
-        .order('data_consulta', { ascending: false });
+      // Fetch Gestacoes in chunks
+      let gestacoesData: any[] = [];
+      let gestFrom = 0;
+      let gestHasMore = true;
+      while (gestHasMore) {
+        const { data, error } = await supabase
+          .from('gestacoes')
+          .select(`
+            sispn,
+            dum,
+            dpp,
+            equipe,
+            referencia_tecnica,
+            acs,
+            data_cadastro,
+            classificacao_pn,
+            alto_risco_compartilhado,
+            sifilis,
+            hiv,
+            hepatite_b,
+            hepatite_c,
+            pacientes (gestante, cpf)
+          `)
+          .range(gestFrom, gestFrom + 999);
+        
+        if (error) throw error;
+        if (data && data.length > 0) {
+          gestacoesData = [...gestacoesData, ...data];
+          if (data.length < 1000) gestHasMore = false;
+          else gestFrom += 1000;
+        } else gestHasMore = false;
+        if (gestFrom > 50000) break;
+      }
+      
+      let formattedGest: any[] = gestacoesData.map(g => {
+        // Handle both object and array response from Supabase join
+        let pac: any = g.pacientes;
+        if (Array.isArray(pac)) pac = pac[0];
+        
+        let nome = (pac as any)?.gestante;
+        let cpf = (pac as any)?.cpf;
 
-      if (consError) throw consError;
-      setTotalAtendimentosCount(consCount || 0);
+        // Fallback: if join failed, try to find in the fetched patients list
+        if (!nome) {
+          const found = patientsList.find(p => p.cpf === (g as any).cpf_paciente);
+          if (found) {
+            nome = found.gestante;
+            cpf = found.cpf;
+          }
+        }
+
+        const rtNome = professionalsData.find(p => p.cpf === (g as any).referencia_tecnica)?.nome || (g as any).referencia_tecnica || 'NÃO INFORMADO';
+        const acsNome = professionalsData.find(p => p.cpf === (g as any).acs)?.nome || (g as any).acs || 'NÃO INFORMADO';
+        
+        return {
+          sispn: String(g.sispn || ''),
+          dum: g.dum,
+          dpp: g.dpp,
+          equipe: g.equipe,
+          rt_nome: rtNome,
+          acs_nome: acsNome,
+          data_cadastro: g.data_cadastro,
+          classificacao_pn: g.classificacao_pn || 'HABITUAL',
+          alto_risco_compartilhado: g.alto_risco_compartilhado || 'NÃO',
+          sifilis: g.sifilis || 'NÃO',
+          hiv: g.hiv || 'NEGATIVO',
+          hepatite_b: g.hepatite_b || 'NÃO REAGENTE',
+          hepatite_c: g.hepatite_c || 'NÃO REAGENTE',
+          paciente_nome: nome || 'NÃO INFORMADO',
+          paciente_cpf: String(cpf || 'NÃO INFORMADO')
+        };
+      });
+      setGestacoes(formattedGest);
+
+      // Fetch Atendimentos in chunks
+      let atendimentosData: any[] = [];
+      let atendFrom = 0;
+      let atendHasMore = true;
+      while (atendHasMore) {
+        const { data, error, count } = await supabase
+          .from('atendimentos')
+          .select('*', { count: 'exact' })
+          .order('data_consulta', { ascending: false })
+          .range(atendFrom, atendFrom + 999);
+        
+        if (error) throw error;
+        if (atendFrom === 0) setTotalAtendimentosCount(count || 0);
+
+        if (data && data.length > 0) {
+          atendimentosData = [...atendimentosData, ...data];
+          if (data.length < 1000) atendHasMore = false;
+          else atendFrom += 1000;
+        } else atendHasMore = false;
+        if (atendFrom > 50000) break;
+      }
 
       // Manually join data to avoid complex join errors
-      const enrichedAtendimentos = (consData || []).map(c => {
+      const enrichedAtendimentos = atendimentosData.map(c => {
         const gest = formattedGest.find(g => g.sispn === c.sispn);
         const prof = professionalsData.find(p => p.cpf === c.cpf);
         return {

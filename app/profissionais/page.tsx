@@ -84,7 +84,8 @@ export default function ProfissionaisPage() {
     let prosResponse = await supabase
       .from('profissionais')
       .select('*, categorias_profissionais(cbo, categoria), unidades_saude(nome_fantasia)')
-      .order('nome');
+      .order('nome')
+      .limit(5000);
     
     if (prosResponse.error && prosResponse.error.message.includes('relationship')) {
       // Fallback if relationship doesn't exist yet

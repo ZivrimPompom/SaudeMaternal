@@ -77,16 +77,35 @@ export default function PacientesPage() {
     }
     setLoading(true);
     
-    const { data, error: fetchError } = await supabase
-      .from('pacientes')
-      .select('*')
-      .order('gestante');
+    let allData: Paciente[] = [];
+    let from = 0;
+    let hasMore = true;
+    let errorOccurred = false;
 
-    if (fetchError) {
-      console.error('Erro ao carregar pacientes:', fetchError);
-      setError(`Erro ao carregar pacientes: ${fetchError.message}`);
-    } else {
-      setPacientes(data as Paciente[]);
+    while (hasMore) {
+      const { data, error: fetchError } = await supabase
+        .from('pacientes')
+        .select('*')
+        .order('gestante')
+        .range(from, from + 999);
+
+      if (fetchError) {
+        console.error('Erro ao carregar pacientes:', fetchError);
+        setError(`Erro ao carregar pacientes: ${fetchError.message}`);
+        errorOccurred = true;
+        hasMore = false;
+      } else if (data && data.length > 0) {
+        allData = [...allData, ...(data as Paciente[])];
+        if (data.length < 1000) hasMore = false;
+        else from += 1000;
+      } else {
+        hasMore = false;
+      }
+      if (from > 50000) break;
+    }
+
+    if (!errorOccurred) {
+      setPacientes(allData);
     }
 
     setLoading(false);

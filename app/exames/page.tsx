@@ -130,7 +130,7 @@ export default function ExamesPage() {
           id: Math.random().toString(36).substr(2, 9),
           id_rotina: '',
           descricao: '',
-          tipo_temp: 'EXAME',
+          tipo_temp: '',
           data_realizacao: '',
           resultado: 'NEGATIVO / NÃO REAGENTE',
           trimestre_realizacao: '---'
@@ -169,7 +169,7 @@ export default function ExamesPage() {
           id: Math.random().toString(36).substr(2, 9),
           id_rotina: '',
           descricao: '',
-          tipo_temp: 'EXAME',
+          tipo_temp: '',
           data_realizacao: today,
           resultado: 'NEGATIVO / NÃO REAGENTE',
           trimestre_realizacao: '1º TRIMESTRE'
@@ -204,29 +204,55 @@ export default function ExamesPage() {
     setLoading(true);
     setError(null);
     try {
-      const [routinesRes, gestRes, resultsRes, catsRes, prosRes] = await Promise.all([
-        supabase.from('rotinas').select('*').in('tipo', ['EXAME', 'VACINA']).order('descricao'),
-        supabase.from('gestacoes').select(`
-          sispn, dum, dpp, equipe, data_cadastro,
-          pacientes (gestante, cpf)
-        `),
-        supabase.from('registro_rotinas').select(`
-          *,
-          rotinas (descricao, tipo, trimestre)
-        `).order('data_realizacao', { ascending: true }).order('id_registro', { ascending: true }),
-        supabase.from('categorias_profissionais').select('*').order('categoria'),
-        supabase.from('profissionais').select('cpf, nome, cbo').eq('situacao', 'ATIVO').order('nome')
+      // Fetch routines, categories and professionals (usually < 1000)
+      const [routinesRes, catsRes, prosRes] = await Promise.all([
+        supabase.from('rotinas').select('*').in('tipo', ['EXAME', 'VACINA']).order('descricao').limit(1000),
+        supabase.from('categorias_profissionais').select('*').order('categoria').limit(1000),
+        supabase.from('profissionais').select('cpf, nome, cbo').eq('situacao', 'ATIVO').order('nome').limit(1000)
       ]);
 
       if (routinesRes.error) throw routinesRes.error;
-      if (gestRes.error) throw gestRes.error;
-      if (resultsRes.error) throw resultsRes.error;
-
       setRoutines(routinesRes.data || []);
       setCategories(catsRes.data || []);
       setAllProfessionals(prosRes.data || []);
+
+      // Fetch Results in chunks (bypassing 1000 limit)
+      let resultsData: any[] = [];
+      let resultsFrom = 0;
+      let resultsHasMore = true;
+      while (resultsHasMore) {
+        const { data, error } = await supabase.from('registro_rotinas').select(`
+          *,
+          rotinas (descricao, tipo, trimestre)
+        `).order('data_realizacao', { ascending: true }).order('id_registro', { ascending: true }).range(resultsFrom, resultsFrom + 999);
+        if (error) throw error;
+        if (data && data.length > 0) {
+          resultsData = [...resultsData, ...data];
+          if (data.length < 1000) resultsHasMore = false;
+          else resultsFrom += 1000;
+        } else resultsHasMore = false;
+        if (resultsFrom > 50000) break;
+      }
+
+      // Fetch Gestacoes in chunks
+      let gestacoesData: any[] = [];
+      let gestFrom = 0;
+      let gestHasMore = true;
+      while (gestHasMore) {
+        const { data, error } = await supabase.from('gestacoes').select(`
+          sispn, dum, dpp, equipe, data_cadastro,
+          pacientes (gestante, cpf)
+        `).range(gestFrom, gestFrom + 999);
+        if (error) throw error;
+        if (data && data.length > 0) {
+          gestacoesData = [...gestacoesData, ...data];
+          if (data.length < 1000) gestHasMore = false;
+          else gestFrom += 1000;
+        } else gestHasMore = false;
+        if (gestFrom > 50000) break;
+      }
       
-      const formattedGest = gestRes.data?.map(g => {
+      const formattedGest = gestacoesData.map(g => {
         let pac: any = g.pacientes;
         if (Array.isArray(pac)) pac = pac[0];
         return {
@@ -238,10 +264,10 @@ export default function ExamesPage() {
           paciente_nome: (pac as any)?.gestante || 'NÃO INFORMADO',
           paciente_cpf: String((pac as any)?.cpf || 'NÃO INFORMADO')
         };
-      }) || [];
+      });
       setGestacoes(formattedGest);
 
-      const enrichedResults = (resultsRes.data || []).map(r => {
+      const enrichedResults = resultsData.map(r => {
         const gest = formattedGest.find(g => g.sispn === r.sispn);
         return {
           ...r,
@@ -363,7 +389,6 @@ export default function ExamesPage() {
         return {
           sispn: formData.sispn,
           id_rotina: routine?.id || entry.id_rotina,
-          tipo: routine?.tipo || entry.tipo_temp || 'EXAME',
           data_realizacao: entry.data_realizacao,
           resultado: entry.resultado,
           trimestre_realizacao: trimestre,
@@ -681,7 +706,7 @@ export default function ExamesPage() {
                               id: Math.random().toString(36).substr(2, 9),
                               id_rotina: '',
                               descricao: '',
-                              tipo_temp: 'EXAME',
+                              tipo_temp: '',
                               data_realizacao: '',
                               resultado: 'NEGATIVO / NÃO REAGENTE',
                               trimestre_realizacao: '---'
@@ -702,7 +727,7 @@ export default function ExamesPage() {
                             <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Data Realização</th>
                             <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Trimestre</th>
                             <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Rotina</th>
-                            <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Descrição</th>
+                            <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Tipo</th>
                             <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Resultado</th>
                             {!editingId && <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60 text-center">Ações</th>}
                           </tr>
@@ -735,40 +760,40 @@ export default function ExamesPage() {
                                 <div className="bg-surface-container-low/50 rounded-xl px-3 py-2">
                                   <select 
                                     className="bg-transparent border-none p-0 text-[11px] font-bold outline-none focus:ring-0 w-full uppercase text-on-surface cursor-pointer appearance-none"
-                                    value={entry.tipo_temp || routines.find(r => r.id === entry.id_rotina)?.tipo || ''}
-                                    onChange={(e) => {
-                                      const newEntries = [...formEntries];
-                                      newEntries[index].tipo_temp = e.target.value;
-                                      newEntries[index].id_rotina = ''; // Reset when type changes
-                                      setFormEntries(newEntries);
-                                    }}
-                                  >
-                                    <option value="">Tipo</option>
-                                    <option value="EXAME">EXAME</option>
-                                    <option value="VACINA">VACINA</option>
-                                  </select>
-                                </div>
-                              </td>
-                              <td className="px-6 py-4">
-                                <div className="bg-surface-container-low/50 rounded-xl px-3 py-2">
-                                  <select 
-                                    className="bg-transparent border-none p-0 text-[11px] font-bold outline-none focus:ring-0 w-full uppercase text-on-surface cursor-pointer appearance-none"
                                     value={entry.descricao || ''}
                                     onChange={(e) => {
                                       const newEntries = [...formEntries];
-                                      newEntries[index].descricao = e.target.value;
+                                      const desc = e.target.value;
+                                      newEntries[index].descricao = desc;
+                                      // Find the type for this description
+                                      const routine = routines.find(r => r.descricao === desc);
+                                      if (routine) {
+                                        newEntries[index].tipo_temp = routine.tipo;
+                                      } else {
+                                        newEntries[index].tipo_temp = '';
+                                      }
                                       setFormEntries(newEntries);
                                     }}
                                   >
                                     <option value="">Selecione a Rotina</option>
-                                    {Array.from(new Set(routines
-                                      .filter(r => !entry.tipo_temp || r.tipo === entry.tipo_temp)
-                                      .map(r => r.descricao)))
+                                    {Array.from(new Set(routines.map(r => r.descricao)))
                                       .sort()
                                       .map(desc => (
                                         <option key={desc} value={desc}>{desc}</option>
                                       ))}
                                   </select>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4">
+                                <div className="bg-surface-container-low/50 rounded-xl px-3 py-2 opacity-60">
+                                  <input 
+                                    type="text"
+                                    readOnly
+                                    disabled
+                                    className="bg-transparent border-none p-0 text-[11px] font-bold outline-none focus:ring-0 w-full uppercase text-on-surface cursor-default"
+                                    value={entry.tipo_temp || ''}
+                                    placeholder="Tipo"
+                                  />
                                 </div>
                               </td>
                               <td className="px-6 py-4">

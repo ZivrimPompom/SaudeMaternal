@@ -12,9 +12,10 @@ interface CSVImporterProps {
   expectedColumns: string[];
   requiredColumns?: string[];
   onSuccess: () => void;
+  onRejected?: (rejected: any[]) => void;
   title?: string;
   conflictColumn?: string;
-  transformData?: (data: any[]) => any[];
+  transformData?: (data: any[]) => any[] | { valid: any[], rejected: any[] };
   className?: string;
   hideTitleOnMobile?: boolean;
 }
@@ -36,8 +37,25 @@ export default function CSVImporter({
   const [success, setSuccess] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [previewData, setPreviewData] = useState<any[]>([]);
+  const [rejectedRecords, setRejectedRecords] = useState<any[]>([]);
 
   const { user: authUser } = useAuth();
+
+  const downloadRejected = () => {
+    if (rejectedRecords.length === 0) return;
+    
+    const csv = Papa.unparse(rejectedRecords);
+    // Add UTF-8 BOM to ensure Excel and other tools recognize the encoding
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `rejeitados_${tableName}_${new Date().getTime()}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -107,11 +125,22 @@ export default function CSVImporter({
       let query = supabase.from(tableName);
       
       let dataToInsert = previewData;
+      let rejected: any[] = [];
       
       // Apply custom transformation if provided (e.g., uppercase for rotinas)
       if (transformData) {
-        dataToInsert = transformData(dataToInsert);
+        console.log('Applying transformData to', dataToInsert.length, 'records');
+        const result = transformData(dataToInsert);
+        if (Array.isArray(result)) {
+          dataToInsert = result;
+        } else {
+          dataToInsert = result.valid;
+          rejected = result.rejected;
+        }
+        console.log('Transform result:', { valid: dataToInsert.length, rejected: rejected.length });
       }
+
+      setRejectedRecords(rejected);
 
       // Inject operator's CPF for auditing after transformation to ensure it's not lost
       if (authUser?.cpf) {
@@ -122,12 +151,16 @@ export default function CSVImporter({
       }
 
       // Deduplicate data based on conflictColumn to prevent "ON CONFLICT DO UPDATE command cannot affect row a second time"
+      // Only deduplicate if the value is present (not null/undefined)
       if (conflictColumn) {
         const seen = new Set();
         dataToInsert = dataToInsert.filter(item => {
           const val = item[conflictColumn];
-          if (val === null || val === undefined || seen.has(val)) {
-            return false;
+          if (val === null || val === undefined) {
+            return true; // Keep records without ID (new records)
+          }
+          if (seen.has(val)) {
+            return false; // Filter duplicates in the same batch
           }
           seen.add(val);
           return true;
@@ -135,12 +168,31 @@ export default function CSVImporter({
       }
 
       if (dataToInsert.length === 0) {
-        setSuccess('Nenhum novo registro para importar.');
+        if (rejected.length > 0) {
+          setSuccess(`Todos os ${rejected.length} registros foram rejeitados. O arquivo de rejeição foi baixado automaticamente.`);
+        } else {
+          setSuccess('Nenhum novo registro para importar.');
+        }
         onSuccess();
+
+        // Automatic download of rejected records if any
+        if (rejected.length > 0) {
+          const csv = Papa.unparse(rejected);
+          const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.setAttribute('href', url);
+          link.setAttribute('download', `rejeitados_${tableName}_${new Date().getTime()}.csv`);
+          link.style.visibility = 'hidden';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+
         setTimeout(() => {
           setShowModal(false);
           setPreviewData([]);
-        }, 2000);
+        }, 3000);
         return;
       }
 
@@ -153,8 +205,27 @@ export default function CSVImporter({
 
       if (result.error) throw result.error;
 
-      setSuccess(`${dataToInsert.length} registros importados com sucesso!`);
+      let successMsg = `${dataToInsert.length} registros importados com sucesso!`;
+      if (rejected.length > 0) {
+        successMsg += ` (${rejected.length} registros foram rejeitados por inconsistências)`;
+      }
+      setSuccess(successMsg);
       onSuccess();
+      
+      // Automatic download of rejected records if any
+      if (rejected.length > 0) {
+        const csv = Papa.unparse(rejected);
+        const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `rejeitados_${tableName}_${new Date().getTime()}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+
       setTimeout(() => {
         setShowModal(false);
         setPreviewData([]);
@@ -248,9 +319,20 @@ export default function CSVImporter({
               )}
 
               {success && (
-                <div className="p-4 rounded-2xl bg-green-50 border border-green-100 text-green-600 text-xs font-bold flex items-center gap-3">
-                  <CheckCircle2 className="w-4 h-4 shrink-0" />
-                  {success}
+                <div className="space-y-4">
+                  <div className="p-4 rounded-2xl bg-green-50 border border-green-100 text-green-600 text-xs font-bold flex items-center gap-3">
+                    <CheckCircle2 className="w-4 h-4 shrink-0" />
+                    {success}
+                  </div>
+                  {rejectedRecords.length > 0 && (
+                    <button
+                      onClick={downloadRejected}
+                      className="w-full p-4 rounded-2xl bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white transition-all text-xs font-bold flex items-center justify-center gap-3 uppercase tracking-widest"
+                    >
+                      <FileUp className="w-4 h-4 rotate-180" />
+                      Baixar Registros Rejeitados (.csv)
+                    </button>
+                  )}
                 </div>
               )}
 
