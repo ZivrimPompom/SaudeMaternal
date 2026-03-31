@@ -131,20 +131,20 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
         onClick={onClose}
       />
 
-      <aside className={`bg-slate-100 dark:bg-slate-900 h-screen w-64 fixed left-0 top-0 overflow-y-auto flex flex-col py-8 px-4 z-50 transition-transform duration-300 shadow-2xl lg:shadow-none ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside className={`bg-surface-container-low h-screen w-64 fixed left-0 top-0 overflow-y-auto flex flex-col py-8 px-4 z-50 transition-transform duration-300 shadow-2xl lg:shadow-none ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="mb-10 px-2 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-primary-container flex items-center justify-center">
-              <span className="material-symbols-outlined text-white" style={{ fontVariationSettings: '"FILL" 1' }}>health_and_safety</span>
+              <span className="material-symbols-outlined text-on-primary-container" style={{ fontVariationSettings: '"FILL" 1' }}>health_and_safety</span>
             </div>
             <div>
-              <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tighter">Saúde Maternal</h1>
-              <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Curadoria Clínica</p>
+              <h1 className="text-xl font-bold text-on-surface tracking-tighter">Saúde Maternal</h1>
+              <p className="text-[10px] uppercase tracking-widest text-on-surface-variant/60 font-bold">Curadoria Clínica</p>
             </div>
           </div>
           <button 
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 transition-colors"
+            className="p-2 rounded-lg hover:bg-surface-container-high text-on-surface-variant transition-colors"
             title="Recolher Painel"
           >
             <span className="material-symbols-outlined">menu_open</span>
@@ -164,11 +164,11 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
                   href={item.href}
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 font-headline text-sm font-semibold tracking-tight ${
                     isActive
-                      ? 'text-slate-900 dark:text-white border-l-4 border-primary bg-white/50 dark:bg-white/10 translate-x-1'
-                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/50'
+                      ? 'text-on-surface border-l-4 border-primary bg-surface-container-highest/50 translate-x-1'
+                      : 'text-on-surface-variant/60 hover:text-on-surface hover:bg-surface-container-high'
                   }`}
                 >
-                  <span className={`material-symbols-outlined ${isActive ? 'text-primary dark:text-primary-container' : ''}`}>
+                  <span className={`material-symbols-outlined ${isActive ? 'text-primary' : ''}`}>
                     {item.icon}
                   </span>
                   <span>{item.name}</span>
@@ -178,12 +178,12 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
                   onClick={() => toggleMenu(item.name)}
                   className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all duration-200 font-headline text-sm font-semibold tracking-tight ${
                     isActive
-                      ? 'text-slate-900 dark:text-white border-l-4 border-primary bg-white/50 dark:bg-white/10'
-                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/50'
+                      ? 'text-on-surface border-l-4 border-primary bg-surface-container-highest/50'
+                      : 'text-on-surface-variant/60 hover:text-on-surface hover:bg-surface-container-high'
                   }`}
                 >
                   <span className="flex items-center gap-3">
-                    <span className={`material-symbols-outlined ${isActive ? 'text-primary dark:text-primary-container' : ''}`}>
+                    <span className={`material-symbols-outlined ${isActive ? 'text-primary' : ''}`}>
                       {item.icon}
                     </span>
                     <span>{item.name}</span>
@@ -195,7 +195,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
               )}
 
               {hasSubItems && isExpanded && (
-                <div className="ml-9 space-y-1 border-l border-slate-200 dark:border-slate-800">
+                <div className="ml-9 space-y-1 border-l border-outline-variant/10">
                   {item.subItems?.map((sub) => {
                     const isSubActive = pathname === sub.href;
                     const isExport = sub.href.startsWith('export:');
@@ -205,7 +205,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
                         <button
                           key={sub.name}
                           onClick={() => handleExportLayout(sub.href.split(':')[1])}
-                          className="w-full flex items-center gap-3 px-4 py-2 rounded-r-lg transition-all duration-200 font-headline text-[10px] font-medium tracking-tight text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary-container hover:bg-primary/5 dark:hover:bg-primary/10 text-left"
+                          className="w-full flex items-center gap-3 px-4 py-2 rounded-r-lg transition-all duration-200 font-headline text-[10px] font-medium tracking-tight text-on-surface-variant/60 hover:text-primary hover:bg-primary/5 text-left"
                         >
                           <span>{sub.name}</span>
                         </button>
@@ -218,8 +218,8 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
                         href={sub.href}
                         className={`flex items-center gap-3 px-4 py-2 rounded-r-lg transition-all duration-200 font-headline text-xs font-medium tracking-tight ${
                           isSubActive
-                            ? 'text-primary dark:text-primary-container bg-primary/5 dark:bg-primary/10'
-                            : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/30'
+                            ? 'text-primary bg-primary/5'
+                            : 'text-on-surface-variant/60 hover:text-on-surface hover:bg-surface-container-high/50'
                         }`}
                       >
                         <span>{sub.name}</span>
@@ -232,14 +232,14 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
           );
         })}
       </nav>
-      <div className="mt-auto pt-8 border-t border-slate-200/50 dark:border-slate-800 space-y-1">
-        <Link href="#" className="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors duration-200 font-headline text-sm font-semibold tracking-tight">
+      <div className="mt-auto pt-8 border-t border-outline-variant/10 space-y-1">
+        <Link href="#" className="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant/60 hover:text-on-surface hover:bg-surface-container-high transition-colors duration-200 font-headline text-sm font-semibold tracking-tight">
           <span className="material-symbols-outlined">help_outline</span>
           <span>Support</span>
         </Link>
         <button 
           onClick={onClose}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary-container hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors duration-200 font-headline text-sm font-semibold tracking-tight mt-4"
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant/60 hover:text-primary hover:bg-surface-container-high transition-colors duration-200 font-headline text-sm font-semibold tracking-tight mt-4"
           title="Recolher Painel"
         >
           <span className="material-symbols-outlined">chevron_left</span>

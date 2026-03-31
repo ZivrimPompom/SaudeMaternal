@@ -48,7 +48,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {!isSidebarOpen && (
         <button
           onClick={toggleSidebar}
-          className="hidden lg:flex fixed bottom-6 left-6 z-50 w-10 h-10 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full items-center justify-center shadow-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-all duration-300 text-slate-600 dark:text-slate-400 hover:text-orange-600"
+          className="hidden lg:flex fixed bottom-6 left-6 z-50 w-10 h-10 bg-surface-container-lowest border border-outline-variant/10 rounded-full items-center justify-center shadow-lg hover:bg-surface-container-high transition-all duration-300 text-on-surface-variant hover:text-primary"
           title="Expandir Painel"
         >
           <span className="material-symbols-outlined">chevron_right</span>

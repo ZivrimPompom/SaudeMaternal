@@ -195,7 +195,7 @@ export default function CSVImporter({
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 max-w-2xl w-full shadow-2xl border border-outline-variant/10 space-y-6 max-h-[90vh] flex flex-col"
+              className="bg-surface-container-lowest rounded-[2.5rem] p-8 max-w-2xl w-full shadow-2xl border border-outline-variant/10 space-y-6 max-h-[90vh] flex flex-col"
             >
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-3">

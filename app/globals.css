@@ -59,6 +59,81 @@
   --radius-full: 0.75rem;
 }
 
+.dark {
+  --color-on-surface: #eff1f3;
+  --color-surface-container-lowest: #0d1012;
+  --color-on-primary-fixed-variant: #ffb5a0;
+  --color-on-primary-fixed: #ffdbd1;
+  --color-error: #ffb4ab;
+  --color-primary: #ffb5a0;
+  --color-inverse-surface: #e0e3e5;
+  --color-tertiary-fixed-dim: #86cfff;
+  --color-inverse-primary: #b02f00;
+  --color-secondary-fixed-dim: #b9c7df;
+  --color-on-secondary: #233144;
+  --color-on-tertiary-fixed-variant: #c8e6ff;
+  --color-surface: #0a0c0e;
+  --color-surface-dim: #0d1012;
+  --color-surface-tint: #ffb5a0;
+  --color-on-primary: #601400;
+  --color-on-background: #eff1f3;
+  --color-on-error-container: #ffdad6;
+  --color-background: #0a0c0e;
+  --color-on-tertiary-container: #c8e6ff;
+  --color-on-secondary-fixed-variant: #d5e3fc;
+  --color-primary-fixed: #ffdbd1;
+  --color-tertiary-container: #004c6d;
+  --color-primary-fixed-dim: #ffb5a0;
+  --color-outline-variant: #5b4039;
+  --color-surface-container-highest: #323537;
+  --color-tertiary: #86cfff;
+  --color-inverse-on-surface: #191c1e;
+  --color-secondary-fixed: #d5e3fc;
+  --color-secondary: #b9c7df;
+  --color-surface-container-low: #191c1e;
+  --color-on-error: #690005;
+  --color-surface-bright: #353a3c;
+  --color-on-tertiary: #00344a;
+  --color-surface-container: #1d2022;
+  --color-on-surface-variant: #e4beb4;
+  --color-on-primary-container: #ffdbd1;
+  --color-on-secondary-fixed: #0d1c2e;
+  --color-on-secondary-container: #d5e3fc;
+  --color-outline: #a78980;
+  --color-error-container: #93000a;
+  --color-on-tertiary-fixed: #001e2e;
+  --color-tertiary-fixed: #c8e6ff;
+  --color-primary-container: #862200;
+  --color-secondary-container: #3a485b;
+  --color-surface-container-high: #272a2c;
+  --color-surface-variant: #5b4039;
+}
+
+.high-contrast {
+  --color-on-surface: #ffffff;
+  --color-surface-container-lowest: #000000;
+  --color-surface-container-low: #080808;
+  --color-surface-container: #111111;
+  --color-surface-container-high: #1a1a1a;
+  --color-surface-container-highest: #222222;
+  --color-on-surface-variant: #ffffff;
+  --color-outline: #ffffff;
+  --color-outline-variant: #ffffff;
+  --color-primary: #ff4d00;
+  --color-on-primary: #000000;
+  --color-primary-container: #ff4d00;
+  --color-on-primary-container: #ffffff;
+  --color-secondary: #00ff00;
+  --color-on-secondary: #000000;
+  --color-secondary-container: #00ff00;
+  --color-on-secondary-container: #ffffff;
+  --color-error: #ff0000;
+  --color-on-error: #ffffff;
+  --color-surface: #000000;
+  --color-background: #000000;
+  --color-on-background: #ffffff;
+}
+
 @layer base {
   .material-symbols-outlined {
     font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
