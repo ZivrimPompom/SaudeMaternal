@@ -46,6 +46,7 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
   const isExamesPage = pathname === '/exames';
   
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isSearchMobileOpen, setIsSearchMobileOpen] = useState(false);
   const [pacientes, setPacientes] = useState<any[]>([]);
   const [profissionais, setProfissionais] = useState<any[]>([]);
 
@@ -374,30 +375,40 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
 
   return (
     <header className={`fixed top-0 right-0 h-16 z-40 bg-surface/80 backdrop-blur-xl border-b border-outline-variant/10 flex justify-between items-center px-4 md:px-8 transition-all duration-300 ${isSidebarOpen ? 'w-full lg:w-[calc(100%-16rem)]' : 'w-full'}`}>
-      <div className="flex items-center gap-2 md:gap-4">
-        <button 
-          onClick={onToggleSidebar}
-          className="p-2 rounded-lg hover:bg-surface-container-high text-on-surface-variant transition-colors"
-          title={isSidebarOpen ? 'Recolher Menu' : 'Expandir Menu'}
-        >
-          <span className="material-symbols-outlined">{isSidebarOpen ? 'menu_open' : 'menu'}</span>
-        </button>
+      <div className="flex items-center gap-1 md:gap-4 flex-1">
+        {!isSearchMobileOpen && (
+          <>
+            <button 
+              onClick={onToggleSidebar}
+              className="p-2 rounded-lg hover:bg-surface-container-high text-on-surface-variant transition-colors"
+              title={isSidebarOpen ? 'Recolher Menu' : 'Expandir Menu'}
+            >
+              <span className="material-symbols-outlined">{isSidebarOpen ? 'menu_open' : 'menu'}</span>
+            </button>
 
-        <Link 
-          href="/"
-          className="p-2 rounded-lg hover:bg-surface-container-high text-on-surface-variant transition-colors flex items-center gap-2"
-          title="Ir para Home"
-        >
-          <span className="material-symbols-outlined">home</span>
-          <span className="hidden sm:inline text-sm font-semibold">Home</span>
-        </Link>
+            <Link 
+              href="/"
+              className="p-2 rounded-lg hover:bg-surface-container-high text-on-surface-variant transition-colors flex items-center gap-2"
+              title="Ir para Home"
+            >
+              <span className="material-symbols-outlined">home</span>
+              <span className="hidden sm:inline text-sm font-semibold">Home</span>
+            </Link>
+          </>
+        )}
         
         {!isHomePage && (
-          <>
-            <span className="hidden sm:block text-lg font-black text-primary font-headline">{getSearchLabel()}</span>
-            <div className="hidden sm:block h-6 w-px bg-outline-variant/20 mx-2"></div>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center bg-surface-container rounded-full px-4 py-1.5 gap-2 w-40 md:w-64">
+          <div className={`flex items-center gap-2 flex-1 ${isSearchMobileOpen ? 'px-0' : 'ml-1 md:ml-2'}`}>
+            {!isSearchMobileOpen && (
+              <>
+                <span className="hidden lg:block text-lg font-black text-primary font-headline whitespace-nowrap">{getSearchLabel()}</span>
+                <div className="hidden lg:block h-6 w-px bg-outline-variant/20 mx-2"></div>
+              </>
+            )}
+
+            {/* Search Bar - Desktop and Mobile Toggle */}
+            <div className={`flex items-center gap-2 ${isSearchMobileOpen ? 'w-full' : 'w-auto'}`}>
+              <div className={`${isSearchMobileOpen ? 'flex flex-1' : 'hidden sm:flex'} items-center bg-surface-container rounded-full px-4 py-1.5 gap-2 w-full max-w-md transition-all duration-300`}>
                 <span className="material-symbols-outlined text-on-surface-variant/40 text-sm">search</span>
                 <input 
                   className="bg-transparent border-none text-sm focus:ring-0 placeholder-on-surface-variant/40 w-full font-body text-on-surface" 
@@ -405,23 +416,39 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
                   type="text" 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  autoFocus={isSearchMobileOpen}
                 />
+                {isSearchMobileOpen && (
+                  <button onClick={() => setIsSearchMobileOpen(false)} className="material-symbols-outlined text-on-surface-variant/40 text-sm">close</button>
+                )}
               </div>
 
-              <div className="flex items-center gap-2">
+              {!isSearchMobileOpen && (
+                <button 
+                  onClick={() => setIsSearchMobileOpen(true)}
+                  className="sm:hidden p-2 rounded-full bg-surface-container text-on-surface-variant/60"
+                >
+                  <span className="material-symbols-outlined text-sm">search</span>
+                </button>
+              )}
+            </div>
+
+            {!isSearchMobileOpen && (
+              <div className="flex items-center gap-1 md:gap-2">
                 {importerProps && (
                   <CSVImporter 
                     {...importerProps}
                     onSuccess={triggerRefresh}
                     title="Importar"
-                    className="flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold transition-all duration-300 bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20"
+                    hideTitleOnMobile={true}
+                    className="flex items-center gap-2 px-3 md:px-4 py-1.5 rounded-full text-xs md:text-sm font-bold transition-all duration-300 bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20"
                   />
                 )}
 
                 {importerProps && (
                   <button
                     onClick={handleExportLayout}
-                    className="flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold transition-all duration-300 bg-white text-primary border border-primary hover:bg-primary/5 shadow-lg shadow-primary/5"
+                    className="flex items-center gap-2 px-3 md:px-4 py-1.5 rounded-full text-xs md:text-sm font-bold transition-all duration-300 bg-white text-primary border border-primary hover:bg-primary/5 shadow-lg shadow-primary/5"
                     title="Baixar modelo de planilha para importação"
                   >
                     <span className="material-symbols-outlined text-sm">download</span>
@@ -432,7 +459,7 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
                 {(isCategoriesPage || isProfessionalsPage || isOperatorsPage || isRotinasPage || isPacientesPage || isUnidadesPage || isGestacoesPage || isAtendimentosPage || isExamesPage) && (
                   <button
                     onClick={() => setIsFormOpen(!isFormOpen)}
-                    className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold transition-all duration-300 ${
+                    className={`flex items-center gap-2 px-3 md:px-4 py-1.5 rounded-full text-xs md:text-sm font-bold transition-all duration-300 ${
                       isFormOpen 
                         ? 'bg-red-600 text-white hover:bg-red-700 shadow-lg shadow-red-200' 
                         : 'bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20'
@@ -443,39 +470,41 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
                   </button>
                 )}
               </div>
-            </div>
-          </>
+            )}
+          </div>
         )}
       </div>
-      <div className="flex items-center gap-6">
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={toggleTheme}
-            className="p-2 rounded-lg hover:bg-surface-container-high text-on-surface-variant transition-colors flex items-center justify-center"
-            title={getThemeTitle()}
-          >
-            <span className="material-symbols-outlined text-lg">
-              {getThemeIcon()}
-            </span>
-          </button>
-          <button className="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">notifications</button>
-          <button className="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">apps</button>
-        </div>
-        
-        <div className="relative">
-          <button 
-            onClick={() => setIsProfileOpen(!isProfileOpen)}
-            className="flex items-center gap-3 hover:bg-surface-container-low p-1.5 rounded-xl transition-colors"
-          >
-            <span className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
-              {userInitials}
-            </span>
-            <span className="hidden lg:block text-left">
-              <span className="block text-xs font-bold leading-none mb-1 capitalize text-on-surface">{userName}</span>
-              <span className="block text-[10px] text-on-surface-variant/60 leading-none truncate max-w-[120px]">{userRole}</span>
-            </span>
-            <span className={`material-symbols-outlined text-on-surface-variant/40 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`}>expand_more</span>
-          </button>
+
+      {!isSearchMobileOpen && (
+        <div className="flex items-center gap-2 md:gap-6 ml-2">
+          <div className="flex items-center gap-1 md:gap-4">
+            <button 
+              onClick={toggleTheme}
+              className="p-2 rounded-lg hover:bg-surface-container-high text-on-surface-variant transition-colors flex items-center justify-center"
+              title={getThemeTitle()}
+            >
+              <span className="material-symbols-outlined text-lg">
+                {getThemeIcon()}
+              </span>
+            </button>
+            <button className="hidden sm:block material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">notifications</button>
+            <button className="hidden sm:block material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">apps</button>
+          </div>
+          
+          <div className="relative">
+            <button 
+              onClick={() => setIsProfileOpen(!isProfileOpen)}
+              className="flex items-center gap-2 md:gap-3 hover:bg-surface-container-low p-1 rounded-xl transition-colors"
+            >
+              <span className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs shrink-0">
+                {userInitials}
+              </span>
+              <span className="hidden lg:block text-left">
+                <span className="block text-xs font-bold leading-none mb-1 capitalize text-on-surface">{userName}</span>
+                <span className="block text-[10px] text-on-surface-variant/60 leading-none truncate max-w-[120px]">{userRole}</span>
+              </span>
+              <span className={`material-symbols-outlined text-on-surface-variant/40 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`}>expand_more</span>
+            </button>
 
           {isProfileOpen && (
             <div className="absolute top-full right-0 mt-2 w-48 bg-surface-container-lowest rounded-xl shadow-xl border border-outline-variant/10 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
@@ -494,6 +523,7 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
           )}
         </div>
       </div>
-    </header>
+    )}
+  </header>
   );
 }

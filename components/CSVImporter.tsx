@@ -16,6 +16,7 @@ interface CSVImporterProps {
   conflictColumn?: string;
   transformData?: (data: any[]) => any[];
   className?: string;
+  hideTitleOnMobile?: boolean;
 }
 
 export default function CSVImporter({ 
@@ -26,7 +27,8 @@ export default function CSVImporter({
   title = 'Importar CSV',
   conflictColumn,
   transformData,
-  className
+  className,
+  hideTitleOnMobile = false
 }: CSVImporterProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isImporting, setIsImporting] = useState(false);
@@ -177,7 +179,7 @@ export default function CSVImporter({
         className={className || "inline-flex items-center gap-2 bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white px-4 py-2 rounded-xl transition-all font-headline text-[10px] font-black uppercase tracking-widest shadow-sm"}
       >
         <FileUp className="w-4 h-4" />
-        {title}
+        <span className={hideTitleOnMobile ? "hidden md:inline" : ""}>{title}</span>
       </button>
       
       <input
