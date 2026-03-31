@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS public.registro_rotinas (
     id_registro UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     sispn TEXT NOT NULL REFERENCES public.gestacoes(sispn) ON DELETE CASCADE,
     id_rotina UUID NOT NULL REFERENCES public.rotinas(id) ON DELETE CASCADE,
+    tipo TEXT NOT NULL CHECK (tipo IN ('EXAME', 'VACINA', 'MEDICACAO')),
     data_realizacao DATE NOT NULL,
     resultado TEXT, -- 'POSITIVO', 'NEGATIVO', or custom text
     observacoes TEXT,

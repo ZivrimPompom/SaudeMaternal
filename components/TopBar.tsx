@@ -289,8 +289,8 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
     };
     if (isExamesPage) return {
       tableName: "registro_rotinas",
-      expectedColumns: ['sispn', 'id_rotina', 'data_realizacao', 'resultado', 'cbo', 'cpf_profissional'],
-      requiredColumns: ['sispn', 'id_rotina', 'data_realizacao'],
+      expectedColumns: ['sispn', 'id_rotina', 'tipo', 'data_realizacao', 'resultado', 'cbo', 'cpf_profissional'],
+      requiredColumns: ['sispn', 'id_rotina', 'tipo', 'data_realizacao'],
       conflictColumn: "id_registro",
       transformData: (data: any[]) => data.map(item => {
         const formatDate = (dateStr: string) => {
@@ -301,10 +301,12 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
           }
           return dateStr;
         };
+        const cpfProf = (item.cpf_profissional || '').replace(/\D/g, '');
         return {
           ...item,
           sispn: (item.sispn || '').replace(/\D/g, ''),
-          cpf_profissional: (item.cpf_profissional || '').replace(/\D/g, ''),
+          tipo: (item.tipo || 'EXAME').toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""),
+          cpf_profissional: cpfProf || 'NÃO INFORMADO',
           data_realizacao: formatDate(item.data_realizacao),
           resultado: (item.resultado || '').toUpperCase(),
           cbo: (item.cbo || '').replace(/\D/g, ''),

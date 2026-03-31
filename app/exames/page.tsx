@@ -36,6 +36,7 @@ interface ExamResult {
   id_registro: string;
   sispn: string;
   id_rotina: string;
+  tipo: string;
   data_realizacao: string;
   resultado: string;
   observacoes?: string;
@@ -362,11 +363,12 @@ export default function ExamesPage() {
         return {
           sispn: formData.sispn,
           id_rotina: routine?.id || entry.id_rotina,
+          tipo: routine?.tipo || entry.tipo_temp || 'EXAME',
           data_realizacao: entry.data_realizacao,
           resultado: entry.resultado,
           trimestre_realizacao: trimestre,
           cbo: professional?.cbo || null,
-          cpf_profissional: selectedProfessionalCpf,
+          cpf_profissional: selectedProfessionalCpf || 'NÃO INFORMADO',
           unidade_cnes: authUser?.unidade_cnes || null,
           cpf_operador: authUser?.cpf || null
         };
@@ -416,6 +418,7 @@ export default function ExamesPage() {
         id: Math.random().toString(36).substr(2, 9),
         id_rotina: res.id_rotina,
         descricao: res.rotinas?.descricao || '',
+        tipo_temp: res.tipo || res.rotinas?.tipo || 'EXAME',
         data_realizacao: res.data_realizacao,
         resultado: res.resultado,
         trimestre_realizacao: res.trimestre_realizacao
@@ -457,7 +460,7 @@ export default function ExamesPage() {
       );
 
       if (!matchesSearch) return false;
-      if (filters.tipo && r.rotinas?.tipo !== filters.tipo) return false;
+      if (filters.tipo && (r.tipo || r.rotinas?.tipo) !== filters.tipo) return false;
       if (filters.trimestre && r.trimestre_realizacao !== filters.trimestre) return false;
       if (filters.rotina && r.rotinas?.descricao !== filters.rotina) return false;
       if (filters.equipe && (gest as any)?.equipe !== filters.equipe) return false;
@@ -920,7 +923,11 @@ export default function ExamesPage() {
                         <td className="px-8 py-6 text-[10px] font-bold text-on-surface-variant/60 font-mono">{res.sispn}</td>
                         <td className="px-8 py-6">
                           <p className="text-xs font-bold text-on-surface uppercase">{res.rotinas?.descricao}</p>
-                          <span className="text-[10px] font-bold text-primary/40 uppercase tracking-widest">{res.trimestre_realizacao || res.rotinas?.trimestre}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-bold text-primary/40 uppercase tracking-widest">{res.tipo || res.rotinas?.tipo}</span>
+                            <span className="text-[10px] font-bold text-primary/40 uppercase tracking-widest">•</span>
+                            <span className="text-[10px] font-bold text-primary/40 uppercase tracking-widest">{res.trimestre_realizacao || res.rotinas?.trimestre}</span>
+                          </div>
                         </td>
                         <td className="px-8 py-6 text-xs font-bold text-on-surface">{new Date(res.data_realizacao).toLocaleDateString('pt-BR')}</td>
                         <td className="px-8 py-6">
@@ -930,7 +937,7 @@ export default function ExamesPage() {
                         </td>
                         <td className="px-8 py-6">
                           <p className="text-xs font-bold text-on-surface uppercase">
-                            {allProfessionals.find(p => p.cpf === res.cpf_profissional)?.nome || '---'}
+                            {allProfessionals.find(p => p.cpf === res.cpf_profissional)?.nome || res.cpf_profissional || '---'}
                           </p>
                           <p className="text-[10px] text-on-surface-variant/40 font-mono uppercase tracking-widest font-bold">{getCboCategory(res.cbo)}</p>
                         </td>
