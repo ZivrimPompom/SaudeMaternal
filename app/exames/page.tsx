@@ -268,11 +268,11 @@ export default function ExamesPage() {
     const start = new Date(dum + 'T12:00:00');
     const rotinaDate = new Date(dataRotina + 'T12:00:00');
     const diffTime = rotinaDate.getTime() - start.getTime();
-    const diffWeeks = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 7));
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
-    if (diffWeeks < 0 || diffWeeks > 42) return 'FORA DO PERÍODO';
-    if (diffWeeks <= 13) return '1º TRIMESTRE';
-    if (diffWeeks <= 27) return '2º TRIMESTRE';
+    if (diffDays < 0 || diffDays > 280) return 'FORA DO PERÍODO';
+    if (diffDays <= 91) return '1º TRIMESTRE';
+    if (diffDays <= 189) return '2º TRIMESTRE';
     return '3º TRIMESTRE';
   };
 
@@ -346,7 +346,7 @@ export default function ExamesPage() {
         const trimestre = calculateTrimestre(gest.dum, entry.data_realizacao || '');
         
         if (trimestre === 'FORA DO PERÍODO') {
-          throw new Error(`Data de realização (${entry.data_realizacao}) está fora do período gestacional (0-42 semanas).`);
+          throw new Error(`Data de realização (${entry.data_realizacao}) está fora do período gestacional (0-280 dias).`);
         }
 
         // Find the routine ID that matches description and calculated trimester

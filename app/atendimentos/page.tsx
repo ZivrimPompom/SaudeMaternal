@@ -173,15 +173,6 @@ export default function AtendimentosPage() {
     observacoes_clinicas: ''
   });
 
-  useEffect(() => {
-    if (!formData.data_consulta) {
-      setFormData(prev => ({
-        ...prev,
-        data_consulta: new Date().toISOString().split('T')[0]
-      }));
-    }
-  }, [formData.data_consulta]);
-
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -347,13 +338,14 @@ export default function AtendimentosPage() {
 
   const calculateTrimestre = (dum: string, dataConsulta: string) => {
     if (!dum || !dataConsulta) return null;
-    const start = new Date(dum);
-    const consult = new Date(dataConsulta);
+    const start = new Date(dum + 'T12:00:00');
+    const consult = new Date(dataConsulta + 'T12:00:00');
     const diffTime = consult.getTime() - start.getTime();
-    const diffWeeks = diffTime / (1000 * 60 * 60 * 24 * 7);
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
-    if (diffWeeks <= 13) return '1º TRIMESTRE';
-    if (diffWeeks <= 27) return '2º TRIMESTRE';
+    if (diffDays < 0 || diffDays > 280) return 'FORA DO PERÍODO';
+    if (diffDays <= 91) return '1º TRIMESTRE';
+    if (diffDays <= 189) return '2º TRIMESTRE';
     return '3º TRIMESTRE';
   };
 
@@ -420,6 +412,12 @@ export default function AtendimentosPage() {
 
     try {
       const trimestre = calculateTrimestre(gest?.dum || '', formData.data_consulta || '');
+      
+      if (trimestre === 'FORA DO PERÍODO') {
+        setError(`Data da consulta (${formData.data_consulta}) está fora do período gestacional (0-280 dias).`);
+        return;
+      }
+
       const professional = allProfessionals.find(p => p.cpf === selectedProfessionalCpf);
 
       const payload = {
@@ -789,7 +787,7 @@ export default function AtendimentosPage() {
                           <input 
                             type="text"
                             readOnly
-                            className="w-full bg-surface-container-low border-2 border-transparent rounded-2xl px-6 py-4 font-body text-sm outline-none text-on-surface-variant/60 uppercase"
+                            className={`w-full bg-surface-container-low border-2 border-transparent rounded-2xl px-6 py-4 font-body text-sm outline-none uppercase ${calculateTrimestre(selectedGestante?.dum || '', formData.data_consulta || '') === 'FORA DO PERÍODO' ? 'text-error font-black' : 'text-on-surface-variant/60'}`}
                             value={calculateTrimestre(selectedGestante?.dum || '', formData.data_consulta || '') || ''}
                           />
                         </div>
