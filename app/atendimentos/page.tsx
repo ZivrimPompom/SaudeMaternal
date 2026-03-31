@@ -783,24 +783,24 @@ export default function AtendimentosPage() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Trimestre Consulta</label>
-                          <input 
-                            type="text"
-                            readOnly
-                            className={`w-full bg-surface-container-low border-2 border-transparent rounded-2xl px-6 py-4 font-body text-sm outline-none uppercase ${calculateTrimestre(selectedGestante?.dum || '', formData.data_consulta || '') === 'FORA DO PERÍODO' ? 'text-error font-black' : 'text-on-surface-variant/60'}`}
-                            value={calculateTrimestre(selectedGestante?.dum || '', formData.data_consulta || '') || ''}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
                           <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">DPP Referência</label>
                           <input 
                             type="text"
                             readOnly
                             className="w-full bg-surface-container-low border-2 border-transparent rounded-2xl px-6 py-4 font-body text-sm outline-none text-on-surface-variant/60"
                             value={selectedGestante ? getDppReferencia(selectedGestante.dpp) : ''}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Referência Consulta</label>
+                          <input 
+                            type="text"
+                            readOnly
+                            className="w-full bg-surface-container-low border-2 border-transparent rounded-2xl px-6 py-4 font-body text-sm outline-none text-on-surface-variant/60"
+                            value={getConsultaReferencia(formData.data_consulta || '')}
                           />
                         </div>
                         <div className="space-y-2">
@@ -833,12 +833,12 @@ export default function AtendimentosPage() {
                           </div>
                         </div>
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Referência Consulta</label>
+                          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Trimestre Consulta</label>
                           <input 
                             type="text"
                             readOnly
-                            className="w-full bg-surface-container-low border-2 border-transparent rounded-2xl px-6 py-4 font-body text-sm outline-none text-on-surface-variant/60"
-                            value={getConsultaReferencia(formData.data_consulta || '')}
+                            className={`w-full bg-surface-container-low border-2 border-transparent rounded-2xl px-6 py-4 font-body text-sm outline-none uppercase ${calculateTrimestre(selectedGestante?.dum || '', formData.data_consulta || '') === 'FORA DO PERÍODO' ? 'text-error font-black' : 'text-on-surface-variant/60'}`}
+                            value={calculateTrimestre(selectedGestante?.dum || '', formData.data_consulta || '') || ''}
                           />
                         </div>
                       </div>
