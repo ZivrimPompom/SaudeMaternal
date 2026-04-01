@@ -113,6 +113,49 @@ const formatCpf = (value: string) => {
 };
 
 export default function AtendimentosPage() {
+  const getGestacaoStatus = (dpp: string) => {
+    if (!dpp) return '---';
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const end = new Date(dpp);
+    end.setHours(0, 0, 0, 0);
+    return now >= end ? 'VENCIDA' : 'ATIVA';
+  };
+
+  const calculateTrimestre = (dum: string, dataConsulta: string) => {
+    if (!dum || !dataConsulta) return null;
+    const start = new Date(dum + 'T12:00:00');
+    const consult = new Date(dataConsulta + 'T12:00:00');
+    const diffTime = consult.getTime() - start.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0 || diffDays > 280) return 'FORA DO PERÍODO';
+    if (diffDays <= 91) return '1º TRIMESTRE';
+    if (diffDays <= 189) return '2º TRIMESTRE';
+    return '3º TRIMESTRE';
+  };
+
+  const getStatusCaptacao = (dum: string, dataCadastro: string) => {
+    if (!dum || !dataCadastro) return '---';
+    const start = new Date(dum);
+    const registration = new Date(dataCadastro);
+    const diffTime = registration.getTime() - start.getTime();
+    const diffWeeks = diffTime / (1000 * 60 * 60 * 24 * 7);
+    return diffWeeks <= 12 ? 'PRECOCE' : 'TARDIA';
+  };
+
+  const getDppReferencia = (dpp: string) => {
+    if (!dpp) return '---';
+    const date = new Date(dpp);
+    return `${date.getFullYear()}/${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+  };
+
+  const getConsultaReferencia = (dataConsulta: string) => {
+    if (!dataConsulta) return '---';
+    const date = new Date(dataConsulta);
+    return `${date.getFullYear()}/${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+  };
+
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
@@ -148,7 +191,8 @@ export default function AtendimentosPage() {
     dpp: '',
     trimestre: '',
     categoria: '',
-    equipe: ''
+    equipe: '',
+    status: 'ATIVA'
   });
 
   const uniqueDppMonths = useMemo(() => {
@@ -173,10 +217,103 @@ export default function AtendimentosPage() {
     observacoes_clinicas: ''
   });
 
+  const [selectedPatientSispn, setSelectedPatientSispn] = useState<string | null>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
+
+  const patientsWithAtendimentos = useMemo(() => {
+    const patientMap = new Map<string, any>();
+    
+    gestacoes.forEach(g => {
+      const status = getGestacaoStatus(g.dpp);
+      if (!filters.status || status === filters.status) {
+        patientMap.set(g.sispn, {
+          ...g,
+          atendimentosCount: 0,
+          lastAtendimentoDate: null,
+          nextAtendimentoDate: null,
+          status: status
+        });
+      }
+    });
+
+    atendimentos.forEach(a => {
+      const p = patientMap.get(a.sispn);
+      if (p) {
+        p.atendimentosCount++;
+        if (!p.lastAtendimentoDate || new Date(a.data_consulta) > new Date(p.lastAtendimentoDate)) {
+          p.lastAtendimentoDate = a.data_consulta;
+        }
+        if (a.data_proxima_consulta) {
+          if (!p.nextAtendimentoDate || new Date(a.data_proxima_consulta) < new Date(p.nextAtendimentoDate)) {
+            // We want the *soonest* next appointment
+            if (new Date(a.data_proxima_consulta) >= new Date()) {
+               p.nextAtendimentoDate = a.data_proxima_consulta;
+            }
+          }
+        }
+      }
+    });
+
+    return Array.from(patientMap.values());
+  }, [gestacoes, atendimentos, filters.status]);
+
+  const filteredPatients = useMemo(() => {
+    return patientsWithAtendimentos.filter(p => {
+      const query = searchQuery.toLowerCase().trim();
+      const normalize = (str: string) => str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : "";
+      const queryNormalizada = normalize(query);
+      
+      const matchesSearch = !query || (
+        normalize(p.paciente_nome).includes(queryNormalizada) ||
+        normalize(p.sispn).includes(queryNormalizada)
+      );
+
+      if (!matchesSearch) return false;
+      
+      if (filters.trimestre || filters.categoria) {
+        const patientAtendimentos = atendimentos.filter(a => a.sispn === p.sispn);
+        const hasMatchingAtendimento = patientAtendimentos.some(a => {
+          if (filters.trimestre && a.trimestre_consulta !== filters.trimestre) return false;
+          if (filters.categoria && getCboCategory(a.cbo) !== filters.categoria) return false;
+          return true;
+        });
+        if (!hasMatchingAtendimento) return false;
+      }
+
+      if (filters.dpp && !p.dpp?.startsWith(filters.dpp)) return false;
+      if (filters.equipe && p.equipe !== filters.equipe) return false;
+
+      return true;
+    });
+  }, [patientsWithAtendimentos, atendimentos, searchQuery, filters]);
+
+  const groupedAtendimentos = useMemo(() => {
+    if (!selectedPatientSispn) return {};
+    const patientAtendimentos = atendimentos.filter(a => a.sispn === selectedPatientSispn);
+    const groups: Record<string, any[]> = {
+      '1º TRIMESTRE': [],
+      '2º TRIMESTRE': [],
+      '3º TRIMESTRE': [],
+      'FORA DO PERÍODO': []
+    };
+    patientAtendimentos.forEach(a => {
+      const trim = a.trimestre_consulta || 'FORA DO PERÍODO';
+      if (!groups[trim]) groups[trim] = [];
+      groups[trim].push(a);
+    });
+    return groups;
+  }, [selectedPatientSispn, atendimentos]);
+
+  const handleViewPatient = (sispn: string) => {
+    setSelectedPatientSispn(sispn);
+    setFormData({ sispn });
+    setPatientSearch(gestacoes.find(g => g.sispn === sispn)?.paciente_nome || sispn);
+    setIsViewModalOpen(true);
+  };
 
   useEffect(() => {
     if (!isFormOpen) {
@@ -371,48 +508,6 @@ export default function AtendimentosPage() {
     }
   };
 
-  const calculateTrimestre = (dum: string, dataConsulta: string) => {
-    if (!dum || !dataConsulta) return null;
-    const start = new Date(dum + 'T12:00:00');
-    const consult = new Date(dataConsulta + 'T12:00:00');
-    const diffTime = consult.getTime() - start.getTime();
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays < 0 || diffDays > 280) return 'FORA DO PERÍODO';
-    if (diffDays <= 91) return '1º TRIMESTRE';
-    if (diffDays <= 189) return '2º TRIMESTRE';
-    return '3º TRIMESTRE';
-  };
-
-  const getStatusCaptacao = (dum: string, dataCadastro: string) => {
-    if (!dum || !dataCadastro) return '---';
-    const start = new Date(dum);
-    const registration = new Date(dataCadastro);
-    const diffTime = registration.getTime() - start.getTime();
-    const diffWeeks = diffTime / (1000 * 60 * 60 * 24 * 7);
-    return diffWeeks <= 12 ? 'PRECOCE' : 'TARDIA';
-  };
-
-  const getGestacaoStatus = (dpp: string) => {
-    if (!dpp) return '---';
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    const end = new Date(dpp);
-    end.setHours(0, 0, 0, 0);
-    return now >= end ? 'VENCIDA' : 'ATIVA';
-  };
-
-  const getDppReferencia = (dpp: string) => {
-    if (!dpp) return '---';
-    const date = new Date(dpp);
-    return `${date.getFullYear()}/${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-  };
-
-  const getConsultaReferencia = (dataConsulta: string) => {
-    if (!dataConsulta) return '---';
-    const date = new Date(dataConsulta);
-    return `${date.getFullYear()}/${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1016,6 +1111,16 @@ export default function AtendimentosPage() {
               
               <select 
                 className="w-full lg:w-auto bg-surface-container-low border-none rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
+                value={filters.status}
+                onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+              >
+                <option value="">Status Gestação</option>
+                <option value="ATIVA">GESTAÇÃO ATIVA</option>
+                <option value="VENCIDA">GESTAÇÃO VENCIDA</option>
+              </select>
+
+              <select 
+                className="w-full lg:w-auto bg-surface-container-low border-none rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
                 value={filters.dpp}
                 onChange={(e) => setFilters({ ...filters, dpp: e.target.value })}
               >
@@ -1058,9 +1163,9 @@ export default function AtendimentosPage() {
                 ))}
               </select>
 
-              {(filters.dpp || filters.trimestre || filters.categoria || filters.equipe) && (
+              {(filters.dpp || filters.trimestre || filters.categoria || filters.equipe || filters.status !== 'ATIVA') && (
                 <button 
-                  onClick={() => setFilters({ dpp: '', trimestre: '', categoria: '', equipe: '' })}
+                  onClick={() => setFilters({ dpp: '', trimestre: '', categoria: '', equipe: '', status: 'ATIVA' })}
                   className="w-full lg:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-primary/10 text-primary text-[9px] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all"
                 >
                   <span className="material-symbols-outlined text-sm">filter_alt_off</span>
@@ -1070,7 +1175,7 @@ export default function AtendimentosPage() {
             </div>
 
             <div className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-widest text-right">
-              Exibindo <span className="text-primary">{filteredAtendimentos.length}</span> registros
+              Exibindo <span className="text-primary">{filteredPatients.length}</span> pacientes
             </div>
           </div>
 
@@ -1079,133 +1184,182 @@ export default function AtendimentosPage() {
               <table className="w-full text-left border-separate border-spacing-0">
                 <thead className="sticky top-0 z-30 bg-surface-container-low">
                   <tr>
-                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Gestante / Identificação</th>
-                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Data / Período</th>
-                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Profissional / CBO</th>
-                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Próximo Agendamento</th>
-                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Operador</th>
-                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-center sticky right-0 bg-surface-container-low z-40 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">Ações</th>
+                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Gestante</th>
+                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Status</th>
+                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">SISPN</th>
+                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Atendimentos</th>
+                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Última Consulta</th>
+                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Próxima Consulta</th>
+                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-center">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-outline-variant/5">
                   {loading ? (
-                    <tr><td colSpan={5} className="p-32 text-center"><div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full mx-auto"></div></td></tr>
-                  ) : filteredAtendimentos.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="p-32 text-center">
-                        <div className="flex flex-col items-center gap-4 opacity-20">
-                          <span className="material-symbols-outlined text-6xl">search</span>
-                          <p className="text-xl font-black uppercase tracking-widest">Nenhum resultado encontrado</p>
-                        </div>
-                      </td>
-                    </tr>
+                    <tr><td colSpan={6} className="p-32 text-center"><div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full mx-auto"></div></td></tr>
+                  ) : filteredPatients.length === 0 ? (
+                    <tr><td colSpan={6} className="p-32 text-center opacity-20 text-xl font-black uppercase tracking-widest">Nenhum paciente encontrado</td></tr>
                   ) : (
-                    filteredAtendimentos
-                      .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-                      .map((con, idx) => (
-                        <tr key={con.id_atendimento || `atendimento-${idx}`} className="hover:bg-primary/[0.02] transition-colors group">
-                          <td className="px-8 py-6">
-                            <div className="flex items-center gap-4">
-                              <div className="w-12 h-12 rounded-2xl bg-primary/5 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-                                <span className="material-symbols-outlined text-2xl">pregnant_woman</span>
-                              </div>
-                              <div>
-                                <p className="font-black text-sm text-on-surface uppercase tracking-tight group-hover:text-primary transition-colors">
-                                  {(() => {
-                                    const gest = Array.isArray(con.gestacoes) ? con.gestacoes[0] : con.gestacoes;
-                                    const pac = gest?.pacientes;
-                                    const pacObj = Array.isArray(pac) ? pac[0] : pac;
-                                    return (pacObj as any)?.gestante || 'NÃO INFORMADO';
-                                  })()}
-                                </p>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-[10px] font-bold text-on-surface-variant/40 font-mono">{con.sispn}</span>
-                                  <span className="text-[10px] font-bold text-primary/40 uppercase tracking-widest">• {(Array.isArray(con.gestacoes) ? con.gestacoes[0] : con.gestacoes)?.equipe}</span>
-                                </div>
-                              </div>
+                    filteredPatients.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((p) => (
+                      <tr key={p.sispn} className="hover:bg-primary/[0.02] transition-colors group">
+                        <td className="px-8 py-6">
+                          <p className="font-black text-sm text-on-surface uppercase tracking-tight group-hover:text-primary transition-colors">
+                            {p.paciente_nome}
+                          </p>
+                          <span className="text-[10px] font-bold text-primary/40 uppercase tracking-widest">{p.equipe}</span>
+                        </td>
+                        <td className="px-8 py-6">
+                          <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${p.status === 'ATIVA' ? 'bg-blue-100 text-blue-600' : 'bg-surface-container-high text-on-surface-variant/40'}`}>
+                            {p.status}
+                          </span>
+                        </td>
+                        <td className="px-8 py-6 text-[10px] font-bold text-on-surface-variant/60 font-mono">{p.sispn}</td>
+                        <td className="px-8 py-6">
+                          <div className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-sm text-primary/40">medical_services</span>
+                            <span className="text-xs font-bold text-on-surface">{p.atendimentosCount} consultas</span>
+                          </div>
+                        </td>
+                        <td className="px-8 py-6 text-xs font-bold text-on-surface">
+                          {p.lastAtendimentoDate ? new Date(p.lastAtendimentoDate).toLocaleDateString('pt-BR') : '---'}
+                        </td>
+                        <td className="px-8 py-6">
+                          {p.nextAtendimentoDate ? (
+                            <div className="flex items-center gap-2 text-xs font-bold text-primary">
+                              <span className="material-symbols-outlined text-sm">event_repeat</span>
+                              {new Date(p.nextAtendimentoDate).toLocaleDateString('pt-BR')}
                             </div>
-                          </td>
-                          <td className="px-8 py-6">
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-2 text-xs font-bold text-on-surface">
-                                <span className="material-symbols-outlined text-primary/40 text-lg">calendar_today</span>
-                                {new Date(con.data_consulta).toLocaleDateString('pt-BR')}
-                              </div>
-                              <div className="flex flex-wrap gap-1.5">
-                                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary/10 text-secondary text-[9px] font-black uppercase tracking-widest">
-                                  <span className="material-symbols-outlined text-[10px]">monitoring</span>
-                                  {con.trimestre_consulta}
-                                </div>
-                                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-[9px] font-black uppercase tracking-widest">
-                                  <span className="material-symbols-outlined text-[10px]">history</span>
-                                  {getConsultaReferencia(con.data_consulta)}
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-8 py-6">
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-2 text-xs font-bold text-on-surface">
-                                <span className="material-symbols-outlined text-primary/40 text-lg">medical_services</span>
-                                {con.profissionais?.nome || 'NÃO INFORMADO'}
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <span className="text-[10px] font-bold text-on-surface-variant/40 font-mono">{con.cbo}</span>
-                                <span className="text-[9px] font-black uppercase tracking-widest text-primary/60">• {getCboCategory(con.cbo)}</span>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-8 py-6">
-                            {con.data_proxima_consulta ? (
-                              <div className="flex items-center gap-2 text-xs font-bold text-on-surface-variant">
-                                <span className="material-symbols-outlined text-primary/40 text-lg">event_repeat</span>
-                                {new Date(con.data_proxima_consulta).toLocaleDateString('pt-BR')}
-                              </div>
-                            ) : (
-                              <span className="text-[10px] font-bold text-on-surface-variant/20 italic tracking-widest uppercase">Não agendada</span>
-                            )}
-                          </td>
-                          <td className="px-8 py-6">
-                            <div className="flex flex-col gap-0.5">
-                              <span className="text-[10px] font-black text-on-surface uppercase tracking-wider">OPERADOR</span>
-                              <span className="text-[9px] font-bold text-on-surface-variant/40">{formatCpf(con.cpf_operador || '') || '---'}</span>
-                            </div>
-                          </td>
-                          <td className="px-8 py-6">
-                            <div className="flex items-center justify-center gap-3">
-                              <button 
-                                onClick={() => handleEdit(con)}
-                                className="p-3 rounded-2xl bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white hover:shadow-lg hover:shadow-primary/20 transition-all active:scale-90"
-                                title="Editar"
-                              >
-                                <span className="material-symbols-outlined text-lg">edit</span>
-                              </button>
-                              <button 
-                                onClick={() => setDeleteConfirmId(con.id_atendimento)}
-                                className="p-3 rounded-2xl bg-surface-container-high text-on-surface-variant hover:bg-error hover:text-white hover:shadow-lg hover:shadow-error/20 transition-all active:scale-90"
-                                title="Excluir"
-                              >
-                                <span className="material-symbols-outlined text-lg">delete</span>
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
+                          ) : (
+                            <span className="text-[10px] font-bold text-on-surface-variant/20 uppercase tracking-widest">Não agendada</span>
+                          )}
+                        </td>
+                        <td className="px-8 py-6">
+                          <div className="flex items-center justify-center gap-3">
+                            <button onClick={() => handleViewPatient(p.sispn)} className="p-3 rounded-2xl bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white transition-all" title="Visualizar Detalhes"><span className="material-symbols-outlined text-lg">visibility</span></button>
+                            <button onClick={() => { setFormData({ sispn: p.sispn }); setPatientSearch(p.paciente_nome); setIsFormOpen(true); }} className="p-3 rounded-2xl bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white transition-all" title="Adicionar Atendimento"><span className="material-symbols-outlined text-lg">add</span></button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
                   )}
                 </tbody>
               </table>
             </div>
             
-            <Pagination 
-              currentPage={currentPage}
-              totalPages={Math.ceil(filteredAtendimentos.length / itemsPerPage)}
-              onPageChange={setCurrentPage}
-              totalItems={filteredAtendimentos.length}
-              itemsPerPage={itemsPerPage}
-              itemName="atendimentos"
-            />
+            <Pagination currentPage={currentPage} totalPages={Math.ceil(filteredPatients.length / itemsPerPage)} onPageChange={setCurrentPage} totalItems={filteredPatients.length} itemsPerPage={itemsPerPage} itemName="pacientes" />
           </div>
         </section>
+
+        <AnimatePresence>
+          {isViewModalOpen && selectedPatientSispn && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="bg-surface-container-lowest rounded-[3rem] p-8 md:p-12 max-w-4xl w-full shadow-2xl border border-outline-variant/10 space-y-8 max-h-[90vh] overflow-y-auto"
+              >
+                <div className="flex justify-between items-start">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                        <span className="material-symbols-outlined">visibility</span>
+                      </div>
+                      <h3 className="text-2xl font-black text-primary uppercase tracking-tight">Histórico de Atendimentos</h3>
+                    </div>
+                    <p className="text-sm text-on-surface-variant/60 font-body">
+                      {gestacoes.find(g => g.sispn === selectedPatientSispn)?.paciente_nome} • {selectedPatientSispn}
+                    </p>
+                  </div>
+                  <button onClick={() => setIsViewModalOpen(false)} className="w-12 h-12 rounded-full hover:bg-surface-container-high flex items-center justify-center transition-colors">
+                    <span className="material-symbols-outlined">close</span>
+                  </button>
+                </div>
+
+                <div className="space-y-10">
+                  {Object.entries(groupedAtendimentos).map(([trimestre, items]) => (
+                    items.length > 0 && (
+                      <div key={trimestre} className="space-y-4">
+                        <div className="flex items-center gap-4">
+                          <div className="h-px flex-1 bg-outline-variant/10"></div>
+                          <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em] bg-primary/5 px-4 py-1.5 rounded-full border border-primary/10">
+                            {trimestre}
+                          </span>
+                          <div className="h-px flex-1 bg-outline-variant/10"></div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {items.map((con) => (
+                            <div key={con.id_atendimento} className="bg-surface-container-low p-6 rounded-[2rem] border border-outline-variant/5 hover:border-primary/20 transition-all group relative">
+                              <div className="flex justify-between items-start mb-4">
+                                <div>
+                                  <div className="flex items-center gap-2 text-xs font-black text-primary uppercase tracking-wider mb-1">
+                                    <span className="material-symbols-outlined text-sm">calendar_today</span>
+                                    {new Date(con.data_consulta).toLocaleDateString('pt-BR')}
+                                  </div>
+                                  <p className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-widest">
+                                    {getConsultaReferencia(con.data_consulta)}
+                                  </p>
+                                </div>
+                                <div className="flex gap-2">
+                                  <button onClick={() => { setIsViewModalOpen(false); handleEdit(con); }} className="p-2 rounded-xl bg-white/50 text-on-surface-variant hover:bg-primary hover:text-white transition-all">
+                                    <span className="material-symbols-outlined text-sm">edit</span>
+                                  </button>
+                                  <button onClick={() => { setIsViewModalOpen(false); setDeleteConfirmId(con.id_atendimento); }} className="p-2 rounded-xl bg-white/50 text-on-surface-variant hover:bg-error hover:text-white transition-all">
+                                    <span className="material-symbols-outlined text-sm">delete</span>
+                                  </button>
+                                </div>
+                              </div>
+                              
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-2">
+                                  <span className="material-symbols-outlined text-primary/40 text-lg">medical_services</span>
+                                  <div className="flex flex-col">
+                                    <span className="text-xs font-bold text-on-surface uppercase">{con.profissionais?.nome || '---'}</span>
+                                    <span className="text-[9px] font-black text-on-surface-variant/40 uppercase tracking-widest">{getCboCategory(con.cbo)}</span>
+                                  </div>
+                                </div>
+
+                                {con.data_proxima_consulta && (
+                                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary/5 border border-primary/10 w-fit">
+                                    <span className="material-symbols-outlined text-primary text-sm">event_repeat</span>
+                                    <span className="text-[9px] font-black text-primary uppercase tracking-widest">Próxima: {new Date(con.data_proxima_consulta).toLocaleDateString('pt-BR')}</span>
+                                  </div>
+                                )}
+
+                                {con.observacoes_clinicas && (
+                                  <div className="mt-3 p-3 rounded-xl bg-surface-container-high/50 text-[10px] text-on-surface-variant font-medium italic">
+                                    &quot;{con.observacoes_clinicas}&quot;
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  ))}
+
+                  {Object.values(groupedAtendimentos).every(arr => arr.length === 0) && (
+                    <div className="py-20 text-center space-y-4 opacity-20">
+                      <span className="material-symbols-outlined text-6xl">inventory_2</span>
+                      <p className="text-xl font-black uppercase tracking-widest">Nenhum atendimento registrado</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="pt-8 border-t border-outline-variant/10 flex justify-center">
+                  <button 
+                    onClick={() => { setIsViewModalOpen(false); setIsFormOpen(true); }}
+                    className="bg-primary text-white px-10 py-4 rounded-full font-black text-[10px] uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 transition-all flex items-center gap-3"
+                  >
+                    <span className="material-symbols-outlined text-lg">add</span>
+                    Novo Atendimento para esta Gestante
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
         {/* Delete Confirmation Modal */}
         <AnimatePresence>
           {deleteConfirmId && (

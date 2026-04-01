@@ -92,6 +92,48 @@ const formatCpf = (value: string) => {
 };
 
 export default function ExamesPage() {
+  const getGestacaoStatus = (dpp: string) => {
+    if (!dpp) return '---';
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const end = new Date(dpp);
+    end.setHours(0, 0, 0, 0);
+    return now >= end ? 'VENCIDA' : 'ATIVA';
+  };
+
+  const calculateTrimestre = (dum: string, dataRotina: string) => {
+    if (!dum || !dataRotina) return '---';
+    const start = new Date(dum + 'T12:00:00');
+    const rotinaDate = new Date(dataRotina + 'T12:00:00');
+    const diffTime = rotinaDate.getTime() - start.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0 || diffDays > 280) return 'FORA DO PERÍODO';
+    if (diffDays <= 91) return '1º TRIMESTRE';
+    if (diffDays <= 189) return '2º TRIMESTRE';
+    return '3º TRIMESTRE';
+  };
+
+  const getStatusCaptacao = (dum: string, dataCadastro: string) => {
+    if (!dum || !dataCadastro) return '---';
+    const start = new Date(dum);
+    const registration = new Date(dataCadastro);
+    const diffWeeks = (registration.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 7);
+    return diffWeeks <= 12 ? 'PRECOCE' : 'TARDIA';
+  };
+
+  const getDppReferencia = (dpp: string) => {
+    if (!dpp) return '---';
+    const date = new Date(dpp);
+    return `${date.getFullYear()}/${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+  };
+
+  const getRotinaReferencia = (data: string) => {
+    if (!data) return '---';
+    const date = new Date(data);
+    return `${date.getFullYear()}/${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+  };
+
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
@@ -145,17 +187,106 @@ export default function ExamesPage() {
     tipo: '',
     trimestre: '',
     rotina: '',
-    equipe: ''
+    equipe: '',
+    status: 'ATIVA'
   });
 
   const [formData, setFormData] = useState<Partial<ExamResult>>({
     sispn: '',
   });
 
+  const [selectedPatientSispn, setSelectedPatientSispn] = useState<string | null>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
+
+  const patientsWithResults = useMemo(() => {
+    const patientMap = new Map<string, any>();
+    
+    gestacoes.forEach(g => {
+      const status = getGestacaoStatus(g.dpp);
+      if (!filters.status || status === filters.status) {
+        patientMap.set(g.sispn, {
+          ...g,
+          resultsCount: 0,
+          lastResultDate: null,
+          hasPositive: false,
+          status: status
+        });
+      }
+    });
+
+    results.forEach(r => {
+      const p = patientMap.get(r.sispn);
+      if (p) {
+        p.resultsCount++;
+        if (!p.lastResultDate || new Date(r.data_realizacao) > new Date(p.lastResultDate)) {
+          p.lastResultDate = r.data_realizacao;
+        }
+        if (r.resultado.includes('POSITIVO') || r.resultado.includes('REAGENTE')) {
+          p.hasPositive = true;
+        }
+      }
+    });
+
+    return Array.from(patientMap.values());
+  }, [gestacoes, results, filters.status]);
+
+  const filteredPatients = useMemo(() => {
+    return patientsWithResults.filter(p => {
+      const query = searchQuery.toLowerCase().trim();
+      const normalize = (str: string) => str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : "";
+      const queryNormalizada = normalize(query);
+      
+      const matchesSearch = !query || (
+        normalize(p.paciente_nome).includes(queryNormalizada) ||
+        normalize(p.sispn).includes(queryNormalizada)
+      );
+
+      if (!matchesSearch) return false;
+      
+      if (filters.tipo || filters.trimestre || filters.rotina) {
+        const patientResults = results.filter(r => r.sispn === p.sispn);
+        const hasMatchingResult = patientResults.some(r => {
+          if (filters.tipo && (r.tipo || r.rotinas?.tipo) !== filters.tipo) return false;
+          if (filters.trimestre && r.trimestre_realizacao !== filters.trimestre) return false;
+          if (filters.rotina && r.rotinas?.descricao !== filters.rotina) return false;
+          return true;
+        });
+        if (!hasMatchingResult) return false;
+      }
+
+      if (filters.equipe && p.equipe !== filters.equipe) return false;
+
+      return true;
+    });
+  }, [patientsWithResults, results, searchQuery, filters]);
+
+  const groupedResults = useMemo(() => {
+    if (!selectedPatientSispn) return {};
+    const patientResults = results.filter(r => r.sispn === selectedPatientSispn);
+    const groups: Record<string, ExamResult[]> = {
+      '1º TRIMESTRE': [],
+      '2º TRIMESTRE': [],
+      '3º TRIMESTRE': [],
+      'FORA DO PERÍODO': []
+    };
+    patientResults.forEach(r => {
+      const trim = r.trimestre_realizacao || 'FORA DO PERÍODO';
+      if (!groups[trim]) groups[trim] = [];
+      groups[trim].push(r);
+    });
+    return groups;
+  }, [selectedPatientSispn, results]);
+
+  const handleViewPatient = (sispn: string) => {
+    setSelectedPatientSispn(sispn);
+    setFormData({ sispn });
+    setPatientSearch(gestacoes.find(g => g.sispn === sispn)?.paciente_nome || sispn);
+    setIsViewModalOpen(true);
+  };
 
   useEffect(() => {
     if (!isFormOpen) {
@@ -290,38 +421,6 @@ export default function ExamesPage() {
     }
   };
 
-  const calculateTrimestre = (dum: string, dataRotina: string) => {
-    if (!dum || !dataRotina) return '---';
-    const start = new Date(dum + 'T12:00:00');
-    const rotinaDate = new Date(dataRotina + 'T12:00:00');
-    const diffTime = rotinaDate.getTime() - start.getTime();
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays < 0 || diffDays > 280) return 'FORA DO PERÍODO';
-    if (diffDays <= 91) return '1º TRIMESTRE';
-    if (diffDays <= 189) return '2º TRIMESTRE';
-    return '3º TRIMESTRE';
-  };
-
-  const getStatusCaptacao = (dum: string, dataCadastro: string) => {
-    if (!dum || !dataCadastro) return '---';
-    const start = new Date(dum);
-    const registration = new Date(dataCadastro);
-    const diffWeeks = (registration.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 7);
-    return diffWeeks <= 12 ? 'PRECOCE' : 'TARDIA';
-  };
-
-  const getDppReferencia = (dpp: string) => {
-    if (!dpp) return '---';
-    const date = new Date(dpp);
-    return `${date.getFullYear()}/${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-  };
-
-  const getRotinaReferencia = (data: string) => {
-    if (!data) return '---';
-    const date = new Date(data);
-    return `${date.getFullYear()}/${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-  };
 
   const selectedGestante = useMemo(() => {
     return gestacoes.find(g => g.sispn === formData.sispn);
@@ -334,14 +433,6 @@ export default function ExamesPage() {
 
   const uniqueEquipes = Array.from(new Set(gestacoes.map(g => g.equipe))).filter(Boolean).sort();
 
-  const getGestacaoStatus = (dpp: string) => {
-    if (!dpp) return '---';
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    const end = new Date(dpp);
-    end.setHours(0, 0, 0, 0);
-    return now >= end ? 'VENCIDA' : 'ATIVA';
-  };
 
   const professionalSearchResults = useMemo(() => {
     if (!professionalSearch || professionalSearch.length < 2) return [];
@@ -858,7 +949,7 @@ export default function ExamesPage() {
                                 <td className="px-4 py-3 font-bold uppercase">{h.rotinas?.descricao}</td>
                                 <td className="px-4 py-3">{new Date(h.data_realizacao).toLocaleDateString('pt-BR')}</td>
                                 <td className="px-4 py-3">
-                                  <span className={`font-black uppercase ${h.resultado.includes('POSITIVO') || h.resultado.includes('REAGENTE') ? 'text-red-600' : 'text-green-600'}`}>
+                                  <span className={`font-black uppercase ${h.resultado.includes('POSITIVO') || h.resultado.includes('REAGENTE') ? 'text-red-600' : 'text-blue-600'}`}>
                                     {h.resultado}
                                   </span>
                                 </td>
@@ -889,6 +980,11 @@ export default function ExamesPage() {
         <section className="space-y-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap items-center gap-4 w-full md:w-auto">
+              <select className="w-full lg:w-auto bg-surface-container-low border-none rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none" value={filters.status} onChange={(e) => setFilters({ ...filters, status: e.target.value })}>
+                <option value="">Status Gestação</option>
+                <option value="ATIVA">GESTAÇÃO ATIVA</option>
+                <option value="VENCIDA">GESTAÇÃO VENCIDA</option>
+              </select>
               <select className="w-full lg:w-auto bg-surface-container-low border-none rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none" value={filters.trimestre} onChange={(e) => setFilters({ ...filters, trimestre: e.target.value })}>
                 <option value="">Trimestre</option>
                 <option value="1º TRIMESTRE">1º TRIMESTRE</option>
@@ -910,9 +1006,18 @@ export default function ExamesPage() {
                 <option value="">Equipe</option>
                 {uniqueEquipes.map(eq => <option key={eq} value={eq}>{eq}</option>)}
               </select>
+              {(filters.status !== 'ATIVA' || filters.trimestre || filters.tipo || filters.rotina || filters.equipe) && (
+                <button 
+                  onClick={() => setFilters({ status: 'ATIVA', trimestre: '', tipo: '', rotina: '', equipe: '', dpp: '' })}
+                  className="w-full lg:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-primary/10 text-primary text-[9px] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all"
+                >
+                  <span className="material-symbols-outlined text-sm">filter_alt_off</span>
+                  Limpar
+                </button>
+              )}
             </div>
             <div className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-widest text-right">
-              Exibindo <span className="text-primary">{filteredResults.length}</span> registros
+              Exibindo <span className="text-primary">{filteredPatients.length}</span> pacientes
             </div>
           </div>
 
@@ -922,60 +1027,60 @@ export default function ExamesPage() {
                 <thead className="sticky top-0 z-30 bg-surface-container-low">
                   <tr>
                     <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Gestante</th>
+                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Status</th>
                     <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">SISPN</th>
-                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Rotina</th>
-                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Data</th>
-                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Resultado</th>
-                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Profissional</th>
-                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Operador</th>
+                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Registros</th>
+                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Última Atividade</th>
+                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Alertas</th>
                     <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-center">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-outline-variant/5">
                   {loading ? (
-                    <tr><td colSpan={5} className="p-32 text-center"><div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full mx-auto"></div></td></tr>
-                  ) : filteredResults.length === 0 ? (
-                    <tr><td colSpan={5} className="p-32 text-center opacity-20 text-xl font-black uppercase tracking-widest">Nenhum resultado encontrado</td></tr>
+                    <tr><td colSpan={6} className="p-32 text-center"><div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full mx-auto"></div></td></tr>
+                  ) : filteredPatients.length === 0 ? (
+                    <tr><td colSpan={6} className="p-32 text-center opacity-20 text-xl font-black uppercase tracking-widest">Nenhum paciente encontrado</td></tr>
                   ) : (
-                    filteredResults.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((res) => (
-                      <tr key={res.id_registro} className="hover:bg-primary/[0.02] transition-colors group">
+                    filteredPatients.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((p) => (
+                      <tr key={p.sispn} className="hover:bg-primary/[0.02] transition-colors group">
                         <td className="px-8 py-6">
                           <p className="font-black text-sm text-on-surface uppercase tracking-tight group-hover:text-primary transition-colors">
-                            {res.gestacoes?.pacientes?.gestante || 'NÃO INFORMADO'}
+                            {p.paciente_nome}
                           </p>
-                          <span className="text-[10px] font-bold text-primary/40 uppercase tracking-widest">{res.gestacoes?.equipe}</span>
+                          <span className="text-[10px] font-bold text-primary/40 uppercase tracking-widest">{p.equipe}</span>
                         </td>
-                        <td className="px-8 py-6 text-[10px] font-bold text-on-surface-variant/60 font-mono">{res.sispn}</td>
                         <td className="px-8 py-6">
-                          <p className="text-xs font-bold text-on-surface uppercase">{res.rotinas?.descricao}</p>
-                          <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-bold text-primary/40 uppercase tracking-widest">{res.tipo || res.rotinas?.tipo}</span>
-                            <span className="text-[10px] font-bold text-primary/40 uppercase tracking-widest">•</span>
-                            <span className="text-[10px] font-bold text-primary/40 uppercase tracking-widest">{res.trimestre_realizacao || res.rotinas?.trimestre}</span>
-                          </div>
-                        </td>
-                        <td className="px-8 py-6 text-xs font-bold text-on-surface">{new Date(res.data_realizacao).toLocaleDateString('pt-BR')}</td>
-                        <td className="px-8 py-6">
-                          <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${res.resultado.includes('POSITIVO') || res.resultado.includes('REAGENTE') ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
-                            {res.resultado}
+                          <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${p.status === 'ATIVA' ? 'bg-blue-100 text-blue-600' : 'bg-surface-container-high text-on-surface-variant/40'}`}>
+                            {p.status}
                           </span>
                         </td>
+                        <td className="px-8 py-6 text-[10px] font-bold text-on-surface-variant/60 font-mono">{p.sispn}</td>
                         <td className="px-8 py-6">
-                          <p className="text-xs font-bold text-on-surface uppercase">
-                            {allProfessionals.find(p => p.cpf === res.cpf_profissional)?.nome || res.cpf_profissional || '---'}
-                          </p>
-                          <p className="text-[10px] text-on-surface-variant/40 font-mono uppercase tracking-widest font-bold">{getCboCategory(res.cbo)}</p>
+                          <div className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-sm text-primary/40">lab_research</span>
+                            <span className="text-xs font-bold text-on-surface">{p.resultsCount} registros</span>
+                          </div>
+                        </td>
+                        <td className="px-8 py-6 text-xs font-bold text-on-surface">
+                          {p.lastResultDate ? new Date(p.lastResultDate).toLocaleDateString('pt-BR') : '---'}
                         </td>
                         <td className="px-8 py-6">
-                          <div className="flex flex-col gap-0.5">
-                            <span className="text-[10px] font-black text-on-surface uppercase tracking-wider">OPERADOR</span>
-                            <span className="text-[9px] font-bold text-on-surface-variant/40">{formatCpf(res.cpf_operador || '') || '---'}</span>
-                          </div>
+                          {p.hasPositive ? (
+                            <span className="px-3 py-1 rounded-full bg-red-100 text-red-600 text-[9px] font-black uppercase tracking-widest flex items-center gap-1 w-fit">
+                              <span className="material-symbols-outlined text-[10px]">warning</span>
+                              POSITIVO / REAGENTE
+                            </span>
+                          ) : (
+                            <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-600 text-[9px] font-black uppercase tracking-widest flex items-center gap-1 w-fit">
+                              <span className="material-symbols-outlined text-[10px]">check_circle</span>
+                              Sem alertas
+                            </span>
+                          )}
                         </td>
                         <td className="px-8 py-6">
                           <div className="flex items-center justify-center gap-3">
-                            <button onClick={() => handleEdit(res)} className="p-3 rounded-2xl bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white transition-all"><span className="material-symbols-outlined text-lg">edit</span></button>
-                            <button onClick={() => setDeleteConfirmId(res.id_registro)} className="p-3 rounded-2xl bg-surface-container-high text-on-surface-variant hover:bg-error hover:text-white transition-all"><span className="material-symbols-outlined text-lg">delete</span></button>
+                            <button onClick={() => handleViewPatient(p.sispn)} className="p-3 rounded-2xl bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white transition-all" title="Visualizar Detalhes"><span className="material-symbols-outlined text-lg">visibility</span></button>
+                            <button onClick={() => { setFormData({ sispn: p.sispn }); setPatientSearch(p.paciente_nome); setIsFormOpen(true); }} className="p-3 rounded-2xl bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white transition-all" title="Adicionar Registro"><span className="material-symbols-outlined text-lg">add</span></button>
                           </div>
                         </td>
                       </tr>
@@ -984,9 +1089,106 @@ export default function ExamesPage() {
                 </tbody>
               </table>
             </div>
-            <Pagination currentPage={currentPage} totalPages={Math.ceil(filteredResults.length / itemsPerPage)} onPageChange={setCurrentPage} totalItems={filteredResults.length} itemsPerPage={itemsPerPage} itemName="resultados" />
+            <Pagination currentPage={currentPage} totalPages={Math.ceil(filteredPatients.length / itemsPerPage)} onPageChange={setCurrentPage} totalItems={filteredPatients.length} itemsPerPage={itemsPerPage} itemName="pacientes" />
           </div>
         </section>
+
+        <AnimatePresence>
+          {isViewModalOpen && selectedPatientSispn && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="bg-surface-container-lowest rounded-[3rem] p-8 md:p-12 max-w-4xl w-full shadow-2xl border border-outline-variant/10 space-y-8 max-h-[90vh] overflow-y-auto"
+              >
+                <div className="flex justify-between items-start">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                        <span className="material-symbols-outlined">visibility</span>
+                      </div>
+                      <h3 className="text-2xl font-black text-primary uppercase tracking-tight">Histórico de Rotinas</h3>
+                    </div>
+                    <p className="text-sm text-on-surface-variant/60 font-body">
+                      {gestacoes.find(g => g.sispn === selectedPatientSispn)?.paciente_nome} • {selectedPatientSispn}
+                    </p>
+                  </div>
+                  <button onClick={() => setIsViewModalOpen(false)} className="w-12 h-12 rounded-full hover:bg-surface-container-high flex items-center justify-center transition-colors">
+                    <span className="material-symbols-outlined">close</span>
+                  </button>
+                </div>
+
+                <div className="space-y-10">
+                  {Object.entries(groupedResults).map(([trimestre, items]) => (
+                    items.length > 0 && (
+                      <div key={trimestre} className="space-y-4">
+                        <div className="flex items-center gap-4">
+                          <div className="h-px flex-1 bg-outline-variant/10"></div>
+                          <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em] bg-primary/5 px-4 py-1.5 rounded-full border border-primary/10">
+                            {trimestre}
+                          </span>
+                          <div className="h-px flex-1 bg-outline-variant/10"></div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {items.map((res) => (
+                            <div key={res.id_registro} className="bg-surface-container-low p-6 rounded-[2rem] border border-outline-variant/5 hover:border-primary/20 transition-all group relative">
+                              <div className="flex justify-between items-start mb-4">
+                                <div>
+                                  <p className="text-xs font-black text-primary uppercase tracking-wider mb-1">{res.rotinas?.descricao}</p>
+                                  <p className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-widest">
+                                    {new Date(res.data_realizacao).toLocaleDateString('pt-BR')}
+                                  </p>
+                                </div>
+                                <div className="flex gap-2">
+                                  <button onClick={() => { setIsViewModalOpen(false); handleEdit(res); }} className="p-2 rounded-xl bg-white/50 text-on-surface-variant hover:bg-primary hover:text-white transition-all">
+                                    <span className="material-symbols-outlined text-sm">edit</span>
+                                  </button>
+                                  <button onClick={() => { setIsViewModalOpen(false); setDeleteConfirmId(res.id_registro); }} className="p-2 rounded-xl bg-white/50 text-on-surface-variant hover:bg-error hover:text-white transition-all">
+                                    <span className="material-symbols-outlined text-sm">delete</span>
+                                  </button>
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${res.resultado.includes('POSITIVO') || res.resultado.includes('REAGENTE') ? 'bg-red-100 text-red-600 ring-2 ring-red-600/20' : 'bg-blue-100 text-blue-600'}`}>
+                                  {res.resultado}
+                                </span>
+                                <div className="text-right">
+                                  <p className="text-[9px] font-black text-on-surface-variant/40 uppercase tracking-widest">Profissional</p>
+                                  <p className="text-[10px] font-bold text-on-surface uppercase truncate max-w-[150px]">
+                                    {allProfessionals.find(p => p.cpf === res.cpf_profissional)?.nome || '---'}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  ))}
+
+                  {Object.values(groupedResults).every(arr => arr.length === 0) && (
+                    <div className="py-20 text-center space-y-4 opacity-20">
+                      <span className="material-symbols-outlined text-6xl">inventory_2</span>
+                      <p className="text-xl font-black uppercase tracking-widest">Nenhum registro encontrado</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="pt-8 border-t border-outline-variant/10 flex justify-center">
+                  <button 
+                    onClick={() => { setIsViewModalOpen(false); setIsFormOpen(true); }}
+                    className="bg-primary text-white px-10 py-4 rounded-full font-black text-[10px] uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 transition-all flex items-center gap-3"
+                  >
+                    <span className="material-symbols-outlined text-lg">add</span>
+                    Novo Registro para esta Gestante
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
 
         <AnimatePresence>
           {deleteConfirmId && (

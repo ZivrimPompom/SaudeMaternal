@@ -56,23 +56,51 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
     if (isGestacoesPage || isExamesPage || isAtendimentosPage) {
       const fetchData = async () => {
         console.log('Fetching data for import validation...', { isGestacoesPage, isExamesPage, isAtendimentosPage });
+        
+        const fetchChunked = async (tableName: string, selectStr: string) => {
+          let allData: any[] = [];
+          let from = 0;
+          const limit = 1000;
+          let hasMore = true;
+          
+          while (hasMore) {
+            const { data, error } = await supabase
+              .from(tableName)
+              .select(selectStr)
+              .range(from, from + limit - 1);
+            
+            if (error) {
+              console.error(`Error fetching ${tableName}:`, error);
+              hasMore = false;
+            } else if (data) {
+              allData = [...allData, ...data];
+              if (data.length < limit) {
+                hasMore = false;
+              } else {
+                from += limit;
+              }
+            } else {
+              hasMore = false;
+            }
+            // Safety break
+            if (from > 50000) break;
+          }
+          return allData;
+        };
+
         if (isGestacoesPage) {
-          const { data: pacData, error: pacErr } = await supabase.from('pacientes').select('cpf, gestante, data_nascimento');
-          const { data: profData, error: profErr } = await supabase.from('profissionais').select('cpf, nome, equipe, cbo');
-          if (pacErr) console.error('Error fetching pacientes:', pacErr);
-          if (profErr) console.error('Error fetching profissionais:', profErr);
-          setPacientes(pacData || []);
-          setProfissionais(profData || []);
-          console.log('Fetched', (pacData || []).length, 'pacientes and', (profData || []).length, 'profissionais');
+          const pacData = await fetchChunked('pacientes', 'cpf, gestante, data_nascimento');
+          const profData = await fetchChunked('profissionais', 'cpf, nome, equipe, cbo');
+          setPacientes(pacData);
+          setProfissionais(profData);
+          console.log('Fetched', pacData.length, 'pacientes and', profData.length, 'profissionais');
         }
         if (isExamesPage || isAtendimentosPage) {
-          const { data: rotData, error: rotErr } = await supabase.from('rotinas').select('id, descricao, tipo, trimestre');
-          const { data: gestData, error: gestErr } = await supabase.from('gestacoes').select('sispn, dum');
-          if (rotErr) console.error('Error fetching rotinas:', rotErr);
-          if (gestErr) console.error('Error fetching gestacoes:', gestErr);
-          setRotinas(rotData || []);
-          setGestacoes(gestData || []);
-          console.log('Fetched', (rotData || []).length, 'rotinas and', (gestData || []).length, 'gestacoes');
+          const rotData = await fetchChunked('rotinas', 'id, descricao, tipo, trimestre');
+          const gestData = await fetchChunked('gestacoes', 'sispn, dum');
+          setRotinas(rotData);
+          setGestacoes(gestData);
+          console.log('Fetched', rotData.length, 'rotinas and', gestData.length, 'gestacoes');
         }
       };
       fetchData();
