@@ -1177,8 +1177,8 @@ export default function AtendimentosPage() {
                                       {trimestre}
                                     </td>
                                   </tr>
-                                  {items.map((con) => (
-                                    <tr key={`atendimento-${con.id_atendimento}`} className="hover:bg-white/50 transition-colors group">
+                                  {items.map((con, idx) => (
+                                    <tr key={`atendimento-${con.id_atendimento || `idx-${idx}`}`} className="hover:bg-white/50 transition-colors group">
                                       <td className="px-6 py-4">
                                         <div className="flex flex-col">
                                           <span className="text-xs font-bold text-on-surface">{new Date(con.data_consulta).toLocaleDateString('pt-BR')}</span>
