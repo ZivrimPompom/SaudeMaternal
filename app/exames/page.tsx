@@ -195,10 +195,7 @@ export default function ExamesPage() {
     sispn: '',
   });
 
-  const [selectedPatientSispn, setSelectedPatientSispn] = useState<string | null>(null);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
@@ -225,7 +222,9 @@ export default function ExamesPage() {
         if (!p.lastResultDate || new Date(r.data_realizacao) > new Date(p.lastResultDate)) {
           p.lastResultDate = r.data_realizacao;
         }
-        if (r.resultado.includes('POSITIVO') || r.resultado.includes('REAGENTE')) {
+        const res = r.resultado.toUpperCase();
+        const isPositive = (res.includes('POSITIVO') || res.includes('REAGENTE')) && !res.includes('NEGATIVO') && !res.includes('NAO') && !res.includes('NÃO');
+        if (isPositive) {
           p.hasPositive = true;
         }
       }
@@ -264,28 +263,12 @@ export default function ExamesPage() {
     });
   }, [patientsWithResults, results, searchQuery, filters]);
 
-  const groupedResults = useMemo(() => {
-    if (!selectedPatientSispn) return {};
-    const patientResults = results.filter(r => r.sispn === selectedPatientSispn);
-    const groups: Record<string, ExamResult[]> = {
-      '1º TRIMESTRE': [],
-      '2º TRIMESTRE': [],
-      '3º TRIMESTRE': [],
-      'FORA DO PERÍODO': []
-    };
-    patientResults.forEach(r => {
-      const trim = r.trimestre_realizacao || 'FORA DO PERÍODO';
-      if (!groups[trim]) groups[trim] = [];
-      groups[trim].push(r);
-    });
-    return groups;
-  }, [selectedPatientSispn, results]);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const handleViewPatient = (sispn: string) => {
-    setSelectedPatientSispn(sispn);
     setFormData({ sispn });
     setPatientSearch(gestacoes.find(g => g.sispn === sispn)?.paciente_nome || sispn);
-    setIsViewModalOpen(true);
+    setIsFormOpen(true);
   };
 
   useEffect(() => {
@@ -428,7 +411,9 @@ export default function ExamesPage() {
 
   const selectedPatientHistory = useMemo(() => {
     if (!formData.sispn) return [];
-    return results.filter(r => r.sispn === formData.sispn);
+    return results
+      .filter(r => r.sispn === formData.sispn)
+      .sort((a, b) => new Date(b.data_realizacao).getTime() - new Date(a.data_realizacao).getTime());
   }, [formData.sispn, results]);
 
   const uniqueEquipes = Array.from(new Set(gestacoes.map(g => g.equipe))).filter(Boolean).sort();
@@ -900,6 +885,7 @@ export default function ExamesPage() {
                                   >
                                     <option value="POSITIVO / REAGENTE">POSITIVO / REAGENTE</option>
                                     <option value="NEGATIVO / NÃO REAGENTE">NEGATIVO / NÃO REAGENTE</option>
+                                    <option value="-">-</option>
                                   </select>
                                 </div>
                               </td>
@@ -941,19 +927,53 @@ export default function ExamesPage() {
                               <th className="px-4 py-3 font-black uppercase tracking-widest text-on-surface-variant/60">Data</th>
                               <th className="px-4 py-3 font-black uppercase tracking-widest text-on-surface-variant/60">Resultado</th>
                               <th className="px-4 py-3 font-black uppercase tracking-widest text-on-surface-variant/60">Trimestre</th>
+                              <th className="px-4 py-3 font-black uppercase tracking-widest text-on-surface-variant/60 text-center">Ações</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-outline-variant/5">
                             {selectedPatientHistory.map((h) => (
-                              <tr key={h.id_registro} className="hover:bg-white/50 transition-colors">
-                                <td className="px-4 py-3 font-bold uppercase">{h.rotinas?.descricao}</td>
+                              <tr key={h.id_registro} className="hover:bg-white/50 transition-colors group">
+                                <td className="px-4 py-3 font-bold uppercase">
+                                  <p className="font-black text-primary uppercase tracking-wider">{h.rotinas?.descricao}</p>
+                                  <p className="text-[9px] font-bold text-on-surface-variant/40 uppercase tracking-widest">
+                                    {allProfessionals.find(p => p.cpf === h.cpf_profissional)?.nome || '---'}
+                                  </p>
+                                </td>
                                 <td className="px-4 py-3">{new Date(h.data_realizacao).toLocaleDateString('pt-BR')}</td>
                                 <td className="px-4 py-3">
-                                  <span className={`font-black uppercase ${h.resultado.includes('POSITIVO') || h.resultado.includes('REAGENTE') ? 'text-red-600' : 'text-blue-600'}`}>
+                                  <span className={`font-black uppercase ${
+                                    (() => {
+                                      const res = h.resultado.toUpperCase();
+                                      const isPositive = (res.includes('POSITIVO') || res.includes('REAGENTE')) && !res.includes('NEGATIVO') && !res.includes('NAO') && !res.includes('NÃO');
+                                      if (isPositive) return 'text-red-600';
+                                      if (h.resultado === '-') return 'text-on-surface-variant/40';
+                                      return 'text-green-600';
+                                    })()
+                                  }`}>
                                     {h.resultado}
                                   </span>
                                 </td>
-                                <td className="px-4 py-3 font-medium">{h.trimestre_realizacao}</td>
+                                <td className="px-4 py-3 font-medium uppercase">{h.trimestre_realizacao}</td>
+                                <td className="px-4 py-3">
+                                  <div className="flex items-center justify-center gap-2">
+                                    <button 
+                                      type="button"
+                                      onClick={() => handleEdit(h)} 
+                                      className="p-1.5 rounded-lg bg-white/50 text-on-surface-variant hover:bg-primary hover:text-white transition-all"
+                                      title="Editar"
+                                    >
+                                      <span className="material-symbols-outlined text-sm">edit</span>
+                                    </button>
+                                    <button 
+                                      type="button"
+                                      onClick={() => setDeleteConfirmId(h.id_registro)} 
+                                      className="p-1.5 rounded-lg bg-white/50 text-on-surface-variant hover:bg-error hover:text-white transition-all"
+                                      title="Excluir"
+                                    >
+                                      <span className="material-symbols-outlined text-sm">delete</span>
+                                    </button>
+                                  </div>
+                                </td>
                               </tr>
                             ))}
                           </tbody>
@@ -1071,7 +1091,7 @@ export default function ExamesPage() {
                               POSITIVO / REAGENTE
                             </span>
                           ) : (
-                            <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-600 text-[9px] font-black uppercase tracking-widest flex items-center gap-1 w-fit">
+                            <span className="px-3 py-1 rounded-full bg-green-100 text-green-600 text-[9px] font-black uppercase tracking-widest flex items-center gap-1 w-fit">
                               <span className="material-symbols-outlined text-[10px]">check_circle</span>
                               Sem alertas
                             </span>
@@ -1092,103 +1112,6 @@ export default function ExamesPage() {
             <Pagination currentPage={currentPage} totalPages={Math.ceil(filteredPatients.length / itemsPerPage)} onPageChange={setCurrentPage} totalItems={filteredPatients.length} itemsPerPage={itemsPerPage} itemName="pacientes" />
           </div>
         </section>
-
-        <AnimatePresence>
-          {isViewModalOpen && selectedPatientSispn && (
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                className="bg-surface-container-lowest rounded-[3rem] p-8 md:p-12 max-w-4xl w-full shadow-2xl border border-outline-variant/10 space-y-8 max-h-[90vh] overflow-y-auto"
-              >
-                <div className="flex justify-between items-start">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
-                        <span className="material-symbols-outlined">visibility</span>
-                      </div>
-                      <h3 className="text-2xl font-black text-primary uppercase tracking-tight">Histórico de Rotinas</h3>
-                    </div>
-                    <p className="text-sm text-on-surface-variant/60 font-body">
-                      {gestacoes.find(g => g.sispn === selectedPatientSispn)?.paciente_nome} • {selectedPatientSispn}
-                    </p>
-                  </div>
-                  <button onClick={() => setIsViewModalOpen(false)} className="w-12 h-12 rounded-full hover:bg-surface-container-high flex items-center justify-center transition-colors">
-                    <span className="material-symbols-outlined">close</span>
-                  </button>
-                </div>
-
-                <div className="space-y-10">
-                  {Object.entries(groupedResults).map(([trimestre, items]) => (
-                    items.length > 0 && (
-                      <div key={trimestre} className="space-y-4">
-                        <div className="flex items-center gap-4">
-                          <div className="h-px flex-1 bg-outline-variant/10"></div>
-                          <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em] bg-primary/5 px-4 py-1.5 rounded-full border border-primary/10">
-                            {trimestre}
-                          </span>
-                          <div className="h-px flex-1 bg-outline-variant/10"></div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {items.map((res) => (
-                            <div key={res.id_registro} className="bg-surface-container-low p-6 rounded-[2rem] border border-outline-variant/5 hover:border-primary/20 transition-all group relative">
-                              <div className="flex justify-between items-start mb-4">
-                                <div>
-                                  <p className="text-xs font-black text-primary uppercase tracking-wider mb-1">{res.rotinas?.descricao}</p>
-                                  <p className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-widest">
-                                    {new Date(res.data_realizacao).toLocaleDateString('pt-BR')}
-                                  </p>
-                                </div>
-                                <div className="flex gap-2">
-                                  <button onClick={() => { setIsViewModalOpen(false); handleEdit(res); }} className="p-2 rounded-xl bg-white/50 text-on-surface-variant hover:bg-primary hover:text-white transition-all">
-                                    <span className="material-symbols-outlined text-sm">edit</span>
-                                  </button>
-                                  <button onClick={() => { setIsViewModalOpen(false); setDeleteConfirmId(res.id_registro); }} className="p-2 rounded-xl bg-white/50 text-on-surface-variant hover:bg-error hover:text-white transition-all">
-                                    <span className="material-symbols-outlined text-sm">delete</span>
-                                  </button>
-                                </div>
-                              </div>
-                              <div className="flex items-center justify-between">
-                                <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${res.resultado.includes('POSITIVO') || res.resultado.includes('REAGENTE') ? 'bg-red-100 text-red-600 ring-2 ring-red-600/20' : 'bg-blue-100 text-blue-600'}`}>
-                                  {res.resultado}
-                                </span>
-                                <div className="text-right">
-                                  <p className="text-[9px] font-black text-on-surface-variant/40 uppercase tracking-widest">Profissional</p>
-                                  <p className="text-[10px] font-bold text-on-surface uppercase truncate max-w-[150px]">
-                                    {allProfessionals.find(p => p.cpf === res.cpf_profissional)?.nome || '---'}
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )
-                  ))}
-
-                  {Object.values(groupedResults).every(arr => arr.length === 0) && (
-                    <div className="py-20 text-center space-y-4 opacity-20">
-                      <span className="material-symbols-outlined text-6xl">inventory_2</span>
-                      <p className="text-xl font-black uppercase tracking-widest">Nenhum registro encontrado</p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="pt-8 border-t border-outline-variant/10 flex justify-center">
-                  <button 
-                    onClick={() => { setIsViewModalOpen(false); setIsFormOpen(true); }}
-                    className="bg-primary text-white px-10 py-4 rounded-full font-black text-[10px] uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 transition-all flex items-center gap-3"
-                  >
-                    <span className="material-symbols-outlined text-lg">add</span>
-                    Novo Registro para esta Gestante
-                  </button>
-                </div>
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>
 
         <AnimatePresence>
           {deleteConfirmId && (

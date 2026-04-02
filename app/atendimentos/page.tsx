@@ -752,13 +752,13 @@ export default function AtendimentosPage() {
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-12 h-1.5 bg-primary rounded-full"></div>
-              <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Monitoramento Clínico</span>
+              <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Sequência Lógica e Mais Econômica</span>
             </div>
             <h2 className="text-5xl md:text-6xl font-black tracking-tighter font-headline text-primary uppercase leading-none">
               Atendimentos
             </h2>
             <p className="text-lg text-on-surface-variant/60 font-body max-w-xl leading-relaxed">
-              Gestão individualizada de consultas e procedimentos para um acompanhamento pré-natal de excelência.
+              Gestão individualizada de consultas e procedimentos para um acompanhamento pré-natal de excelência seguindo a sequência lógica e mais econômica.
             </p>
           </div>
 
