@@ -316,7 +316,14 @@ export default function AtendimentosPage() {
 
   const handleViewPatient = (sispn: string) => {
     setSelectedPatientSispn(sispn);
-    setFormData({ sispn });
+    setFormData({
+      sispn,
+      data_consulta: new Date().toISOString().split('T')[0],
+      cbo: '',
+      cpf: 'NÃO INFORMADO',
+      data_proxima_consulta: '',
+      observacoes_clinicas: ''
+    });
     setPatientSearch(gestacoes.find(g => g.sispn === sispn)?.paciente_nome || sispn);
     setIsViewingHistory(true);
     setIsFormOpen(true);
@@ -646,10 +653,10 @@ export default function AtendimentosPage() {
     }
 
     setFormData({
-      sispn: con.sispn,
-      data_consulta: con.data_consulta,
-      cbo: con.cbo,
-      cpf: con.cpf,
+      sispn: con.sispn || '',
+      data_consulta: con.data_consulta || '',
+      cbo: con.cbo || '',
+      cpf: con.cpf || '',
       data_proxima_consulta: con.data_proxima_consulta || '',
       observacoes_clinicas: con.observacoes_clinicas || ''
     });
@@ -974,7 +981,7 @@ export default function AtendimentosPage() {
                             <input 
                               type="date"
                               className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none"
-                              value={formData.data_proxima_consulta}
+                              value={formData.data_proxima_consulta || ''}
                               onChange={(e) => setFormData({ ...formData, data_proxima_consulta: e.target.value })}
                             />
                           </div>
@@ -991,7 +998,7 @@ export default function AtendimentosPage() {
                             <input 
                               type="date"
                               className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none"
-                              value={formData.data_consulta}
+                              value={formData.data_consulta || ''}
                               onChange={(e) => setFormData({ ...formData, data_consulta: e.target.value })}
                               required
                             />
@@ -1080,7 +1087,7 @@ export default function AtendimentosPage() {
                         <textarea 
                           className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none resize-none h-32"
                           placeholder="Notas sobre o atendimento..."
-                          value={formData.observacoes_clinicas}
+                          value={formData.observacoes_clinicas || ''}
                           onChange={(e) => setFormData({ ...formData, observacoes_clinicas: e.target.value })}
                         />
                       </div>
@@ -1161,8 +1168,9 @@ export default function AtendimentosPage() {
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-outline-variant/5">
-                            {Object.entries(groupedAtendimentos).map(([trimestre, items]) => (
-                              items.length > 0 && (
+                            {Object.entries(groupedAtendimentos)
+                              .filter(([_, items]) => items.length > 0)
+                              .map(([trimestre, items]) => (
                                 <React.Fragment key={trimestre}>
                                   <tr className="bg-primary/[0.02]">
                                     <td colSpan={5} className="px-6 py-2 text-[8px] font-black text-primary uppercase tracking-[0.3em] text-center">
@@ -1216,8 +1224,7 @@ export default function AtendimentosPage() {
                                     </tr>
                                   ))}
                                 </React.Fragment>
-                              )
-                            ))}
+                              ))}
                             {Object.values(groupedAtendimentos).every(arr => arr.length === 0) && (
                               <tr>
                                 <td colSpan={5} className="px-6 py-12 text-center opacity-20 text-[10px] font-black uppercase tracking-widest">Nenhum atendimento registrado</td>
@@ -1382,7 +1389,14 @@ export default function AtendimentosPage() {
                             <button onClick={() => handleViewPatient(p.sispn)} className="p-3 rounded-2xl bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white transition-all" title="Visualizar Detalhes"><span className="material-symbols-outlined text-lg">visibility</span></button>
                             <button onClick={() => { 
                               setSelectedPatientSispn(p.sispn); 
-                              setFormData({ sispn: p.sispn }); 
+                              setFormData({
+                                sispn: p.sispn,
+                                data_consulta: new Date().toISOString().split('T')[0],
+                                cbo: '',
+                                cpf: 'NÃO INFORMADO',
+                                data_proxima_consulta: '',
+                                observacoes_clinicas: ''
+                              }); 
                               setPatientSearch(p.paciente_nome); 
                               setIsViewingHistory(false);
                               setIsFormOpen(true); 
