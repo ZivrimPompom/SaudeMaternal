@@ -140,6 +140,7 @@ export default function ExamesPage() {
   }, []);
 
   const { searchQuery, setSearchQuery, isFormOpen, setIsFormOpen, refreshTrigger } = useSearch();
+  const [isViewingHistory, setIsViewingHistory] = useState(false);
   const { user: authUser } = useAuth();
   const [results, setResults] = useState<ExamResult[]>([]);
   const [gestacoes, setGestacoes] = useState<Gestacao[]>([]);
@@ -268,12 +269,22 @@ export default function ExamesPage() {
   const handleViewPatient = (sispn: string) => {
     setFormData({ sispn });
     setPatientSearch(gestacoes.find(g => g.sispn === sispn)?.paciente_nome || sispn);
+    setIsViewingHistory(true);
     setIsFormOpen(true);
+    
+    // Scroll to history table after a short delay
+    setTimeout(() => {
+      const historyElement = document.getElementById('history-table');
+      if (historyElement) {
+        historyElement.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 100);
   };
 
   useEffect(() => {
     if (!isFormOpen) {
       setEditingId(null);
+      setIsViewingHistory(false);
       setFormData({
         sispn: '',
       });
@@ -630,7 +641,8 @@ export default function ExamesPage() {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-8">
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  <div className={isViewingHistory && !editingId ? 'hidden' : 'block'}>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                     {/* Patient Selection */}
                     <div className="space-y-2 relative" ref={patientDropdownRef}>
                       <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Busca por SISPN ou Nome <span className="text-error">*</span></label>
@@ -649,7 +661,7 @@ export default function ExamesPage() {
                               initial={{ opacity: 0, y: 10 }} 
                               animate={{ opacity: 1, y: 0 }} 
                               exit={{ opacity: 0, y: 10 }} 
-                              className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border-4 border-primary z-50 overflow-hidden"
+                              className="absolute top-full left-0 right-0 mt-2 bg-surface-container-lowest rounded-2xl shadow-2xl border-4 border-primary z-50 overflow-hidden"
                             >
                               <div className="bg-primary px-6 py-3">
                                 <p className="text-white font-black text-[10px] uppercase tracking-widest">Selecione a gestante...</p>
@@ -707,7 +719,7 @@ export default function ExamesPage() {
                               initial={{ opacity: 0, y: 10 }} 
                               animate={{ opacity: 1, y: 0 }} 
                               exit={{ opacity: 0, y: 10 }} 
-                              className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border-4 border-primary z-50 overflow-hidden"
+                              className="absolute top-full left-0 right-0 mt-2 bg-surface-container-lowest rounded-2xl shadow-2xl border-4 border-primary z-50 overflow-hidden"
                             >
                               <div className="bg-primary px-6 py-3">
                                 <p className="text-white font-black text-[10px] uppercase tracking-widest">Selecione o profissional...</p>
@@ -875,7 +887,13 @@ export default function ExamesPage() {
                               <td className="px-6 py-4">
                                 <div className="bg-surface-container-low/50 rounded-xl px-3 py-2">
                                   <select 
-                                    className="bg-transparent border-none p-0 text-[11px] font-bold outline-none focus:ring-0 w-full uppercase text-on-surface cursor-pointer appearance-none"
+                                    className={`bg-transparent border-none p-0 text-[11px] font-bold outline-none focus:ring-0 w-full uppercase cursor-pointer appearance-none ${
+                                      entry.resultado === '-' 
+                                        ? 'text-on-surface-variant/40' 
+                                        : (entry.resultado.includes('POSITIVO') || entry.resultado.includes('REAGENTE')) 
+                                          ? 'text-error' 
+                                          : 'text-green-600'
+                                    }`}
                                     value={entry.resultado}
                                     onChange={(e) => {
                                       const newEntries = [...formEntries];
@@ -912,12 +930,27 @@ export default function ExamesPage() {
                     </div>
                   </div>
 
+                    </div>
+
                   {/* Movimento de Exames da Gestante Selecionada */}
                   {formData.sispn && selectedPatientHistory.length > 0 && (
-                    <div className="space-y-4 pt-6 border-t border-outline-variant/10">
-                      <div className="flex items-center gap-2">
-                        <span className="material-symbols-outlined text-primary text-sm">history</span>
-                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Movimento de Rotinas Realizadas</h4>
+                    <div id="history-table" className="space-y-4 pt-6 border-t border-outline-variant/10">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="material-symbols-outlined text-primary text-sm">history</span>
+                          <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Movimento de Rotinas Realizadas</h4>
+                        </div>
+                        
+                        {isViewingHistory && !editingId && (
+                          <button 
+                            type="button"
+                            onClick={() => setIsViewingHistory(false)}
+                            className="bg-primary text-white px-6 py-2 rounded-full font-black text-[9px] uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+                          >
+                            <span className="material-symbols-outlined text-sm">add</span>
+                            Adicionar Exame
+                          </button>
+                        )}
                       </div>
                       <div className="bg-surface-container-low rounded-3xl overflow-hidden border border-outline-variant/5">
                         <table className="w-full text-left text-[10px]">
@@ -982,7 +1015,7 @@ export default function ExamesPage() {
                     </div>
                   )}
 
-                  <div className="flex justify-end gap-4 pt-8 border-t border-outline-variant/10">
+                  <div className={`flex justify-end gap-4 pt-8 border-t border-outline-variant/10 ${isViewingHistory && !editingId ? 'hidden' : 'flex'}`}>
                     <button type="button" onClick={() => setIsFormOpen(false)} className="px-8 py-4 rounded-full font-black text-[10px] uppercase tracking-widest text-on-surface-variant hover:bg-surface-container-high transition-colors">Cancelar</button>
                     <button type="submit" className="bg-primary text-white px-12 py-4 rounded-full font-black text-[10px] uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-3">
                       <span className="material-symbols-outlined text-lg">save</span>
@@ -1100,7 +1133,13 @@ export default function ExamesPage() {
                         <td className="px-8 py-6">
                           <div className="flex items-center justify-center gap-3">
                             <button onClick={() => handleViewPatient(p.sispn)} className="p-3 rounded-2xl bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white transition-all" title="Visualizar Detalhes"><span className="material-symbols-outlined text-lg">visibility</span></button>
-                            <button onClick={() => { setFormData({ sispn: p.sispn }); setPatientSearch(p.paciente_nome); setIsFormOpen(true); }} className="p-3 rounded-2xl bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white transition-all" title="Adicionar Registro"><span className="material-symbols-outlined text-lg">add</span></button>
+                            <button onClick={() => { 
+                              setFormData({ sispn: p.sispn }); 
+                              setPatientSearch(p.paciente_nome); 
+                              setIsViewingHistory(false);
+                              setIsFormOpen(true); 
+                              window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }} className="p-3 rounded-2xl bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white transition-all" title="Adicionar Registro"><span className="material-symbols-outlined text-lg">add</span></button>
                           </div>
                         </td>
                       </tr>

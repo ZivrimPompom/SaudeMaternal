@@ -150,6 +150,27 @@
     direction: ltr;
     -webkit-font-smoothing: antialiased;
   }
+
+  /* Fix for invisible select options in dark mode */
+  select {
+    color: var(--color-on-surface) !important;
+    background-color: transparent;
+  }
+
+  select option {
+    background-color: #ffffff !important;
+    color: #191c1e !important;
+  }
+
+  .dark select option {
+    background-color: #1d2022 !important;
+    color: #eff1f3 !important;
+  }
+
+  /* Ensure date inputs also have correct text color */
+  input[type="date"] {
+    color: var(--color-on-surface) !important;
+  }
 }
 
 body {

@@ -218,7 +218,7 @@ export default function AtendimentosPage() {
   });
 
   const [selectedPatientSispn, setSelectedPatientSispn] = useState<string | null>(null);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isViewingHistory, setIsViewingHistory] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -305,6 +305,12 @@ export default function AtendimentosPage() {
       if (!groups[trim]) groups[trim] = [];
       groups[trim].push(a);
     });
+
+    // Sort by date within each trimester (ascending order as requested "order of date")
+    Object.keys(groups).forEach(key => {
+      groups[key].sort((a, b) => new Date(a.data_consulta).getTime() - new Date(b.data_consulta).getTime());
+    });
+
     return groups;
   }, [selectedPatientSispn, atendimentos]);
 
@@ -312,12 +318,23 @@ export default function AtendimentosPage() {
     setSelectedPatientSispn(sispn);
     setFormData({ sispn });
     setPatientSearch(gestacoes.find(g => g.sispn === sispn)?.paciente_nome || sispn);
-    setIsViewModalOpen(true);
+    setIsViewingHistory(true);
+    setIsFormOpen(true);
+    
+    // Scroll to history table after a short delay to allow rendering
+    setTimeout(() => {
+      const historyElement = document.getElementById('history-table');
+      if (historyElement) {
+        historyElement.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 100);
   };
 
   useEffect(() => {
     if (!isFormOpen) {
       setEditingId(null);
+      setSelectedPatientSispn(null);
+      setIsViewingHistory(false);
       setFormData({
         sispn: '',
         data_consulta: new Date().toISOString().split('T')[0],
@@ -598,19 +615,34 @@ export default function AtendimentosPage() {
   };
 
   const handleEdit = (con: Atendimento) => {
+    if (!con) return;
+    
     setEditingId(con.id_atendimento);
-    const gest = Array.isArray(con.gestacoes) ? con.gestacoes[0] : con.gestacoes;
-    const pac = gest?.pacientes;
-    const pacObj = Array.isArray(pac) ? pac[0] : pac;
+    setIsViewingHistory(false);
+    setSelectedPatientSispn(con.sispn);
     
-    setPatientSearch((pacObj as any)?.gestante || con.sispn);
-    setProfessionalSearch(con.profissionais?.nome || con.cpf);
-    setSelectedProfessionalCpf(con.cpf);
+    // Get patient name safely
+    let gestanteNome = con.sispn;
+    if (con.gestacoes) {
+      const gest = Array.isArray(con.gestacoes) ? con.gestacoes[0] : con.gestacoes;
+      const pac = gest?.pacientes;
+      const pacObj = Array.isArray(pac) ? pac[0] : pac;
+      if (pacObj?.gestante) {
+        gestanteNome = pacObj.gestante;
+      }
+    }
     
-    const professional = allProfessionals.find(p => p.cpf === con.cpf);
-    if (professional) {
-      const category = categories.find(c => c.cbo === professional.cbo.substring(0, 4));
-      if (category) setSelectedCategory(category.categoria);
+    setPatientSearch(gestanteNome);
+    setProfessionalSearch(con.profissionais?.nome || con.cpf || '');
+    setSelectedProfessionalCpf(con.cpf || '');
+    
+    // Find category
+    if (con.cpf) {
+      const professional = allProfessionals.find(p => p.cpf === con.cpf);
+      if (professional) {
+        const category = categories.find(c => c.cbo === professional.cbo.substring(0, 4));
+        if (category) setSelectedCategory(category.categoria);
+      }
     }
 
     setFormData({
@@ -621,8 +653,10 @@ export default function AtendimentosPage() {
       data_proxima_consulta: con.data_proxima_consulta || '',
       observacoes_clinicas: con.observacoes_clinicas || ''
     });
-    setPatientSearch(formatSispn(con.sispn));
+    
     setIsFormOpen(true);
+    
+    // Scroll to top to show the form
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -802,7 +836,8 @@ export default function AtendimentosPage() {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-8">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
+                  <div className={isViewingHistory && !editingId ? 'hidden' : 'block'}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
                     {/* Column 1 */}
                     <div className="space-y-6">
                       <div className="space-y-2 relative" ref={patientDropdownRef}>
@@ -833,7 +868,7 @@ export default function AtendimentosPage() {
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: 10 }}
-                                className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border-4 border-primary z-50 overflow-hidden"
+                                className="absolute top-full left-0 right-0 mt-2 bg-surface-container-lowest rounded-2xl shadow-2xl border-4 border-primary z-50 overflow-hidden"
                               >
                                 <div className="bg-primary px-6 py-3">
                                   <p className="text-white font-black text-[10px] uppercase tracking-widest">Selecione a gestante...</p>
@@ -995,7 +1030,7 @@ export default function AtendimentosPage() {
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: 10 }}
-                                className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border-4 border-primary z-50 overflow-hidden"
+                                className="absolute top-full left-0 right-0 mt-2 bg-surface-container-lowest rounded-2xl shadow-2xl border-4 border-primary z-50 overflow-hidden"
                               >
                                 <div className="bg-primary px-6 py-3">
                                   <p className="text-white font-black text-[10px] uppercase tracking-widest">Selecione o profissional...</p>
@@ -1050,14 +1085,16 @@ export default function AtendimentosPage() {
                         />
                       </div>
                     </div>
+                    </div>
                   </div>
 
-                  <div className="flex justify-end gap-4 pt-8 border-t border-outline-variant/10">
+                  <div className={`flex justify-end gap-4 pt-8 border-t border-outline-variant/10 ${isViewingHistory && !editingId ? 'hidden' : 'flex'}`}>
                     <button 
                       type="button"
                       onClick={() => {
                         setIsFormOpen(false);
                         setEditingId(null);
+                        setSelectedPatientSispn(null);
                         setFormData({
                           sispn: '',
                           data_consulta: new Date().toISOString().split('T')[0],
@@ -1084,6 +1121,114 @@ export default function AtendimentosPage() {
                     </button>
                   </div>
                 </form>
+
+                {/* Integrated History Table */}
+                {selectedPatientSispn && (
+                  <div id="history-table" className="pt-12 space-y-8 border-t border-outline-variant/10">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                          <span className="material-symbols-outlined">history</span>
+                        </div>
+                        <div>
+                          <h4 className="text-lg font-black text-primary uppercase tracking-tight">Histórico de Atendimentos Realizados</h4>
+                          <p className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-widest">Acompanhamento cronológico por trimestre</p>
+                        </div>
+                      </div>
+                      
+                      {isViewingHistory && !editingId && (
+                        <button 
+                          type="button"
+                          onClick={() => setIsViewingHistory(false)}
+                          className="bg-primary text-white px-6 py-3 rounded-full font-black text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+                        >
+                          <span className="material-symbols-outlined text-sm">add</span>
+                          Novo Atendimento
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="bg-surface-container-low rounded-[2.5rem] overflow-hidden border border-outline-variant/5">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-separate border-spacing-0">
+                          <thead>
+                            <tr className="bg-surface-container-high/50">
+                              <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-primary/60">Data</th>
+                              <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-primary/60">Trimestre</th>
+                              <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-primary/60">Profissional</th>
+                              <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-primary/60">Próxima</th>
+                              <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-primary/60 text-center">Ações</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-outline-variant/5">
+                            {Object.entries(groupedAtendimentos).map(([trimestre, items]) => (
+                              items.length > 0 && (
+                                <React.Fragment key={trimestre}>
+                                  <tr className="bg-primary/[0.02]">
+                                    <td colSpan={5} className="px-6 py-2 text-[8px] font-black text-primary uppercase tracking-[0.3em] text-center">
+                                      {trimestre}
+                                    </td>
+                                  </tr>
+                                  {items.map((con) => (
+                                    <tr key={con.id_atendimento} className="hover:bg-white/50 transition-colors group">
+                                      <td className="px-6 py-4">
+                                        <div className="flex flex-col">
+                                          <span className="text-xs font-bold text-on-surface">{new Date(con.data_consulta).toLocaleDateString('pt-BR')}</span>
+                                          <span className="text-[9px] font-bold text-on-surface-variant/40 uppercase tracking-widest">{getConsultaReferencia(con.data_consulta)}</span>
+                                        </div>
+                                      </td>
+                                      <td className="px-6 py-4">
+                                        <span className="text-[9px] font-black text-on-surface-variant/60 uppercase tracking-widest">{con.trimestre_consulta}</span>
+                                      </td>
+                                      <td className="px-6 py-4">
+                                        <div className="flex flex-col">
+                                          <span className="text-xs font-bold text-primary uppercase">{con.profissionais?.nome || '---'}</span>
+                                          <span className="text-[9px] font-black text-on-surface-variant/40 uppercase tracking-widest">{getCboCategory(con.cbo)}</span>
+                                        </div>
+                                      </td>
+                                      <td className="px-6 py-4">
+                                        {con.data_proxima_consulta ? (
+                                          <span className="text-xs font-bold text-primary">{new Date(con.data_proxima_consulta).toLocaleDateString('pt-BR')}</span>
+                                        ) : (
+                                          <span className="text-[9px] font-bold text-on-surface-variant/20 uppercase tracking-widest">---</span>
+                                        )}
+                                      </td>
+                                      <td className="px-6 py-4">
+                                        <div className="flex items-center justify-center gap-2">
+                                          <button 
+                                            type="button"
+                                            onClick={() => handleEdit(con)} 
+                                            className="p-2 rounded-xl bg-white/50 text-on-surface-variant hover:bg-primary hover:text-white transition-all shadow-sm"
+                                            title="Editar"
+                                          >
+                                            <span className="material-symbols-outlined text-sm">edit</span>
+                                          </button>
+                                          <button 
+                                            type="button"
+                                            onClick={() => setDeleteConfirmId(con.id_atendimento)} 
+                                            className="p-2 rounded-xl bg-white/50 text-on-surface-variant hover:bg-error hover:text-white transition-all shadow-sm"
+                                            title="Excluir"
+                                          >
+                                            <span className="material-symbols-outlined text-sm">delete</span>
+                                          </button>
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </React.Fragment>
+                              )
+                            ))}
+                            {Object.values(groupedAtendimentos).every(arr => arr.length === 0) && (
+                              <tr>
+                                <td colSpan={5} className="px-6 py-12 text-center opacity-20 text-[10px] font-black uppercase tracking-widest">Nenhum atendimento registrado</td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 
                 {error && (
                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-4 bg-error/10 rounded-2xl flex items-center gap-3 text-error text-xs font-bold">
@@ -1235,7 +1380,14 @@ export default function AtendimentosPage() {
                         <td className="px-8 py-6">
                           <div className="flex items-center justify-center gap-3">
                             <button onClick={() => handleViewPatient(p.sispn)} className="p-3 rounded-2xl bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white transition-all" title="Visualizar Detalhes"><span className="material-symbols-outlined text-lg">visibility</span></button>
-                            <button onClick={() => { setFormData({ sispn: p.sispn }); setPatientSearch(p.paciente_nome); setIsFormOpen(true); }} className="p-3 rounded-2xl bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white transition-all" title="Adicionar Atendimento"><span className="material-symbols-outlined text-lg">add</span></button>
+                            <button onClick={() => { 
+                              setSelectedPatientSispn(p.sispn); 
+                              setFormData({ sispn: p.sispn }); 
+                              setPatientSearch(p.paciente_nome); 
+                              setIsViewingHistory(false);
+                              setIsFormOpen(true); 
+                              window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }} className="p-3 rounded-2xl bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white transition-all" title="Adicionar Atendimento"><span className="material-symbols-outlined text-lg">add</span></button>
                           </div>
                         </td>
                       </tr>
@@ -1249,118 +1401,6 @@ export default function AtendimentosPage() {
           </div>
         </section>
 
-        <AnimatePresence>
-          {isViewModalOpen && selectedPatientSispn && (
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                className="bg-surface-container-lowest rounded-[3rem] p-8 md:p-12 max-w-4xl w-full shadow-2xl border border-outline-variant/10 space-y-8 max-h-[90vh] overflow-y-auto"
-              >
-                <div className="flex justify-between items-start">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
-                        <span className="material-symbols-outlined">visibility</span>
-                      </div>
-                      <h3 className="text-2xl font-black text-primary uppercase tracking-tight">Histórico de Atendimentos</h3>
-                    </div>
-                    <p className="text-sm text-on-surface-variant/60 font-body">
-                      {gestacoes.find(g => g.sispn === selectedPatientSispn)?.paciente_nome} • {selectedPatientSispn}
-                    </p>
-                  </div>
-                  <button onClick={() => setIsViewModalOpen(false)} className="w-12 h-12 rounded-full hover:bg-surface-container-high flex items-center justify-center transition-colors">
-                    <span className="material-symbols-outlined">close</span>
-                  </button>
-                </div>
-
-                <div className="space-y-10">
-                  {Object.entries(groupedAtendimentos).map(([trimestre, items]) => (
-                    items.length > 0 && (
-                      <div key={trimestre} className="space-y-4">
-                        <div className="flex items-center gap-4">
-                          <div className="h-px flex-1 bg-outline-variant/10"></div>
-                          <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em] bg-primary/5 px-4 py-1.5 rounded-full border border-primary/10">
-                            {trimestre}
-                          </span>
-                          <div className="h-px flex-1 bg-outline-variant/10"></div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {items.map((con) => (
-                            <div key={con.id_atendimento} className="bg-surface-container-low p-6 rounded-[2rem] border border-outline-variant/5 hover:border-primary/20 transition-all group relative">
-                              <div className="flex justify-between items-start mb-4">
-                                <div>
-                                  <div className="flex items-center gap-2 text-xs font-black text-primary uppercase tracking-wider mb-1">
-                                    <span className="material-symbols-outlined text-sm">calendar_today</span>
-                                    {new Date(con.data_consulta).toLocaleDateString('pt-BR')}
-                                  </div>
-                                  <p className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-widest">
-                                    {getConsultaReferencia(con.data_consulta)}
-                                  </p>
-                                </div>
-                                <div className="flex gap-2">
-                                  <button onClick={() => { setIsViewModalOpen(false); handleEdit(con); }} className="p-2 rounded-xl bg-white/50 text-on-surface-variant hover:bg-primary hover:text-white transition-all">
-                                    <span className="material-symbols-outlined text-sm">edit</span>
-                                  </button>
-                                  <button onClick={() => { setIsViewModalOpen(false); setDeleteConfirmId(con.id_atendimento); }} className="p-2 rounded-xl bg-white/50 text-on-surface-variant hover:bg-error hover:text-white transition-all">
-                                    <span className="material-symbols-outlined text-sm">delete</span>
-                                  </button>
-                                </div>
-                              </div>
-                              
-                              <div className="space-y-3">
-                                <div className="flex items-center gap-2">
-                                  <span className="material-symbols-outlined text-primary/40 text-lg">medical_services</span>
-                                  <div className="flex flex-col">
-                                    <span className="text-xs font-bold text-on-surface uppercase">{con.profissionais?.nome || '---'}</span>
-                                    <span className="text-[9px] font-black text-on-surface-variant/40 uppercase tracking-widest">{getCboCategory(con.cbo)}</span>
-                                  </div>
-                                </div>
-
-                                {con.data_proxima_consulta && (
-                                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary/5 border border-primary/10 w-fit">
-                                    <span className="material-symbols-outlined text-primary text-sm">event_repeat</span>
-                                    <span className="text-[9px] font-black text-primary uppercase tracking-widest">Próxima: {new Date(con.data_proxima_consulta).toLocaleDateString('pt-BR')}</span>
-                                  </div>
-                                )}
-
-                                {con.observacoes_clinicas && (
-                                  <div className="mt-3 p-3 rounded-xl bg-surface-container-high/50 text-[10px] text-on-surface-variant font-medium italic">
-                                    &quot;{con.observacoes_clinicas}&quot;
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )
-                  ))}
-
-                  {Object.values(groupedAtendimentos).every(arr => arr.length === 0) && (
-                    <div className="py-20 text-center space-y-4 opacity-20">
-                      <span className="material-symbols-outlined text-6xl">inventory_2</span>
-                      <p className="text-xl font-black uppercase tracking-widest">Nenhum atendimento registrado</p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="pt-8 border-t border-outline-variant/10 flex justify-center">
-                  <button 
-                    onClick={() => { setIsViewModalOpen(false); setIsFormOpen(true); }}
-                    className="bg-primary text-white px-10 py-4 rounded-full font-black text-[10px] uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 transition-all flex items-center gap-3"
-                  >
-                    <span className="material-symbols-outlined text-lg">add</span>
-                    Novo Atendimento para esta Gestante
-                  </button>
-                </div>
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>
-        {/* Delete Confirmation Modal */}
         <AnimatePresence>
           {deleteConfirmId && (
             <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
