@@ -1169,16 +1169,16 @@ export default function AtendimentosPage() {
                           </thead>
                           <tbody className="divide-y divide-outline-variant/5">
                             {Object.entries(groupedAtendimentos)
-                              .filter(([_, items]) => items.length > 0)
+                              .filter(([_, items]) => items && items.length > 0)
                               .map(([trimestre, items]) => (
-                                <React.Fragment key={trimestre}>
+                                <React.Fragment key={`group-${trimestre}`}>
                                   <tr className="bg-primary/[0.02]">
                                     <td colSpan={5} className="px-6 py-2 text-[8px] font-black text-primary uppercase tracking-[0.3em] text-center">
                                       {trimestre}
                                     </td>
                                   </tr>
                                   {items.map((con) => (
-                                    <tr key={con.id_atendimento} className="hover:bg-white/50 transition-colors group">
+                                    <tr key={`atendimento-${con.id_atendimento}`} className="hover:bg-white/50 transition-colors group">
                                       <td className="px-6 py-4">
                                         <div className="flex flex-col">
                                           <span className="text-xs font-bold text-on-surface">{new Date(con.data_consulta).toLocaleDateString('pt-BR')}</span>
