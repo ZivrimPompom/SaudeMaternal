@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useSearch } from '@/context/SearchContext';
 import { useAuth } from '@/context/AuthContext';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'motion/react';
 import Pagination from '@/components/Pagination';
+import RecordsSummary from '@/components/RecordsSummary';
 
 interface Paciente {
   cpf: string;
@@ -36,7 +37,7 @@ export default function PacientesPage() {
     setMounted(true);
   }, []);
 
-  const { searchQuery, setSearchQuery, isFormOpen, setIsFormOpen, refreshTrigger } = useSearch();
+  const { searchQuery, setSearchQuery, isFormOpen, setIsFormOpen, refreshTrigger, setOnExportCSV } = useSearch();
   const { user: authUser } = useAuth();
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
   const [loading, setLoading] = useState(true);
@@ -184,24 +185,26 @@ export default function PacientesPage() {
     return { ageText, lifeStage };
   };
 
-  const filteredPacientes = pacientes.filter(pac => {
-    const query = searchQuery.toLowerCase().trim();
-    if (!query) return true;
+  const filteredPacientes = useMemo(() => {
+    return pacientes.filter(pac => {
+      const query = searchQuery.toLowerCase().trim();
+      if (!query) return true;
 
-    const normalize = (str: string) => 
-      str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : "";
+      const normalize = (str: string) => 
+        str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : "";
 
-    const gestante = normalize(pac.gestante);
-    const cpf = pac.cpf?.replace(/\D/g, '') || '';
-    const prontuario = pac.prontuario?.toLowerCase() || '';
-    
-    const queryNormalizada = normalize(query);
-    const queryDigits = query.replace(/\D/g, '');
+      const gestante = normalize(pac.gestante);
+      const cpf = pac.cpf?.replace(/\D/g, '') || '';
+      const prontuario = pac.prontuario?.toLowerCase() || '';
+      
+      const queryNormalizada = normalize(query);
+      const queryDigits = query.replace(/\D/g, '');
 
-    return gestante.includes(queryNormalizada) || 
-           (queryDigits !== '' && cpf.includes(queryDigits)) ||
-           prontuario.includes(queryNormalizada);
-  });
+      return gestante.includes(queryNormalizada) || 
+             (queryDigits !== '' && cpf.includes(queryDigits)) ||
+             prontuario.includes(queryNormalizada);
+    });
+  }, [pacientes, searchQuery]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -322,7 +325,7 @@ export default function PacientesPage() {
     }
   };
 
-  const handleExportCSV = () => {
+  const handleExportCSV = useCallback(() => {
     const headers = ['GESTANTE', 'CPF', 'NOME MÃE', 'PRONTUÁRIO', 'CNS', 'DATA NASCIMENTO', 'BAIRRO', 'CONTATO', 'CIDADE'];
     const rows = filteredPacientes.map(p => [
       p.gestante,
@@ -345,7 +348,12 @@ export default function PacientesPage() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  };
+  }, [filteredPacientes]);
+
+  useEffect(() => {
+    setOnExportCSV(() => handleExportCSV);
+    return () => setOnExportCSV(null);
+  }, [handleExportCSV, setOnExportCSV]);
 
   if (!mounted) return null;
 
@@ -354,50 +362,15 @@ export default function PacientesPage() {
       <div className="max-w-7xl mx-auto space-y-6">
         
         {/* Topbar Pattern - Figura 1 */}
-        <div className="bg-white p-4 rounded-2xl border border-outline-variant/10 shadow-sm flex flex-col md:flex-row items-center gap-4">
-          <div className="flex items-center gap-4 pr-4 border-r border-outline-variant/10">
+        <div className="bg-white p-4 rounded-2xl border border-outline-variant/10 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
             <h1 className="text-xl font-black text-primary uppercase tracking-tight">Pacientes</h1>
           </div>
-          
-          <div className="relative flex-1 w-full">
-            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/30 text-xl">search</span>
-            <input
-              type="text"
-              placeholder="Nome ou CPF..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-surface-container-low border-none rounded-2xl text-xs font-bold focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-on-surface-variant/30"
-            />
-          </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-primary text-on-primary font-headline text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
-            >
-              <span className="material-symbols-outlined text-lg">upload</span>
-              Importar
-            </button>
-            <button
-              className="flex items-center gap-2 px-6 py-3 rounded-2xl border-2 border-primary text-primary font-headline text-[10px] font-black uppercase tracking-widest hover:bg-primary/5 transition-all"
-            >
-              <span className="material-symbols-outlined text-lg">download</span>
-              Exportar Layout
-            </button>
-            <button
-              onClick={handleExportCSV}
-              className="flex items-center gap-2 px-6 py-3 rounded-2xl border-2 border-primary text-primary font-headline text-[10px] font-black uppercase tracking-widest hover:bg-primary/5 transition-all"
-            >
-              <span className="material-symbols-outlined text-lg">download</span>
-              Exportar CSV
-            </button>
-            <button
-              onClick={() => setIsFormOpen(!isFormOpen)}
-              className="flex items-center gap-2 px-8 py-3 rounded-2xl bg-primary text-on-primary font-headline text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
-            >
-              <span className="material-symbols-outlined text-lg">{isFormOpen ? 'close' : 'add'}</span>
-              {isFormOpen ? 'Cancelar' : 'Cadastrar'}
-            </button>
-          </div>
+          <RecordsSummary 
+            total={pacientes.length} 
+            filtered={filteredPacientes.length} 
+          />
         </div>
 
         <div className="grid grid-cols-12 gap-6">
@@ -671,21 +644,6 @@ export default function PacientesPage() {
                   <div>
                     <h3 className="text-2xl font-black font-headline text-on-surface uppercase tracking-tight">Pacientes</h3>
                     <p className="text-xs text-on-surface-variant/40 font-body uppercase tracking-widest font-bold">Listagem Geral</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4 w-full md:w-auto">
-                  <div className="relative flex-1 md:w-64">
-                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/30 text-xl">search</span>
-                    <input 
-                      type="text" 
-                      placeholder="Filtrar pacientes..."
-                      className="w-full bg-surface-container-low border-none rounded-full pl-12 pr-4 py-3 text-xs font-body focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                      value={searchQuery}
-                      onChange={(e) => {
-                        setSearchQuery(e.target.value);
-                        setCurrentPage(1);
-                      }}
-                    />
                   </div>
                 </div>
               </div>

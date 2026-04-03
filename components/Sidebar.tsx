@@ -78,23 +78,6 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
       name: 'Relatórios', 
       icon: 'analytics', 
       href: '#' 
-    },
-    {
-      name: 'Manutenção',
-      icon: 'settings',
-      subItems: [
-        { name: 'Exportar Layout Pacientes', href: 'export:pacientes' },
-        { name: 'Exportar Layout Gestações', href: 'export:gestacoes' },
-        { name: 'Exportar Layout Unidades de Saúde', href: 'export:unidades' },
-        ...(isAdministrator ? [{ name: 'Exportar Layout Operadores', href: 'export:operadores' }] : []),
-        { name: 'Exportar Layout Categorias Profissionais', href: 'export:categorias' },
-        { name: 'Exportar Layout Profissionais', href: 'export:profissionais' },
-        { name: 'Exportar Layout Rotinas', href: 'export:rotinas' },
-        { name: 'Exportar Layout Atendimentos', href: 'export:atendimentos' },
-        { name: 'Exportar Layout Desfechos', href: 'export:desfechos' },
-        { name: 'Exportar Layout Recém-nascidos', href: 'export:recem_nascidos' },
-        { name: 'Exportar Layout Exames e Vacinas', href: 'export:exames' },
-      ]
     }
   ];
 

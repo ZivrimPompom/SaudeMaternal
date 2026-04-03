@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useSearch } from '@/context/SearchContext';
 import { useAuth } from '@/context/AuthContext';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'motion/react';
 import Pagination from '@/components/Pagination';
+import RecordsSummary from '@/components/RecordsSummary';
 
 interface Gestacao {
   sispn: string;
@@ -67,7 +68,7 @@ export default function GestacoesPage() {
     setMounted(true);
   }, []);
 
-  const { searchQuery, setSearchQuery, isFormOpen, setIsFormOpen, refreshTrigger } = useSearch();
+  const { searchQuery, setSearchQuery, isFormOpen, setIsFormOpen, refreshTrigger, setOnExportCSV } = useSearch();
   const { user: authUser } = useAuth();
   
   const [gestacoes, setGestacoes] = useState<Gestacao[]>([]);
@@ -424,29 +425,30 @@ export default function GestacoesPage() {
     return now >= end ? 'VENCIDA' : 'ATIVA';
   };
 
-  const filteredGestacoes = gestacoes.filter(g => {
-    // Search query filter
-    const query = searchQuery.toLowerCase().trim();
-    const normalize = (str: string) => 
-      str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : "";
-    
-    const queryNormalizada = normalize(query);
-    const queryDigits = query.replace(/\D/g, '');
+  const filteredGestacoes = useMemo(() => {
+    return gestacoes.filter(g => {
+      // Search query filter
+      const query = searchQuery.toLowerCase().trim();
+      const normalize = (str: string) => 
+        str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : "";
+      
+      const queryNormalizada = normalize(query);
+      const queryDigits = query.replace(/\D/g, '');
 
-    const matchesSearch = !query || (
-      normalize(g.paciente_nome || '').includes(queryNormalizada) || 
-      normalize(g.sispn || '').includes(queryNormalizada) ||
-      normalize(g.cpf_paciente || '').includes(queryNormalizada) ||
-      (queryDigits !== '' && g.sispn.replace(/\D/g, '').includes(queryDigits)) ||
-      (queryDigits !== '' && g.cpf_paciente.replace(/\D/g, '').includes(queryDigits)) ||
-      normalize(g.referencia_tecnica_nome || '').includes(queryNormalizada) ||
-      normalize(g.acs_nome || '').includes(queryNormalizada) ||
-      normalize(g.equipe || '').includes(queryNormalizada)
-    );
+      const matchesSearch = !query || (
+        normalize(g.paciente_nome || '').includes(queryNormalizada) || 
+        normalize(g.sispn || '').includes(queryNormalizada) ||
+        normalize(g.cpf_paciente || '').includes(queryNormalizada) ||
+        (queryDigits !== '' && g.sispn.replace(/\D/g, '').includes(queryDigits)) ||
+        (queryDigits !== '' && g.cpf_paciente.replace(/\D/g, '').includes(queryDigits)) ||
+        normalize(g.referencia_tecnica_nome || '').includes(queryNormalizada) ||
+        normalize(g.acs_nome || '').includes(queryNormalizada) ||
+        normalize(g.equipe || '').includes(queryNormalizada)
+      );
 
-    if (!matchesSearch) return false;
+      if (!matchesSearch) return false;
 
-    // Additional filters
+      // Additional filters
     if (filters.dpp) {
       const gDpp = g.dpp || '';
       // Convert yyyy/MM to yyyy-MM
@@ -707,7 +709,7 @@ export default function GestacoesPage() {
     ).slice(0, 10);
   }, [acsList, acsSearchQuery]);
 
-  const handleExportCSV = () => {
+  const handleExportCSV = useCallback(() => {
     const headers = ['SISPN', 'GESTANTE', 'CPF', 'DUM', 'DPP', 'EQUIPE', 'RT', 'ACS', 'STATUS'];
     const rows = filteredGestacoes.map(g => {
       const status = calculateWeeks(g.dum) > 42 ? 'ENCERRADA' : 'ATIVA';
@@ -733,7 +735,12 @@ export default function GestacoesPage() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  };
+  }, [filteredGestacoes]);
+
+  useEffect(() => {
+    setOnExportCSV(() => handleExportCSV);
+    return () => setOnExportCSV(null);
+  }, [handleExportCSV, setOnExportCSV]);
 
   if (!mounted) return null;
 
@@ -742,50 +749,15 @@ export default function GestacoesPage() {
       <div className="max-w-7xl mx-auto space-y-6">
         
         {/* Topbar Pattern - Figura 1 */}
-        <div className="bg-white p-4 rounded-2xl border border-outline-variant/10 shadow-sm flex flex-col md:flex-row items-center gap-4">
-          <div className="flex items-center gap-4 pr-4 border-r border-outline-variant/10">
+        <div className="bg-white p-4 rounded-2xl border border-outline-variant/10 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
             <h1 className="text-xl font-black text-primary uppercase tracking-tight">Gestações</h1>
           </div>
-          
-          <div className="relative flex-1 w-full">
-            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/30 text-xl">search</span>
-            <input
-              type="text"
-              placeholder="SISPN ou CPF..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-surface-container-low border-none rounded-2xl text-xs font-bold focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-on-surface-variant/30"
-            />
-          </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-primary text-on-primary font-headline text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
-            >
-              <span className="material-symbols-outlined text-lg">upload</span>
-              Importar
-            </button>
-            <button
-              className="flex items-center gap-2 px-6 py-3 rounded-2xl border-2 border-primary text-primary font-headline text-[10px] font-black uppercase tracking-widest hover:bg-primary/5 transition-all"
-            >
-              <span className="material-symbols-outlined text-lg">download</span>
-              Exportar Layout
-            </button>
-            <button
-              onClick={handleExportCSV}
-              className="flex items-center gap-2 px-6 py-3 rounded-2xl border-2 border-primary text-primary font-headline text-[10px] font-black uppercase tracking-widest hover:bg-primary/5 transition-all"
-            >
-              <span className="material-symbols-outlined text-lg">download</span>
-              Exportar CSV
-            </button>
-            <button
-              onClick={() => setIsFormOpen(!isFormOpen)}
-              className="flex items-center gap-2 px-8 py-3 rounded-2xl bg-primary text-on-primary font-headline text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
-            >
-              <span className="material-symbols-outlined text-lg">{isFormOpen ? 'close' : 'add'}</span>
-              {isFormOpen ? 'Cancelar' : 'Cadastrar'}
-            </button>
-          </div>
+          <RecordsSummary 
+            total={gestacoes.length} 
+            filtered={filteredGestacoes.length} 
+          />
         </div>
 
         <div className="grid grid-cols-12 gap-6">

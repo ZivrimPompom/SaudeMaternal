@@ -12,7 +12,7 @@ import { supabase } from '@/lib/supabase';
 import { useTheme } from '@/context/ThemeContext';
 
 export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSidebar: () => void; isSidebarOpen: boolean }) {
-  const { searchQuery, setSearchQuery, isFormOpen, setIsFormOpen, triggerRefresh } = useSearch();
+  const { searchQuery, setSearchQuery, isFormOpen, setIsFormOpen, triggerRefresh, onExportCSV } = useSearch();
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const pathname = usePathname();
@@ -636,31 +636,15 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
               </>
             )}
 
-            {/* Search Bar - Desktop and Mobile Toggle */}
-            <div className={`flex items-center gap-2 ${isSearchMobileOpen ? 'w-full' : 'w-auto'}`}>
-              <div className={`${isSearchMobileOpen ? 'flex flex-1' : 'hidden sm:flex'} items-center bg-surface-container rounded-full px-4 py-1.5 gap-2 w-full max-w-md transition-all duration-300`}>
-                <span className="material-symbols-outlined text-on-surface-variant/40 text-sm">search</span>
-                <input 
-                  className="bg-transparent border-none text-sm focus:ring-0 placeholder-on-surface-variant/40 w-full font-body text-on-surface" 
-                  placeholder={getSearchPlaceholder()} 
-                  type="text" 
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  autoFocus={isSearchMobileOpen}
-                />
-                {isSearchMobileOpen && (
-                  <button onClick={() => setIsSearchMobileOpen(false)} className="material-symbols-outlined text-on-surface-variant/40 text-sm">close</button>
-                )}
-              </div>
-
-              {!isSearchMobileOpen && (
-                <button 
-                  onClick={() => setIsSearchMobileOpen(true)}
-                  className="sm:hidden p-2 rounded-full bg-surface-container text-on-surface-variant/60"
-                >
-                  <span className="material-symbols-outlined text-sm">search</span>
-                </button>
-              )}
+            <div className="relative flex-1 max-w-md">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/30 text-lg">search</span>
+              <input
+                type="text"
+                placeholder={getSearchPlaceholder()}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-1.5 bg-surface-container-low border-none rounded-full text-xs font-bold focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-on-surface-variant/30"
+              />
             </div>
 
             {!isSearchMobileOpen && (
@@ -683,6 +667,17 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
                   >
                     <span className="material-symbols-outlined text-sm">download</span>
                     <span className="hidden md:inline">Exportar Layout</span>
+                  </button>
+                )}
+
+                {onExportCSV && (
+                  <button
+                    onClick={onExportCSV}
+                    className="flex items-center gap-2 px-3 md:px-4 py-1.5 rounded-full text-xs md:text-sm font-bold transition-all duration-300 bg-white text-primary border border-primary hover:bg-primary/5 shadow-lg shadow-primary/5"
+                    title="Exportar dados atuais para CSV"
+                  >
+                    <span className="material-symbols-outlined text-sm">upload</span>
+                    <span className="hidden md:inline">Exportar CSV</span>
                   </button>
                 )}
 

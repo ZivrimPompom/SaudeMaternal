@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useSearch } from '@/context/SearchContext';
 import { useAuth } from '@/context/AuthContext';
@@ -27,6 +27,7 @@ import {
   X
 } from 'lucide-react';
 import Pagination from '@/components/Pagination';
+import RecordsSummary from '@/components/RecordsSummary';
 
 interface HealthUnit {
   cnes: string;
@@ -57,7 +58,7 @@ export default function UnidadesSaudePage() {
     setMounted(true);
   }, []);
 
-  const { searchQuery, setSearchQuery, isFormOpen, setIsFormOpen, refreshTrigger } = useSearch();
+  const { searchQuery, setSearchQuery, isFormOpen, setIsFormOpen, refreshTrigger, setOnExportCSV } = useSearch();
   const { user: authUser } = useAuth();
   const [units, setUnits] = useState<HealthUnit[]>([]);
   const [loading, setLoading] = useState(isSupabaseConfigured);
@@ -252,31 +253,33 @@ export default function UnidadesSaudePage() {
     }
   };
 
-  const filteredUnits = units.filter(unit => {
-    const query = searchQuery.toLowerCase().trim();
-    if (!query) return true;
+  const filteredUnits = useMemo(() => {
+    return units.filter(unit => {
+      const query = searchQuery.toLowerCase().trim();
+      if (!query) return true;
 
-    const normalize = (str: string) => 
-      str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+      const normalize = (str: string) => 
+        str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : "";
 
-    const name = normalize(unit.nome_fantasia);
-    const cnes = unit.cnes.toLowerCase();
-    const bairro = normalize(unit.bairro);
-    
-    const queryNormalizada = normalize(query);
+      const name = normalize(unit.nome_fantasia);
+      const cnes = unit.cnes.toLowerCase();
+      const bairro = normalize(unit.bairro);
+      
+      const queryNormalizada = normalize(query);
 
-    return (
-      name.includes(queryNormalizada) ||
-      cnes.includes(queryNormalizada) ||
-      bairro.includes(queryNormalizada)
-    );
-  });
+      return (
+        name.includes(queryNormalizada) ||
+        cnes.includes(queryNormalizada) ||
+        bairro.includes(queryNormalizada)
+      );
+    });
+  }, [units, searchQuery]);
 
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery]);
 
-  const handleExportCSV = () => {
+  const handleExportCSV = useCallback(() => {
     const headers = ['CNES', 'NOME FANTASIA', 'LOGRADOURO', 'NÚMERO', 'BAIRRO', 'MUNICÍPIO', 'UF', 'CEP', 'TELEFONE'];
     const rows = filteredUnits.map(u => [
       u.cnes,
@@ -299,7 +302,12 @@ export default function UnidadesSaudePage() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  };
+  }, [filteredUnits]);
+
+  useEffect(() => {
+    setOnExportCSV(() => handleExportCSV);
+    return () => setOnExportCSV(null);
+  }, [handleExportCSV, setOnExportCSV]);
 
   if (!mounted) return null;
 
@@ -307,50 +315,15 @@ export default function UnidadesSaudePage() {
     <DashboardLayout title="Unidades de Saúde">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Topbar Pattern - Figura 1 */}
-        <div className="bg-white p-4 rounded-2xl border border-outline-variant/10 shadow-sm flex flex-col md:flex-row items-center gap-4">
-          <div className="flex items-center gap-4 pr-4 border-r border-outline-variant/10">
+        <div className="bg-white p-4 rounded-2xl border border-outline-variant/10 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
             <h1 className="text-xl font-black text-primary uppercase tracking-tight">Unidades</h1>
           </div>
-          
-          <div className="relative flex-1 w-full">
-            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/30 text-xl">search</span>
-            <input
-              type="text"
-              placeholder="Nome ou CNES..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-surface-container-low border-none rounded-2xl text-xs font-bold focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-on-surface-variant/30"
-            />
-          </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-primary text-on-primary font-headline text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
-            >
-              <span className="material-symbols-outlined text-lg">upload</span>
-              Importar
-            </button>
-            <button
-              className="flex items-center gap-2 px-6 py-3 rounded-2xl border-2 border-primary text-primary font-headline text-[10px] font-black uppercase tracking-widest hover:bg-primary/5 transition-all"
-            >
-              <span className="material-symbols-outlined text-lg">download</span>
-              Exportar Layout
-            </button>
-            <button
-              onClick={handleExportCSV}
-              className="flex items-center gap-2 px-6 py-3 rounded-2xl border-2 border-primary text-primary font-headline text-[10px] font-black uppercase tracking-widest hover:bg-primary/5 transition-all"
-            >
-              <span className="material-symbols-outlined text-lg">download</span>
-              Exportar CSV
-            </button>
-            <button
-              onClick={() => setIsFormOpen(!isFormOpen)}
-              className="flex items-center gap-2 px-8 py-3 rounded-2xl bg-primary text-on-primary font-headline text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
-            >
-              <span className="material-symbols-outlined text-lg">{isFormOpen ? 'close' : 'add'}</span>
-              {isFormOpen ? 'Cancelar' : 'Cadastrar'}
-            </button>
-          </div>
+          <RecordsSummary 
+            total={units.length} 
+            filtered={filteredUnits.length} 
+          />
         </div>
 
         <div className="grid grid-cols-12 gap-6 md:gap-8">
@@ -572,18 +545,6 @@ export default function UnidadesSaudePage() {
                 <div>
                   <h3 className="text-2xl font-bold font-headline text-on-surface">Unidades Cadastradas</h3>
                   <p className="text-xs text-on-surface-variant font-body opacity-60 mt-1">Listagem de estabelecimentos de saúde</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-                    <input 
-                      type="text" 
-                      placeholder="Filtrar..."
-                      className="bg-surface-container-low border-none rounded-full pl-9 pr-4 py-2 text-xs font-body focus:ring-2 focus:ring-primary/20 outline-none w-40 md:w-64 transition-all"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                  </div>
                 </div>
               </div>
               <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent">

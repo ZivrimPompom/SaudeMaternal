@@ -9,6 +9,8 @@ interface SearchContextType {
   setIsFormOpen: (isOpen: boolean) => void;
   refreshTrigger: number;
   triggerRefresh: () => void;
+  onExportCSV: (() => void) | null;
+  setOnExportCSV: (fn: (() => void) | null) => void;
 }
 
 const SearchContext = createContext<SearchContextType | undefined>(undefined);
@@ -17,6 +19,7 @@ export function SearchProvider({ children }: { children: ReactNode }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [onExportCSV, setOnExportCSV] = useState<(() => void) | null>(null);
 
   const triggerRefresh = () => setRefreshTrigger(prev => prev + 1);
 
@@ -27,7 +30,9 @@ export function SearchProvider({ children }: { children: ReactNode }) {
       isFormOpen, 
       setIsFormOpen,
       refreshTrigger,
-      triggerRefresh
+      triggerRefresh,
+      onExportCSV,
+      setOnExportCSV
     }}>
       {children}
     </SearchContext.Provider>

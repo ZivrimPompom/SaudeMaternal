@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useSearch } from '@/context/SearchContext';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '@/context/AuthContext';
 import Pagination from '@/components/Pagination';
+import RecordsSummary from '@/components/RecordsSummary';
 
 interface RecemNascido {
   id?: string;
@@ -68,7 +69,7 @@ export default function DesfechosPage() {
     setMounted(true);
   }, []);
 
-  const { searchQuery, setSearchQuery, isFormOpen, setIsFormOpen, refreshTrigger } = useSearch();
+  const { searchQuery, setSearchQuery, isFormOpen, setIsFormOpen, refreshTrigger, setOnExportCSV } = useSearch();
   const { user: authUser } = useAuth();
   
   const [desfechos, setDesfechos] = useState<Desfecho[]>([]);
@@ -176,20 +177,7 @@ export default function DesfechosPage() {
   };
 
   const handleAddRN = () => {
-    const newRN: RecemNascido = { 
-      nome_rn: '', 
-      cpf_rn: '', 
-      data_nascimento: '', 
-      data_consulta_rn: '', 
-      comparecimento: false 
-    };
-
-    if (formData.tipo_desfecho === 'PARTO' && selectedGestante) {
-      newRN.nome_rn = `RN ${selectedGestante.paciente_nome}`;
-      newRN.data_nascimento = formData.data_desfecho;
-    }
-
-    setRecemNascidos([...recemNascidos, newRN]);
+    setRecemNascidos([...recemNascidos, { nome_rn: '', cpf_rn: '', data_nascimento: '', data_consulta_rn: '', comparecimento: false }]);
   };
 
   const handleRemoveRN = (index: number) => {
@@ -214,11 +202,12 @@ export default function DesfechosPage() {
   useEffect(() => {
     if (formData.tipo_desfecho === 'PARTO' && selectedGestante) {
       setRecemNascidos(prev => {
-        return prev.map(rn => ({
-          ...rn,
-          nome_rn: rn.nome_rn || `RN ${selectedGestante.paciente_nome}`,
-          data_nascimento: rn.data_nascimento || formData.data_desfecho
-        }));
+        const updated = [...prev];
+        if (updated.length > 0) {
+          if (!updated[0].nome_rn) updated[0].nome_rn = `RN ${selectedGestante.paciente_nome}`;
+          if (!updated[0].data_nascimento) updated[0].data_nascimento = formData.data_desfecho;
+        }
+        return updated;
       });
     }
   }, [formData.tipo_desfecho, selectedGestante, formData.data_desfecho]);
@@ -235,15 +224,6 @@ export default function DesfechosPage() {
     
     const consulta = new Date(dataConsulta);
     return consulta <= limit ? 'EM DIA' : 'ATRASADO';
-  };
-
-  const getStatusCaptacao = (dum: string, dataCadastro: string) => {
-    if (!dum || !dataCadastro) return '---';
-    const start = new Date(dum);
-    const cad = new Date(dataCadastro);
-    const diffTime = cad.getTime() - start.getTime();
-    const diffWeeks = diffTime / (1000 * 60 * 60 * 24 * 7);
-    return diffWeeks <= 12 ? 'PRECOCE' : 'TARDIA';
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -344,7 +324,7 @@ export default function DesfechosPage() {
 
   if (!mounted) return null;
 
-  const handleExportCSV = () => {
+  const handleExportCSV = useCallback(() => {
     const headers = ['SISPN', 'GESTANTE', 'DATA DESFECHO', 'DESFECHO'];
     const rows = filteredDesfechos.map(d => [
       d.sispn,
@@ -362,99 +342,28 @@ export default function DesfechosPage() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  };
+  }, [filteredDesfechos]);
+
+  useEffect(() => {
+    setOnExportCSV(() => handleExportCSV);
+    return () => setOnExportCSV(null);
+  }, [handleExportCSV, setOnExportCSV]);
 
   return (
     <DashboardLayout title="Lançamento de Desfecho">
       <div className="max-w-7xl mx-auto space-y-6">
         
         {/* Topbar Pattern - Figura 1 */}
-        <div className="bg-white p-4 rounded-2xl border border-outline-variant/10 shadow-sm flex flex-col md:flex-row items-center gap-4">
-          <div className="flex items-center gap-4 pr-4 border-r border-outline-variant/10">
+        <div className="bg-white p-4 rounded-2xl border border-outline-variant/10 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
             <h1 className="text-xl font-black text-primary uppercase tracking-tight">Desfechos</h1>
           </div>
-          
-          <div className="relative flex-1 w-full">
-            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/30 text-xl">search</span>
-            <input
-              type="text"
-              placeholder="SISPN ou CPF..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-surface-container-low border-none rounded-2xl text-xs font-bold focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-on-surface-variant/30"
-            />
-          </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-primary text-on-primary font-headline text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
-            >
-              <span className="material-symbols-outlined text-lg">upload</span>
-              Importar
-            </button>
-            <button
-              className="flex items-center gap-2 px-6 py-3 rounded-2xl border-2 border-primary text-primary font-headline text-[10px] font-black uppercase tracking-widest hover:bg-primary/5 transition-all"
-            >
-              <span className="material-symbols-outlined text-lg">download</span>
-              Exportar Layout
-            </button>
-            <button
-              onClick={handleExportCSV}
-              className="flex items-center gap-2 px-6 py-3 rounded-2xl border-2 border-primary text-primary font-headline text-[10px] font-black uppercase tracking-widest hover:bg-primary/5 transition-all"
-            >
-              <span className="material-symbols-outlined text-lg">download</span>
-              Exportar CSV
-            </button>
-            <button
-              onClick={() => setIsFormOpen(!isFormOpen)}
-              className="flex items-center gap-2 px-8 py-3 rounded-2xl bg-primary text-on-primary font-headline text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
-            >
-              <span className="material-symbols-outlined text-lg">{isFormOpen ? 'close' : 'add'}</span>
-              {isFormOpen ? 'Cancelar' : 'Cadastrar'}
-            </button>
-          </div>
+          <RecordsSummary 
+            total={desfechos.length} 
+            filtered={filteredDesfechos.length} 
+          />
         </div>
-
-        {/* Orange Patient Info Frame */}
-        {selectedGestante && (
-          <motion.div 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-primary p-6 rounded-3xl shadow-xl shadow-primary/20 border border-white/10 text-white relative overflow-hidden"
-          >
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-32 -mt-32" />
-            <div className="relative z-10 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-6">
-              <div className="space-y-1">
-                <p className="text-[8px] font-black uppercase tracking-widest opacity-60">Nome da Gestante</p>
-                <p className="text-xs font-black uppercase truncate">{selectedGestante.paciente_nome}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-[8px] font-black uppercase tracking-widest opacity-60">CPF</p>
-                <p className="text-xs font-black uppercase">{selectedGestante.paciente_cpf}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-[8px] font-black uppercase tracking-widest opacity-60">SISPN</p>
-                <p className="text-xs font-black uppercase">{selectedGestante.sispn}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-[8px] font-black uppercase tracking-widest opacity-60">Captação</p>
-                <p className="text-xs font-black uppercase">{getStatusCaptacao(selectedGestante.dum, selectedGestante.data_cadastro)}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-[8px] font-black uppercase tracking-widest opacity-60">DUM</p>
-                <p className="text-xs font-black uppercase">{new Date(selectedGestante.dum).toLocaleDateString('pt-BR')}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-[8px] font-black uppercase tracking-widest opacity-60">DPP</p>
-                <p className="text-xs font-black uppercase">{new Date(selectedGestante.dpp).toLocaleDateString('pt-BR')}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-[8px] font-black uppercase tracking-widest opacity-60">Risco</p>
-                <p className="text-xs font-black uppercase">BAIXO RISCO</p>
-              </div>
-            </div>
-          </motion.div>
-        )}
 
         <AnimatePresence>
           {isFormOpen && (

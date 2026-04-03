@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useSearch } from '@/context/SearchContext';
 import { useAuth } from '@/context/AuthContext';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'motion/react';
 import Pagination from '@/components/Pagination';
+import RecordsSummary from '@/components/RecordsSummary';
 
 interface Categoria {
   cbo: string;
@@ -42,7 +43,7 @@ export default function ProfissionaisPage() {
     setMounted(true);
   }, []);
 
-  const { searchQuery, isFormOpen, setIsFormOpen, refreshTrigger } = useSearch();
+  const { searchQuery, setSearchQuery, isFormOpen, setIsFormOpen, refreshTrigger, setOnExportCSV } = useSearch();
   const { user: authUser } = useAuth();
   const [professionals, setProfessionals] = useState<Profissional[]>([]);
   const [categories, setCategories] = useState<Categoria[]>([]);
@@ -52,22 +53,63 @@ export default function ProfissionaisPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [deleteConfirmCpf, setDeleteConfirmCpf] = useState<string | null>(null);
 
-  const [formData, setFormData] = useState<Partial<Profissional>>({
-    cpf: '',
-    nome: '',
-    cns: '',
-    cbo: '',
-    equipe: 'SEM EQUIPE',
-    vinculo: 'INTERMEDIADO',
-    tipo_vinculo: 'CLT',
-    chs: 20,
-    situacao: 'ATIVO',
-    unidade_cnes: ''
-  });
-
   const [editingCpf, setEditingCpf] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
+
+  const filteredProfessionals = useMemo(() => {
+    return professionals.filter(pro => {
+      const query = searchQuery.toLowerCase().trim();
+      if (!query) return true;
+
+      const normalize = (str: string) => 
+        str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+      const nome = normalize(pro.nome);
+      const cpf = pro.cpf.replace(/\D/g, '');
+      const cns = pro.cns.replace(/\D/g, '');
+      const categoria = pro.categorias_profissionais ? normalize(pro.categorias_profissionais.categoria) : '';
+      
+      const queryNormalizada = normalize(query);
+      const queryDigits = query.replace(/\D/g, '');
+
+      const matchesNome = nome.includes(queryNormalizada);
+      const matchesCpf = queryDigits !== '' && cpf.includes(queryDigits);
+      const matchesCns = queryDigits !== '' && cns.includes(queryDigits);
+      const matchesCategoria = categoria.includes(queryNormalizada);
+
+      return matchesNome || matchesCpf || matchesCns || matchesCategoria;
+    });
+  }, [professionals, searchQuery]);
+
+  const handleExportCSV = useCallback(() => {
+    const headers = ['NOME', 'CPF', 'CNS', 'CATEGORIA', 'EQUIPE', 'VÍNCULO', 'CHS', 'SITUAÇÃO'];
+    const rows = filteredProfessionals.map(p => [
+      p.nome,
+      p.cpf,
+      p.cns,
+      p.categorias_profissionais?.categoria || p.cbo,
+      p.equipe,
+      p.vinculo,
+      p.chs,
+      p.situacao
+    ]);
+    const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", "profissionais.csv");
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, [filteredProfessionals]);
+
+  useEffect(() => {
+    setOnExportCSV(() => handleExportCSV);
+    return () => setOnExportCSV(null);
+  }, [handleExportCSV, setOnExportCSV]);
 
   useEffect(() => {
     setIsFormOpen(false);
@@ -139,27 +181,17 @@ export default function ProfissionaisPage() {
       .replace(/(\d{4}\.\d{4}\.\d{4})(\d)/, '$1.$2');
   };
 
-  const filteredProfessionals = professionals.filter(pro => {
-    const query = searchQuery.toLowerCase().trim();
-    if (!query) return true;
-
-    const normalize = (str: string) => 
-      str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-
-    const nome = normalize(pro.nome);
-    const cpf = pro.cpf.replace(/\D/g, '');
-    const cns = pro.cns.replace(/\D/g, '');
-    const categoria = pro.categorias_profissionais ? normalize(pro.categorias_profissionais.categoria) : '';
-    
-    const queryNormalizada = normalize(query);
-    const queryDigits = query.replace(/\D/g, '');
-
-    const matchesNome = nome.includes(queryNormalizada);
-    const matchesCpf = queryDigits !== '' && cpf.includes(queryDigits);
-    const matchesCns = queryDigits !== '' && cns.includes(queryDigits);
-    const matchesCategoria = categoria.includes(queryNormalizada);
-
-    return matchesNome || matchesCpf || matchesCns || matchesCategoria;
+  const [formData, setFormData] = useState<Partial<Profissional>>({
+    cpf: '',
+    nome: '',
+    cns: '',
+    cbo: '',
+    equipe: 'SEM EQUIPE',
+    vinculo: 'INTERMEDIADO',
+    tipo_vinculo: 'CLT',
+    chs: 20,
+    situacao: 'ATIVO',
+    unidade_cnes: ''
   });
 
   useEffect(() => {
@@ -299,80 +331,21 @@ export default function ProfissionaisPage() {
     }
   };
 
-  const handleExportCSV = () => {
-    const headers = ['NOME', 'CPF', 'CNS', 'CATEGORIA', 'EQUIPE', 'VÍNCULO', 'CHS', 'SITUAÇÃO'];
-    const rows = filteredProfessionals.map(p => [
-      p.nome,
-      p.cpf,
-      p.cns,
-      p.categorias_profissionais?.categoria || p.cbo,
-      p.equipe,
-      p.vinculo,
-      p.chs,
-      p.situacao
-    ]);
-    const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute("download", "profissionais.csv");
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
   if (!mounted) return null;
   return (
     <DashboardLayout title="Profissionais">
       <div className="max-w-7xl mx-auto space-y-6">
         
         {/* Topbar Pattern - Figura 1 */}
-        <div className="bg-white p-4 rounded-2xl border border-outline-variant/10 shadow-sm flex flex-col md:flex-row items-center gap-4">
-          <div className="flex items-center gap-4 pr-4 border-r border-outline-variant/10">
+        <div className="bg-white p-4 rounded-2xl border border-outline-variant/10 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
             <h1 className="text-xl font-black text-primary uppercase tracking-tight">Profissionais</h1>
           </div>
-          
-          <div className="relative flex-1 w-full">
-            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/30 text-xl">search</span>
-            <input
-              type="text"
-              placeholder="Nome ou CPF..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-surface-container-low border-none rounded-2xl text-xs font-bold focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-on-surface-variant/30"
-            />
-          </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-primary text-on-primary font-headline text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
-            >
-              <span className="material-symbols-outlined text-lg">upload</span>
-              Importar
-            </button>
-            <button
-              className="flex items-center gap-2 px-6 py-3 rounded-2xl border-2 border-primary text-primary font-headline text-[10px] font-black uppercase tracking-widest hover:bg-primary/5 transition-all"
-            >
-              <span className="material-symbols-outlined text-lg">download</span>
-              Exportar Layout
-            </button>
-            <button
-              onClick={handleExportCSV}
-              className="flex items-center gap-2 px-6 py-3 rounded-2xl border-2 border-primary text-primary font-headline text-[10px] font-black uppercase tracking-widest hover:bg-primary/5 transition-all"
-            >
-              <span className="material-symbols-outlined text-lg">download</span>
-              Exportar CSV
-            </button>
-            <button
-              onClick={() => setIsFormOpen(!isFormOpen)}
-              className="flex items-center gap-2 px-8 py-3 rounded-2xl bg-primary text-on-primary font-headline text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
-            >
-              <span className="material-symbols-outlined text-lg">{isFormOpen ? 'close' : 'add'}</span>
-              {isFormOpen ? 'Cancelar' : 'Cadastrar'}
-            </button>
-          </div>
+          <RecordsSummary 
+            total={professionals.length} 
+            filtered={filteredProfessionals.length} 
+          />
         </div>
 
         <div className="grid grid-cols-12 gap-6">
@@ -607,9 +580,6 @@ export default function ProfissionaisPage() {
                     <h3 className="text-2xl font-black font-headline text-on-surface uppercase tracking-tight">Profissionais</h3>
                     <p className="text-xs text-on-surface-variant/40 font-body uppercase tracking-widest font-bold">Listagem Geral</p>
                   </div>
-                </div>
-                <div className="bg-primary/10 text-primary px-6 py-2 rounded-full text-[10px] font-black font-headline uppercase tracking-[0.2em]">
-                  {filteredProfessionals.length} Registros
                 </div>
               </div>
 
