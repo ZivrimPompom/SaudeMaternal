@@ -731,9 +731,11 @@ export default function DesfechosPage() {
             <div className="p-6 border-t border-outline-variant/5 bg-surface-container-lowest">
               <Pagination
                 currentPage={currentPage}
+                totalPages={Math.ceil(filteredDesfechos.length / itemsPerPage)}
+                onPageChange={setCurrentPage}
                 totalItems={filteredDesfechos.length}
                 itemsPerPage={itemsPerPage}
-                onPageChange={setCurrentPage}
+                itemName="desfechos"
               />
             </div>
           )}
