@@ -121,7 +121,7 @@ export default function LoginPage() {
                 required
                 type="text" 
                 placeholder="000.000.000-00"
-                className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-600/20 focus:border-orange-600 outline-none transition-all placeholder:text-slate-400"
+                className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-600/20 focus:border-orange-600 outline-none transition-all placeholder:text-slate-400 text-slate-900"
                 value={cpf}
                 onChange={handleCpfChange}
                 maxLength={14}
@@ -142,7 +142,7 @@ export default function LoginPage() {
                 required
                 type={showPassword ? "text" : "password"} 
                 placeholder="••••••••"
-                className="w-full pl-12 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-600/20 focus:border-orange-600 outline-none transition-all placeholder:text-slate-400"
+                className="w-full pl-12 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-600/20 focus:border-orange-600 outline-none transition-all placeholder:text-slate-400 text-slate-900"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
