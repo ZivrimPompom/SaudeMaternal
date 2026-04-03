@@ -12,7 +12,7 @@ export default function Page() {
     setMounted(true);
   }, []);
 
-  const [stats, setStats] = useState({ operators: 0, categories: 0, professionals: 0, routines: 0, patients: 0, units: 0, gestations: 0, consultations: 0, examResults: 0 });
+  const [stats, setStats] = useState({ operators: 0, categories: 0, professionals: 0, routines: 0, patients: 0, units: 0, gestations: 0, consultations: 0, examResults: 0, outcomes: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,13 +30,14 @@ export default function Page() {
         supabase.from('unidades_saude').select('*', { count: 'exact', head: true }),
         supabase.from('gestacoes').select('*', { count: 'exact', head: true }),
         supabase.from('atendimentos').select('*', { count: 'exact', head: true }),
-        supabase.from('registro_rotinas').select('*', { count: 'exact', head: true })
-      ]).then(([ops, cats, pros, rots, pacs, units, gests, cons, exams]) => {
+        supabase.from('registro_rotinas').select('*', { count: 'exact', head: true }),
+        supabase.from('desfechos').select('*', { count: 'exact', head: true })
+      ]).then(([ops, cats, pros, rots, pacs, units, gests, cons, exams, outcomes]) => {
         if (cons.error) {
           console.error('Erro específico ao buscar atendimentos:', cons.error);
         }
         
-        const errors = [ops, cats, pros, rots, pacs, units, gests, cons, exams].filter(r => r.error);
+        const errors = [ops, cats, pros, rots, pacs, units, gests, cons, exams, outcomes].filter(r => r.error);
         if (errors.length > 0) {
           console.error('Alguns erros ao buscar estatísticas:', errors);
           // We still set what we got, but log errors
@@ -51,7 +52,8 @@ export default function Page() {
           units: units.count || 0,
           gestations: gests.count || 0,
           consultations: cons.count || 0,
-          examResults: exams.count || 0
+          examResults: exams.count || 0,
+          outcomes: outcomes.count || 0
         });
       }).catch(err => {
         console.error('Erro ao buscar estatísticas:', err);
@@ -61,7 +63,7 @@ export default function Page() {
       });
     } else {
       const timer = setTimeout(() => {
-        setStats({ operators: 3, categories: 12, professionals: 8, routines: 15, patients: 42, units: 5, gestations: 28, consultations: 156, examResults: 84 });
+        setStats({ operators: 3, categories: 12, professionals: 8, routines: 15, patients: 42, units: 5, gestations: 28, consultations: 156, examResults: 84, outcomes: 12 });
         setLoading(false);
       }, 500);
       return () => clearTimeout(timer);
@@ -244,6 +246,24 @@ export default function Page() {
               <div className="flex flex-col">
                 <span className="text-[13px] font-black uppercase tracking-[0.2em] text-on-surface-variant/40">Total</span>
                 <span className="text-3xl md:text-4xl font-black text-primary font-headline leading-none">{loading ? '...' : stats.examResults}</span>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-surface-container-low flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+                <Plus className="w-6 h-6 text-on-surface-variant/40 group-hover:text-primary transition-colors" />
+              </div>
+            </div>
+          </Link>
+
+          <Link href="/desfechos" className="bg-surface-container-lowest p-7 md:p-8 rounded-[2.5rem] shadow-xl shadow-black/5 border border-outline-variant/10 hover:border-primary/30 hover:shadow-primary/10 transition-all group relative overflow-hidden flex flex-col h-full min-h-[286px]">
+            <div className="absolute top-0 right-0 w-20 h-20 bg-primary/5 rounded-full -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-700" />
+            <div className="w-18 h-18 rounded-3xl bg-primary/10 flex items-center justify-center mb-6 group-hover:bg-primary group-hover:rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
+              <ClipboardList className="text-primary group-hover:text-white w-9 h-9 transition-colors" />
+            </div>
+            <h3 className="text-2xl md:text-3xl font-black font-headline mb-3 text-on-surface tracking-tight leading-tight">Desfechos</h3>
+            <p className="text-sm md:text-base text-on-surface-variant/60 font-body mb-6 leading-tight line-clamp-1">Encerramentos.</p>
+            <div className="mt-auto flex items-center justify-between pt-6 border-t border-outline-variant/10">
+              <div className="flex flex-col">
+                <span className="text-[13px] font-black uppercase tracking-[0.2em] text-on-surface-variant/40">Total</span>
+                <span className="text-3xl md:text-4xl font-black text-primary font-headline leading-none">{loading ? '...' : stats.outcomes}</span>
               </div>
               <div className="w-12 h-12 rounded-2xl bg-surface-container-low flex items-center justify-center group-hover:bg-primary/10 transition-colors">
                 <Plus className="w-6 h-6 text-on-surface-variant/40 group-hover:text-primary transition-colors" />

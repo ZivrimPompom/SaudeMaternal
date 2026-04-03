@@ -459,13 +459,34 @@ export default function OperadoresPage() {
     }
   };
 
+  const handleExportCSV = () => {
+    const headers = ['NOME', 'CPF', 'STATUS', 'NÍVEL ACESSO', 'UNIDADE CNES'];
+    const rows = filteredOperators.map(o => [
+      o.name,
+      o.cpf,
+      o.status,
+      o.nivel_acesso,
+      o.unidade_cnes || ''
+    ]);
+    const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", "operadores.csv");
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (!mounted) return null;
   
   const isAdministrator = authUser?.nivel_acesso === 'Administrador';
 
   if (!isAdministrator) {
     return (
-      <DashboardLayout>
+      <DashboardLayout title="Operadores">
         <div className="min-h-[60vh] flex flex-col items-center justify-center p-8 text-center space-y-6">
           <div className="w-24 h-24 bg-red-50 rounded-full flex items-center justify-center text-red-500 mb-4 shadow-sm border border-red-100">
             <Shield className="w-12 h-12" />
@@ -487,25 +508,54 @@ export default function OperadoresPage() {
   }
 
   return (
-    <DashboardLayout>
-      <div className="p-4 md:p-8 lg:p-12 pb-32 max-w-7xl mx-auto space-y-8 md:space-y-12">
-        {/* Page Header */}
-        <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <span className="w-12 h-1.5 bg-primary rounded-full"></span>
-              <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Controle de Acessos</span>
-            </div>
-            <h2 className="text-5xl font-black tracking-tight font-headline text-on-surface uppercase text-primary">Operadores</h2>
-            <p className="text-lg text-on-surface-variant/60 font-body max-w-2xl">Gerencie os perfis de acesso e permissões clínicas do sistema.</p>
+    <DashboardLayout title="Operadores">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Topbar Pattern - Figura 1 */}
+        <div className="bg-white p-4 rounded-2xl border border-outline-variant/10 shadow-sm flex flex-col md:flex-row items-center gap-4">
+          <div className="flex items-center gap-4 pr-4 border-r border-outline-variant/10">
+            <h1 className="text-xl font-black text-primary uppercase tracking-tight">Operadores</h1>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-3 bg-surface-container-high px-4 py-2 rounded-full border border-outline-variant/20 shadow-sm">
-              <Users className="text-primary w-5 h-5" />
-              <span className="text-sm font-bold font-label uppercase tracking-widest text-on-surface-variant">{filteredOperators.length} Operadores</span>
-            </div>
+          
+          <div className="relative flex-1 w-full">
+            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/30 text-xl">search</span>
+            <input
+              type="text"
+              placeholder="Nome ou CPF..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-12 pr-4 py-3 bg-surface-container-low border-none rounded-2xl text-xs font-bold focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-on-surface-variant/30"
+            />
           </div>
-        </header>
+
+          <div className="flex items-center gap-2">
+            <button
+              className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-primary text-on-primary font-headline text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+            >
+              <span className="material-symbols-outlined text-lg">upload</span>
+              Importar
+            </button>
+            <button
+              className="flex items-center gap-2 px-6 py-3 rounded-2xl border-2 border-primary text-primary font-headline text-[10px] font-black uppercase tracking-widest hover:bg-primary/5 transition-all"
+            >
+              <span className="material-symbols-outlined text-lg">download</span>
+              Exportar Layout
+            </button>
+            <button
+              onClick={handleExportCSV}
+              className="flex items-center gap-2 px-6 py-3 rounded-2xl border-2 border-primary text-primary font-headline text-[10px] font-black uppercase tracking-widest hover:bg-primary/5 transition-all"
+            >
+              <span className="material-symbols-outlined text-lg">download</span>
+              Exportar CSV
+            </button>
+            <button
+              onClick={() => setIsFormOpen(!isFormOpen)}
+              className="flex items-center gap-2 px-8 py-3 rounded-2xl bg-primary text-on-primary font-headline text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+            >
+              <span className="material-symbols-outlined text-lg">{isFormOpen ? 'close' : 'add'}</span>
+              {isFormOpen ? 'Cancelar' : 'Cadastrar'}
+            </button>
+          </div>
+        </div>
 
         {/* Layout Grid: Bento Style */}
         {!isSupabaseConfigured && (

@@ -208,6 +208,25 @@ export default function AtendimentosPage() {
     return Array.from(months).sort().reverse();
   }, [gestacoes]);
 
+  const uniqueCategorias = useMemo(() => {
+    const cats = new Set<string>();
+    atendimentos.forEach(a => {
+      if (a.cbo) {
+        const cat = getCboCategory(a.cbo);
+        cats.add(cat);
+      }
+    });
+    return Array.from(cats).sort();
+  }, [atendimentos]);
+
+  const uniqueEquipes = useMemo(() => {
+    const eqs = new Set<string>();
+    gestacoes.forEach(g => {
+      if (g.equipe) eqs.add(g.equipe);
+    });
+    return Array.from(eqs).sort();
+  }, [gestacoes]);
+
   const [formData, setFormData] = useState<Partial<Atendimento>>({
     sispn: '',
     data_consulta: '',
@@ -780,45 +799,120 @@ export default function AtendimentosPage() {
     return allProfessionals.filter(p => p.cbo.startsWith(category.cbo));
   }, [selectedCategory, categories, allProfessionals]);
 
-  const uniqueEquipes = Array.from(new Set(gestacoes.map(g => g.equipe))).filter(Boolean).sort();
-  const uniqueCategorias = Array.from(new Set(atendimentos.map(c => getCboCategory(c.cbo)))).filter(Boolean).sort();
+  const handleExportCSV = () => {
+    const headers = ['SISPN', 'GESTANTE', 'DATA CONSULTA', 'TRIMESTRE', 'PROFISSIONAL', 'CBO'];
+    const rows = filteredAtendimentos.map(a => [
+      a.sispn,
+      a.gestacoes?.pacientes?.gestante || 'N/A',
+      new Date(a.data_consulta).toLocaleDateString('pt-BR'),
+      a.trimestre_consulta,
+      a.profissionais?.nome || 'N/A',
+      a.cbo
+    ]);
+    const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", "atendimentos.csv");
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   if (!mounted) return null;
 
   return (
     <DashboardLayout>
       <div className="p-4 md:p-8 lg:p-10 pb-32 max-w-7xl mx-auto space-y-10">
-        {/* Header Section - Inspired by Gestacoes and Stitch */}
-        <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-1.5 bg-primary rounded-full"></div>
-              <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Sequência Lógica e Mais Econômica</span>
-            </div>
-            <h2 className="text-5xl md:text-6xl font-black tracking-tighter font-headline text-primary uppercase leading-none">
-              Atendimentos
-            </h2>
-            <p className="text-lg text-on-surface-variant/60 font-body max-w-xl leading-relaxed">
-              Gestão individualizada de consultas e procedimentos para um acompanhamento pré-natal de excelência seguindo a sequência lógica e mais econômica.
-            </p>
+        {/* Topbar Pattern - Figura 1 */}
+        <div className="bg-white p-4 rounded-2xl border border-outline-variant/10 shadow-sm flex flex-col md:flex-row items-center gap-4">
+          <div className="flex items-center gap-4 pr-4 border-r border-outline-variant/10">
+            <h1 className="text-xl font-black text-primary uppercase tracking-tight">Atendimentos</h1>
+          </div>
+          
+          <div className="relative flex-1 w-full">
+            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/30 text-xl">search</span>
+            <input
+              type="text"
+              placeholder="SISPN ou CPF..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-12 pr-4 py-3 bg-surface-container-low border-none rounded-2xl text-xs font-bold focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-on-surface-variant/30"
+            />
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center gap-4">
-            <div className="flex items-center gap-3 w-full sm:w-auto">
-              <div className="flex items-center gap-3 bg-surface-container-high px-4 py-2 rounded-full border border-outline-variant/20 shadow-sm">
-                <span className="material-symbols-outlined text-primary text-xl">clinical_notes</span>
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-black font-label uppercase tracking-widest text-on-surface-variant leading-none">
-                    {totalAtendimentosCount} Total
-                  </span>
-                  <span className="text-[8px] font-bold font-label uppercase tracking-[0.2em] text-primary mt-0.5">
-                    {filteredAtendimentos.length} Filtrados
-                  </span>
-                </div>
+          <div className="flex items-center gap-2">
+            <button
+              className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-primary text-on-primary font-headline text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+            >
+              <span className="material-symbols-outlined text-lg">upload</span>
+              Importar
+            </button>
+            <button
+              className="flex items-center gap-2 px-6 py-3 rounded-2xl border-2 border-primary text-primary font-headline text-[10px] font-black uppercase tracking-widest hover:bg-primary/5 transition-all"
+            >
+              <span className="material-symbols-outlined text-lg">download</span>
+              Exportar Layout
+            </button>
+            <button
+              onClick={handleExportCSV}
+              className="flex items-center gap-2 px-6 py-3 rounded-2xl border-2 border-primary text-primary font-headline text-[10px] font-black uppercase tracking-widest hover:bg-primary/5 transition-all"
+            >
+              <span className="material-symbols-outlined text-lg">download</span>
+              Exportar CSV
+            </button>
+            <button
+              onClick={() => setIsFormOpen(!isFormOpen)}
+              className="flex items-center gap-2 px-8 py-3 rounded-2xl bg-primary text-on-primary font-headline text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+            >
+              <span className="material-symbols-outlined text-lg">{isFormOpen ? 'close' : 'add'}</span>
+              {isFormOpen ? 'Cancelar' : 'Cadastrar'}
+            </button>
+          </div>
+        </div>
+
+        {/* Orange Patient Info Frame */}
+        {selectedGestante && (
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-primary p-6 rounded-3xl shadow-xl shadow-primary/20 border border-white/10 text-white relative overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-32 -mt-32" />
+            <div className="relative z-10 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-6">
+              <div className="space-y-1">
+                <p className="text-[8px] font-black uppercase tracking-widest opacity-60">Nome da Gestante</p>
+                <p className="text-xs font-black uppercase truncate">{selectedGestante.paciente_nome}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[8px] font-black uppercase tracking-widest opacity-60">CPF</p>
+                <p className="text-xs font-black uppercase">{selectedGestante.paciente_cpf}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[8px] font-black uppercase tracking-widest opacity-60">SISPN</p>
+                <p className="text-xs font-black uppercase">{selectedGestante.sispn}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[8px] font-black uppercase tracking-widest opacity-60">Captação</p>
+                <p className="text-xs font-black uppercase">{getStatusCaptacao(selectedGestante.dum, selectedGestante.data_cadastro)}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[8px] font-black uppercase tracking-widest opacity-60">DUM</p>
+                <p className="text-xs font-black uppercase">{new Date(selectedGestante.dum).toLocaleDateString('pt-BR')}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[8px] font-black uppercase tracking-widest opacity-60">DPP</p>
+                <p className="text-xs font-black uppercase">{new Date(selectedGestante.dpp).toLocaleDateString('pt-BR')}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[8px] font-black uppercase tracking-widest opacity-60">Risco</p>
+                <p className="text-xs font-black uppercase">{selectedGestante.classificacao_pn || 'BAIXO RISCO'}</p>
               </div>
             </div>
-          </div>
-        </header>
+          </motion.div>
+        )}
 
         {/* Form Section - Inspired by Stitch Model */}
         <AnimatePresence>

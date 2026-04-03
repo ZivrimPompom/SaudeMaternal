@@ -64,6 +64,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
       subItems: [
         { name: 'Atendimentos', href: '/atendimentos' },
         { name: 'Exames e Vacinas', href: '/exames' },
+        { name: 'Desfecho da Gestação', href: '/desfechos' },
       ]
     },
     { 
@@ -90,6 +91,8 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
         { name: 'Exportar Layout Profissionais', href: 'export:profissionais' },
         { name: 'Exportar Layout Rotinas', href: 'export:rotinas' },
         { name: 'Exportar Layout Atendimentos', href: 'export:atendimentos' },
+        { name: 'Exportar Layout Desfechos', href: 'export:desfechos' },
+        { name: 'Exportar Layout Recém-nascidos', href: 'export:recem_nascidos' },
         { name: 'Exportar Layout Exames e Vacinas', href: 'export:exames' },
       ]
     }
@@ -102,6 +105,8 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
       unidades: ['cnes', 'nome_fantasia', 'logradouro', 'numero', 'complemento', 'bairro', 'municipio', 'uf', 'cep', 'telefone'],
       gestacoes: ['sispn', 'cpf_paciente', 'dum', 'dpp', 'data_abertura', 'data_cadastro', 'referencia_tecnica', 'acs', 'equipe', 'idade_cadastro', 'fase_vida_cadastro', 'gestacao_anterior', 'aborto', 'parto', 'sifilis', 'sifilis_tratada', 'hiv', 'hepatite_b', 'hepatite_c', 'classificacao_pn', 'alto_risco_compartilhado'],
       atendimentos: ['sispn', 'data_consulta', 'cbo', 'cpf', 'data_proxima_consulta', 'observacoes_clinicas'],
+      desfechos: ['sispn', 'tipo_desfecho', 'data_desfecho', 'unidade_cnes'],
+      recem_nascidos: ['id_desfecho', 'nome_rn', 'cpf_rn', 'data_nascimento', 'data_consulta_rn', 'comparecimento'],
       exames: ['sispn', 'id_rotina', 'data_realizacao', 'resultado', 'cbo', 'cpf_profissional'],
       operadores: ['nome', 'cpf', 'senha', 'status', 'nivel_acesso', 'sigla', 'unidade_cnes'],
       rotinas: ['tipo', 'descricao', 'trimestre', 'categoria'],

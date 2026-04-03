@@ -185,27 +185,77 @@ export default function RotinasPage() {
     }
   };
 
+  const handleExportCSV = () => {
+    const headers = ['TIPO', 'DESCRIÇÃO', 'TRIMESTRE', 'CATEGORIA'];
+    const rows = filteredRoutines.map(r => [
+      r.tipo,
+      r.descricao,
+      r.trimestre,
+      r.categoria
+    ]);
+    const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", "rotinas.csv");
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (!mounted) return null;
 
   return (
-    <DashboardLayout>
-      <div className="p-4 md:p-8 lg:p-12 pb-32 max-w-7xl mx-auto space-y-8 md:space-y-12">
-        <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <span className="w-12 h-1.5 bg-primary rounded-full"></span>
-              <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Protocolos Clínicos</span>
-            </div>
-            <h2 className="text-5xl font-black tracking-tight font-headline text-on-surface uppercase text-primary">Rotinas</h2>
-            <p className="text-lg text-on-surface-variant/60 font-body max-w-2xl">Definição de exames, vacinas e medicações por trimestre gestacional.</p>
+    <DashboardLayout title="Rotinas">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Topbar Pattern - Figura 1 */}
+        <div className="bg-white p-4 rounded-2xl border border-outline-variant/10 shadow-sm flex flex-col md:flex-row items-center gap-4">
+          <div className="flex items-center gap-4 pr-4 border-r border-outline-variant/10">
+            <h1 className="text-xl font-black text-primary uppercase tracking-tight">Rotinas</h1>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-3 bg-surface-container-high px-4 py-2 rounded-full border border-outline-variant/20 shadow-sm">
-              <ClipboardList className="text-primary w-5 h-5" />
-              <span className="text-sm font-bold font-label uppercase tracking-widest text-on-surface-variant">{filteredRoutines.length} Rotinas</span>
-            </div>
+          
+          <div className="relative flex-1 w-full">
+            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/30 text-xl">search</span>
+            <input
+              type="text"
+              placeholder="Descrição, tipo, trimestre..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-12 pr-4 py-3 bg-surface-container-low border-none rounded-2xl text-xs font-bold focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-on-surface-variant/30"
+            />
           </div>
-        </header>
+
+          <div className="flex items-center gap-2">
+            <button
+              className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-primary text-on-primary font-headline text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+            >
+              <span className="material-symbols-outlined text-lg">upload</span>
+              Importar
+            </button>
+            <button
+              className="flex items-center gap-2 px-6 py-3 rounded-2xl border-2 border-primary text-primary font-headline text-[10px] font-black uppercase tracking-widest hover:bg-primary/5 transition-all"
+            >
+              <span className="material-symbols-outlined text-lg">download</span>
+              Exportar Layout
+            </button>
+            <button
+              onClick={handleExportCSV}
+              className="flex items-center gap-2 px-6 py-3 rounded-2xl border-2 border-primary text-primary font-headline text-[10px] font-black uppercase tracking-widest hover:bg-primary/5 transition-all"
+            >
+              <span className="material-symbols-outlined text-lg">download</span>
+              Exportar CSV
+            </button>
+            <button
+              onClick={() => setIsFormOpen(!isFormOpen)}
+              className="flex items-center gap-2 px-8 py-3 rounded-2xl bg-primary text-on-primary font-headline text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+            >
+              <span className="material-symbols-outlined text-lg">{isFormOpen ? 'close' : 'add'}</span>
+              {isFormOpen ? 'Cancelar' : 'Cadastrar'}
+            </button>
+          </div>
+        </div>
 
         <div className="grid grid-cols-12 gap-10">
           {/* Form Section */}

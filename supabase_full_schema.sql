@@ -166,7 +166,31 @@ CREATE TABLE IF NOT EXISTS public.atendimentos (
     updated_at TIMESTAMPTZ DEFAULT now()
 );
 
--- 9. Create the exam results table (Registro de Rotinas)
+-- 9. Create the outcomes table (Desfechos)
+CREATE TABLE IF NOT EXISTS public.desfechos (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    sispn TEXT NOT NULL REFERENCES public.gestacoes(sispn) ON DELETE CASCADE,
+    tipo_desfecho TEXT NOT NULL CHECK (tipo_desfecho IN ('PARTO', 'ABORTO', 'MUDOU-SE', 'ÓBITO', 'CONVÊNIO MÉDICO', 'OUTROS')),
+    data_desfecho DATE NOT NULL,
+    unidade_cnes TEXT REFERENCES public.unidades_saude(cnes),
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 10. Create the newborns table (Recém-nascidos)
+CREATE TABLE IF NOT EXISTS public.recem_nascidos (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id_desfecho UUID NOT NULL REFERENCES public.desfechos(id) ON DELETE CASCADE,
+    nome_rn TEXT,
+    cpf_rn TEXT,
+    data_nascimento DATE NOT NULL,
+    data_consulta_rn DATE,
+    comparecimento BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 11. Create the exam results table (Registro de Rotinas)
 CREATE TABLE IF NOT EXISTS public.registro_rotinas (
     id_registro UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     sispn TEXT NOT NULL REFERENCES public.gestacoes(sispn) ON DELETE CASCADE,
@@ -184,7 +208,7 @@ CREATE TABLE IF NOT EXISTS public.registro_rotinas (
     updated_at TIMESTAMPTZ DEFAULT now()
 );
 
--- 10. Enable Row Level Security (RLS) for all tables
+-- 12. Enable Row Level Security (RLS) for all tables
 ALTER TABLE public.unidades_saude ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.operadores ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.pacientes ENABLE ROW LEVEL SECURITY;
@@ -193,9 +217,11 @@ ALTER TABLE public.profissionais ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.rotinas ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.gestacoes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.atendimentos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.desfechos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.recem_nascidos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.registro_rotinas ENABLE ROW LEVEL SECURITY;
 
--- 11. Create basic policies (Allow all for development)
+-- 13. Create basic policies (Allow all for development)
 -- In production, these should be restricted based on auth.uid()
 CREATE POLICY "Allow all access for development" ON public.unidades_saude FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all access for development" ON public.operadores FOR ALL USING (true) WITH CHECK (true);
@@ -205,9 +231,11 @@ CREATE POLICY "Allow all access for development" ON public.profissionais FOR ALL
 CREATE POLICY "Allow all access for development" ON public.rotinas FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all access for development" ON public.gestacoes FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all access for development" ON public.atendimentos FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all access for development" ON public.desfechos FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all access for development" ON public.recem_nascidos FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all access for development" ON public.registro_rotinas FOR ALL USING (true) WITH CHECK (true);
 
--- 12. Helper function for updated_at
+-- 14. Helper function for updated_at
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -216,7 +244,7 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
--- 13. Triggers for updated_at
+-- 15. Triggers for updated_at
 DROP TRIGGER IF EXISTS update_unidades_saude_updated_at ON public.unidades_saude;
 CREATE TRIGGER update_unidades_saude_updated_at BEFORE UPDATE ON public.unidades_saude FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 
@@ -240,6 +268,12 @@ CREATE TRIGGER update_gestacoes_updated_at BEFORE UPDATE ON public.gestacoes FOR
 
 DROP TRIGGER IF EXISTS update_atendimentos_updated_at ON public.atendimentos;
 CREATE TRIGGER update_atendimentos_updated_at BEFORE UPDATE ON public.atendimentos FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_desfechos_updated_at ON public.desfechos;
+CREATE TRIGGER update_desfechos_updated_at BEFORE UPDATE ON public.desfechos FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_recem_nascidos_updated_at ON public.recem_nascidos;
+CREATE TRIGGER update_recem_nascidos_updated_at BEFORE UPDATE ON public.recem_nascidos FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 
 DROP TRIGGER IF EXISTS update_registro_rotinas_updated_at ON public.registro_rotinas;
 CREATE TRIGGER update_registro_rotinas_updated_at BEFORE UPDATE ON public.registro_rotinas FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();

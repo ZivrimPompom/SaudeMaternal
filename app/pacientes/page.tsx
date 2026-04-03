@@ -322,29 +322,85 @@ export default function PacientesPage() {
     }
   };
 
+  const handleExportCSV = () => {
+    const headers = ['GESTANTE', 'CPF', 'NOME MÃE', 'PRONTUÁRIO', 'CNS', 'DATA NASCIMENTO', 'BAIRRO', 'CONTATO', 'CIDADE'];
+    const rows = filteredPacientes.map(p => [
+      p.gestante,
+      p.cpf,
+      p.nome_mae,
+      p.prontuario,
+      p.cns,
+      p.data_nascimento,
+      p.bairro,
+      p.contato,
+      p.cidade
+    ]);
+    const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", "pacientes.csv");
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (!mounted) return null;
 
   return (
-    <DashboardLayout>
-      <div className="p-4 md:p-8 lg:p-12 pb-32 max-w-7xl mx-auto space-y-8 md:space-y-12">
-        <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <span className="w-12 h-1.5 bg-primary rounded-full"></span>
-              <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Gestão Clínica</span>
-            </div>
-            <h2 className="text-5xl md:text-6xl font-black tracking-tighter font-headline text-primary uppercase leading-none">Pacientes</h2>
-            <p className="text-lg text-on-surface-variant/60 font-body max-w-xl leading-relaxed">Gerenciamento de gestantes e prontuários do sistema.</p>
+    <DashboardLayout title="Pacientes">
+      <div className="max-w-7xl mx-auto space-y-6">
+        
+        {/* Topbar Pattern - Figura 1 */}
+        <div className="bg-white p-4 rounded-2xl border border-outline-variant/10 shadow-sm flex flex-col md:flex-row items-center gap-4">
+          <div className="flex items-center gap-4 pr-4 border-r border-outline-variant/10">
+            <h1 className="text-xl font-black text-primary uppercase tracking-tight">Pacientes</h1>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-3 bg-surface-container-high px-4 py-2 rounded-full border border-outline-variant/20 shadow-sm">
-              <span className="material-symbols-outlined text-primary text-[20px]">group</span>
-              <span className="text-sm font-bold font-label uppercase tracking-widest text-on-surface-variant">{filteredPacientes.length} Pacientes</span>
-            </div>
+          
+          <div className="relative flex-1 w-full">
+            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/30 text-xl">search</span>
+            <input
+              type="text"
+              placeholder="Nome ou CPF..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-12 pr-4 py-3 bg-surface-container-low border-none rounded-2xl text-xs font-bold focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-on-surface-variant/30"
+            />
           </div>
-        </header>
 
-        <div className="grid grid-cols-12 gap-10">
+          <div className="flex items-center gap-2">
+            <button
+              className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-primary text-on-primary font-headline text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+            >
+              <span className="material-symbols-outlined text-lg">upload</span>
+              Importar
+            </button>
+            <button
+              className="flex items-center gap-2 px-6 py-3 rounded-2xl border-2 border-primary text-primary font-headline text-[10px] font-black uppercase tracking-widest hover:bg-primary/5 transition-all"
+            >
+              <span className="material-symbols-outlined text-lg">download</span>
+              Exportar Layout
+            </button>
+            <button
+              onClick={handleExportCSV}
+              className="flex items-center gap-2 px-6 py-3 rounded-2xl border-2 border-primary text-primary font-headline text-[10px] font-black uppercase tracking-widest hover:bg-primary/5 transition-all"
+            >
+              <span className="material-symbols-outlined text-lg">download</span>
+              Exportar CSV
+            </button>
+            <button
+              onClick={() => setIsFormOpen(!isFormOpen)}
+              className="flex items-center gap-2 px-8 py-3 rounded-2xl bg-primary text-on-primary font-headline text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+            >
+              <span className="material-symbols-outlined text-lg">{isFormOpen ? 'close' : 'add'}</span>
+              {isFormOpen ? 'Cancelar' : 'Cadastrar'}
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-12 gap-6">
           {/* Form Section */}
           <AnimatePresence>
             {isFormOpen && (
