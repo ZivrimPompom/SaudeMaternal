@@ -6,7 +6,7 @@ import TopBar from '@/components/TopBar';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default function DashboardLayout({ children, title }: { children: React.ReactNode; title?: string }) {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [mounted, setMounted] = React.useState(false);

@@ -322,8 +322,6 @@ export default function DesfechosPage() {
     return filteredDesfechos.slice(start, start + itemsPerPage);
   }, [filteredDesfechos, currentPage]);
 
-  if (!mounted) return null;
-
   const handleExportCSV = useCallback(() => {
     const headers = ['SISPN', 'GESTANTE', 'DATA DESFECHO', 'DESFECHO'];
     const rows = filteredDesfechos.map(d => [
@@ -348,6 +346,8 @@ export default function DesfechosPage() {
     setOnExportCSV(() => handleExportCSV);
     return () => setOnExportCSV(null);
   }, [handleExportCSV, setOnExportCSV]);
+
+  if (!mounted) return null;
 
   return (
     <DashboardLayout title="Lançamento de Desfecho">

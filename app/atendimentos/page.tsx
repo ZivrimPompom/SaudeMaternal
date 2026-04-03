@@ -209,6 +209,23 @@ export default function AtendimentosPage() {
     return Array.from(months).sort().reverse();
   }, [gestacoes]);
 
+  const uniqueCategorias = useMemo(() => {
+    const cats = new Set<string>();
+    allProfessionals.forEach(p => {
+      const cat = getCboCategory(p.cbo);
+      if (cat) cats.add(cat);
+    });
+    return Array.from(cats).sort();
+  }, [allProfessionals]);
+
+  const uniqueEquipes = useMemo(() => {
+    const eqs = new Set<string>();
+    gestacoes.forEach(g => {
+      if (g.equipe) eqs.add(g.equipe);
+    });
+    return Array.from(eqs).sort();
+  }, [gestacoes]);
+
   const [formData, setFormData] = useState<Partial<Atendimento>>({
     sispn: '',
     data_consulta: '',

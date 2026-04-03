@@ -521,17 +521,8 @@ export default function GestacoesPage() {
     }
 
     return true;
-  });
-
-  const calculateStatus = (dum: string) => {
-    if (!dum) return 'ATIVA';
-    const dumDate = new Date(dum + 'T12:00:00');
-    const today = new Date();
-    // Se a data de hoje for maior que DUM + 280 dias, está vencida
-    const limitDate = new Date(dumDate);
-    limitDate.setDate(limitDate.getDate() + 280);
-    return today > limitDate ? 'VENCIDA' : 'ATIVA';
-  };
+    });
+  }, [gestacoes, searchQuery, filters]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
