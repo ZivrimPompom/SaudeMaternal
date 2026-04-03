@@ -62,6 +62,58 @@ interface Profissional {
   categoria_nome?: string;
 }
 
+// Helper Functions
+const formatSispn = (value: string) => {
+  const v = value.replace(/\D/g, '');
+  if (v.length <= 9) return v;
+  return `${v.slice(0, 9)}-${v.slice(9, 13)}`;
+};
+
+const formatCpf = (value: string) => {
+  const v = value.replace(/\D/g, '');
+  if (v.length <= 3) return v;
+  if (v.length <= 6) return `${v.slice(0, 3)}.${v.slice(3)}`;
+  if (v.length <= 9) return `${v.slice(0, 3)}.${v.slice(3, 6)}.${v.slice(6)}`;
+  return `${v.slice(0, 3)}.${v.slice(3, 6)}.${v.slice(6, 9)}-${v.slice(9, 11)}`;
+};
+
+const getGestacaoWeeks = (dum: string) => {
+  if (!dum) return 0;
+  const start = new Date(dum);
+  const now = new Date();
+  const diffTime = Math.abs(now.getTime() - start.getTime());
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return Math.floor(diffDays / 7);
+};
+
+const getStatusCaptacao = (dum: string, dataCadastro: string) => {
+  if (!dum || !dataCadastro) return '---';
+  const start = new Date(dum);
+  const cad = new Date(dataCadastro);
+  const diffTime = cad.getTime() - start.getTime();
+  const diffWeeks = diffTime / (1000 * 60 * 60 * 24 * 7);
+  return diffWeeks <= 12 ? 'PRECOCE' : 'TARDIA';
+};
+
+const getGestacaoStatus = (dpp: string) => {
+  if (!dpp) return '---';
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const end = new Date(dpp);
+  end.setHours(0, 0, 0, 0);
+  return now >= end ? 'VENCIDA' : 'ATIVA';
+};
+
+const calculateStatus = (dum: string) => {
+  if (!dum) return 'ATIVA';
+  const dumDate = new Date(dum + 'T12:00:00');
+  const today = new Date();
+  // Se a data de hoje for maior que DUM + 280 dias, está vencida
+  const limitDate = new Date(dumDate);
+  limitDate.setDate(limitDate.getDate() + 280);
+  return today >= limitDate ? 'VENCIDA' : 'ATIVA';
+};
+
 export default function GestacoesPage() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -712,7 +764,7 @@ export default function GestacoesPage() {
   const handleExportCSV = useCallback(() => {
     const headers = ['SISPN', 'GESTANTE', 'CPF', 'DUM', 'DPP', 'EQUIPE', 'RT', 'ACS', 'STATUS'];
     const rows = filteredGestacoes.map(g => {
-      const status = calculateWeeks(g.dum) > 42 ? 'ENCERRADA' : 'ATIVA';
+      const status = getGestacaoWeeks(g.dum) > 42 ? 'ENCERRADA' : 'ATIVA';
       return [
         g.sispn,
         g.pacientes?.gestante || 'N/A',
