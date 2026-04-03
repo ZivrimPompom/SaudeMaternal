@@ -646,7 +646,7 @@ export default function ExamesPage() {
           </div>
 
           <RecordsSummary 
-            total={exames.length} 
+            total={results.length} 
             filtered={filteredExames.length} 
           />
         </div>
