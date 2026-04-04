@@ -8,6 +8,7 @@ import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'motion/react';
 import Pagination from '@/components/Pagination';
 import RecordsSummary from '@/components/RecordsSummary';
+import SearchInput from '@/components/SearchInput';
 
 interface Categoria {
   cbo: string;
@@ -341,6 +342,11 @@ export default function ProfissionaisPage() {
           <div className="flex items-center gap-4">
             <h1 className="text-xl font-black text-primary uppercase tracking-tight">Profissionais</h1>
           </div>
+
+          <SearchInput 
+            className="hidden md:flex flex-1 mx-8" 
+            placeholder="Digite Nome ou CPF ou CNS ou CBO"
+          />
 
           <RecordsSummary 
             total={professionals.length} 

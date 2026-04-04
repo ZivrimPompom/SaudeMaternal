@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import Pagination from '@/components/Pagination';
 import RecordsSummary from '@/components/RecordsSummary';
+import SearchInput from '@/components/SearchInput';
 
 interface HealthUnit {
   cnes: string;
@@ -319,6 +320,11 @@ export default function UnidadesSaudePage() {
           <div className="flex items-center gap-4">
             <h1 className="text-xl font-black text-primary uppercase tracking-tight">Unidades</h1>
           </div>
+
+          <SearchInput 
+            className="hidden md:flex flex-1 mx-8" 
+            placeholder="Digite Nome"
+          />
 
           <RecordsSummary 
             total={units.length} 

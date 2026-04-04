@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '@/context/AuthContext';
 import Pagination from '@/components/Pagination';
 import RecordsSummary from '@/components/RecordsSummary';
+import SearchInput from '@/components/SearchInput';
 
 interface RecemNascido {
   id?: string;
@@ -388,6 +389,8 @@ export default function DesfechosPage() {
               <p className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-widest">Gestão de resultados gestacionais</p>
             </div>
           </div>
+
+          <SearchInput className="hidden md:flex flex-1 mx-8" />
 
           <RecordsSummary 
             total={desfechos.length} 

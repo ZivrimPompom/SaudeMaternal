@@ -8,6 +8,7 @@ import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'motion/react';
 import Pagination from '@/components/Pagination';
 import RecordsSummary from '@/components/RecordsSummary';
+import SearchInput from '@/components/SearchInput';
 
 interface Gestacao {
   sispn: string;
@@ -797,9 +798,12 @@ export default function GestacoesPage() {
             <h1 className="text-xl font-black text-primary uppercase tracking-tight">Gestações</h1>
           </div>
 
+          <SearchInput className="hidden md:flex flex-1 mx-8" />
+
           <RecordsSummary 
             total={gestacoes.length} 
             filtered={filteredGestacoes.length} 
+            itemName="GESTANTE"
           />
         </div>
 

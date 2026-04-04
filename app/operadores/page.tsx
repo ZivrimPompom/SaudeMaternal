@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import Pagination from '@/components/Pagination';
 import RecordsSummary from '@/components/RecordsSummary';
+import SearchInput from '@/components/SearchInput';
 
 interface Operator {
   id: string;
@@ -523,6 +524,8 @@ export default function OperadoresPage() {
           <div className="flex items-center gap-4">
             <h1 className="text-xl font-black text-primary uppercase tracking-tight">Operadores</h1>
           </div>
+
+          <SearchInput className="hidden md:flex flex-1 mx-8" />
 
           <RecordsSummary 
             total={operators.length} 

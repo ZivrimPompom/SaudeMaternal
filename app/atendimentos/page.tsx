@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '@/context/AuthContext';
 import Pagination from '@/components/Pagination';
 import RecordsSummary from '@/components/RecordsSummary';
+import SearchInput from '@/components/SearchInput';
 
 interface Categoria {
   cbo: string;
@@ -835,6 +836,8 @@ export default function AtendimentosPage() {
           <div className="flex items-center gap-4">
             <h1 className="text-xl font-black text-primary uppercase tracking-tight">Atendimentos</h1>
           </div>
+
+          <SearchInput className="hidden md:flex flex-1 mx-8" />
 
           <RecordsSummary 
             total={atendimentos.length} 
