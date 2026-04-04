@@ -646,7 +646,7 @@ export default function ExamesPage() {
             <h1 className="text-xl font-black text-primary uppercase tracking-tight">Exames</h1>
           </div>
 
-          <SearchInput className="hidden md:flex flex-1 mx-8" />
+          <SearchInput className="w-full md:flex-1 md:mx-8" />
 
           <RecordsSummary 
             total={results.length} 

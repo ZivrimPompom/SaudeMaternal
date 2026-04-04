@@ -322,7 +322,7 @@ export default function UnidadesSaudePage() {
           </div>
 
           <SearchInput 
-            className="hidden md:flex flex-1 mx-8" 
+            className="w-full md:flex-1 md:mx-8" 
             placeholder="Digite Nome"
           />
 
