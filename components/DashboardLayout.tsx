@@ -56,7 +56,7 @@ export default function DashboardLayout({ children, title }: { children: React.R
       )}
 
       <main className={`transition-all duration-300 pt-16 min-h-screen pb-24 overflow-y-auto ${isSidebarOpen ? 'lg:pl-64' : 'pl-0'}`}>
-        <div className="p-4 md:p-8">
+        <div className="p-3 md:p-6">
           {children}
         </div>
       </main>

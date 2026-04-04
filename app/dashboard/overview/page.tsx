@@ -377,14 +377,18 @@ export default function DashboardOverview() {
           </header>
 
           {/* Filter Bar */}
-          <div className="flex flex-wrap items-center gap-4 bg-surface-container-low p-4 rounded-[2rem] border border-outline-variant/10 shadow-sm">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant/50 ml-2">Unidade</label>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap items-center gap-3 w-full md:w-auto">
+              <div className="flex items-center gap-2 bg-primary/10 px-5 py-2.5 rounded-full border border-primary/20 shrink-0">
+                <span className="material-symbols-outlined text-primary text-sm">filter_alt</span>
+                <span className="text-[9px] font-black uppercase tracking-widest text-primary">Filtros Ativos</span>
+              </div>
+              
               <select 
                 value={filterUnit}
                 onChange={(e) => setFilterUnit(e.target.value)}
                 disabled={user?.nivel_acesso !== 'Administrador'}
-                className="bg-surface-container-lowest border border-outline-variant/20 rounded-xl px-4 py-2 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {user?.nivel_acesso === 'Administrador' && (
                   <option key="unit-all" value="all">Todas as Unidades</option>
@@ -393,68 +397,54 @@ export default function DashboardOverview() {
                   <option key={`unit-opt-${u.cnes}`} value={u.cnes}>{u.nome_fantasia || u.nome}</option>
                 ))}
               </select>
-            </div>
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant/50 ml-2">Rotina</label>
               <select 
                 value={filterRoutine}
                 onChange={(e) => setFilterRoutine(e.target.value)}
-                className="bg-surface-container-lowest border border-outline-variant/20 rounded-xl px-4 py-2 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
               >
                 <option key="routine-all" value="all">Todas as Rotinas</option>
                 {routineOptions.map((type) => (
                   <option key={`routine-opt-${type}`} value={type}>{type}</option>
                 ))}
               </select>
-            </div>
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant/50 ml-2">Trimestre</label>
               <select 
                 value={filterTrimester}
                 onChange={(e) => setFilterTrimester(e.target.value)}
-                className="bg-surface-container-lowest border border-outline-variant/20 rounded-xl px-4 py-2 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
               >
-                <option key="trim-all" value="all">Todos</option>
+                <option key="trim-all" value="all">Filtrar Trimestre</option>
                 <option key="trim-1" value="1º TRIMESTRE">1º Trimestre</option>
                 <option key="trim-2" value="2º TRIMESTRE">2º Trimestre</option>
                 <option key="trim-3" value="3º TRIMESTRE">3º Trimestre</option>
               </select>
-            </div>
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant/50 ml-2">Risco</label>
-              <div className="flex bg-surface-container-lowest p-1 rounded-xl border border-outline-variant/20">
-                {['all', 'HABITUAL', 'RISCO'].map((r) => (
-                  <button
-                    key={r}
-                    onClick={() => setFilterRisk(r)}
-                    className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
-                      filterRisk === r 
-                        ? 'bg-primary text-white shadow-lg shadow-primary/20' 
-                        : 'text-on-surface-variant/60 hover:bg-primary/5'
-                    }`}
-                  >
-                    {r === 'all' ? 'Todos' : r === 'HABITUAL' ? 'Habitual' : 'Alto Risco'}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {(filterUnit !== 'all' || filterRisk !== 'all' || filterTrimester !== 'all' || filterRoutine !== 'all') && (
-              <button 
-                onClick={() => {
-                  setFilterUnit('all');
-                  setFilterRisk('all');
-                  setFilterTrimester('all');
-                  setFilterRoutine('all');
-                }}
-                className="mt-auto mb-1 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary/5 rounded-xl transition-all border border-primary/20"
+              <select 
+                value={filterRisk}
+                onChange={(e) => setFilterRisk(e.target.value)}
+                className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
               >
-                Limpar Tudo
-              </button>
-            )}
+                <option key="risk-all" value="all">Grau de Risco</option>
+                <option key="risk-habitual" value="HABITUAL">HABITUAL</option>
+                <option key="risk-risco" value="RISCO">ALTO RISCO</option>
+              </select>
+
+              {(filterUnit !== 'all' || filterRisk !== 'all' || filterTrimester !== 'all' || filterRoutine !== 'all') && (
+                <button 
+                  onClick={() => {
+                    setFilterUnit('all');
+                    setFilterRisk('all');
+                    setFilterTrimester('all');
+                    setFilterRoutine('all');
+                  }}
+                   className="w-full lg:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-error/10 text-error text-[9px] font-black uppercase tracking-widest hover:bg-error hover:text-white transition-all border border-error/20"
+                >
+                  <span className="material-symbols-outlined text-sm">filter_alt_off</span>
+                  Limpar
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
