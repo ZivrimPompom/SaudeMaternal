@@ -9,6 +9,7 @@ import { useAuth } from '@/context/AuthContext';
 import Pagination from '@/components/Pagination';
 import RecordsSummary from '@/components/RecordsSummary';
 import SearchInput from '@/components/SearchInput';
+import PatientBanner from '@/components/PatientBanner';
 
 interface RecemNascido {
   id?: string;
@@ -49,10 +50,13 @@ interface Gestacao {
   dpp: string;
   paciente_nome: string;
   paciente_cpf: string;
+  paciente_cns?: string;
+  paciente_nascimento?: string;
   equipe: string;
   referencia_tecnica: string;
   acs: string;
   data_cadastro: string;
+  classificacao_pn?: string;
 }
 
 const TIPO_DESFECHO_OPTIONS = [
@@ -123,8 +127,8 @@ export default function DesfechosPage() {
       const { data: gestData, error: gestError } = await supabase
         .from('gestacoes')
         .select(`
-          sispn, dum, dpp, equipe, referencia_tecnica, acs, data_cadastro,
-          pacientes (gestante, cpf)
+          sispn, dum, dpp, equipe, referencia_tecnica, acs, data_cadastro, classificacao_pn,
+          pacientes (gestante, cpf, cns, data_nascimento)
         `)
         .order('created_at', { ascending: false });
 
@@ -136,10 +140,13 @@ export default function DesfechosPage() {
         dpp: g.dpp,
         paciente_nome: g.pacientes?.gestante || 'NÃO INFORMADO',
         paciente_cpf: g.pacientes?.cpf || 'NÃO INFORMADO',
+        paciente_cns: g.pacientes?.cns || '---',
+        paciente_nascimento: g.pacientes?.data_nascimento || null,
         equipe: g.equipe,
         referencia_tecnica: g.referencia_tecnica,
         acs: g.acs,
-        data_cadastro: g.data_cadastro
+        data_cadastro: g.data_cadastro,
+        classificacao_pn: g.classificacao_pn || 'HABITUAL'
       }));
       setGestacoes(formattedGestacoes);
 
@@ -149,8 +156,8 @@ export default function DesfechosPage() {
         .select(`
           *,
           gestacoes (
-            sispn, dum, dpp, equipe, referencia_tecnica, acs, data_cadastro,
-            pacientes (gestante, cpf)
+            sispn, dum, dpp, equipe, referencia_tecnica, acs, data_cadastro, classificacao_pn,
+            pacientes (gestante, cpf, cns, data_nascimento)
           ),
           recem_nascidos (*)
         `)
@@ -462,28 +469,18 @@ export default function DesfechosPage() {
 
                 {/* Gestante Selecionada Card */}
                 {selectedGestante && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="bg-primary rounded-2xl p-6 text-on-primary shadow-lg shadow-primary/20 flex items-center gap-6 relative overflow-hidden"
-                  >
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl" />
-                    <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm">
-                      <span className="material-symbols-outlined text-3xl">person</span>
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-70">Gestante Selecionada</p>
-                      <h3 className="text-xl font-bold tracking-tight">{selectedGestante.paciente_nome}</h3>
-                      <div className="flex flex-wrap gap-x-6 gap-y-1 mt-2 text-[10px] font-bold uppercase tracking-widest opacity-80">
-                        <span>Referência: {selectedGestante.dum ? new Date(selectedGestante.dum).toLocaleDateString('pt-BR', { month: '2-digit', year: 'numeric' }) : 'N/A'}</span>
-                        <span>Equipe: {selectedGestante.equipe}</span>
-                      </div>
-                    </div>
-                    <div className="bg-white/10 backdrop-blur-md px-6 py-3 rounded-xl border border-white/20">
-                      <p className="text-[8px] font-black uppercase tracking-[0.2em] opacity-70 mb-1">Número SISPN</p>
-                      <p className="text-lg font-black tracking-tighter">{selectedGestante.sispn}</p>
-                    </div>
-                  </motion.div>
+                  <PatientBanner 
+                    patient={{
+                      nome: selectedGestante.paciente_nome,
+                      data_nascimento: selectedGestante.paciente_nascimento || '',
+                      cpf: selectedGestante.paciente_cpf,
+                      cns: selectedGestante.paciente_cns || '',
+                      dum: selectedGestante.dum,
+                      dpp: selectedGestante.dpp,
+                      data_cadastro: selectedGestante.data_cadastro,
+                      risco: selectedGestante.classificacao_pn || 'HABITUAL'
+                    }}
+                  />
                 )}
 
                 {/* Dados do Desfecho */}

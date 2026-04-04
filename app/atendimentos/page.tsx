@@ -9,6 +9,7 @@ import { useAuth } from '@/context/AuthContext';
 import Pagination from '@/components/Pagination';
 import RecordsSummary from '@/components/RecordsSummary';
 import SearchInput from '@/components/SearchInput';
+import PatientBanner from '@/components/PatientBanner';
 
 interface Categoria {
   cbo: string;
@@ -59,6 +60,8 @@ interface Gestacao {
   dpp: string;
   paciente_nome: string;
   paciente_cpf: string;
+  paciente_cns?: string;
+  paciente_nascimento?: string;
   equipe: string;
   rt_nome: string;
   acs_nome: string;
@@ -444,7 +447,7 @@ export default function AtendimentosPage() {
             hiv,
             hepatite_b,
             hepatite_c,
-            pacientes (gestante, cpf)
+            pacientes (gestante, cpf, cns, data_nascimento)
           `)
           .range(gestFrom, gestFrom + 999);
         
@@ -492,7 +495,9 @@ export default function AtendimentosPage() {
           hepatite_b: g.hepatite_b || 'NÃO REAGENTE',
           hepatite_c: g.hepatite_c || 'NÃO REAGENTE',
           paciente_nome: nome || 'NÃO INFORMADO',
-          paciente_cpf: String(cpf || 'NÃO INFORMADO')
+          paciente_cpf: String(cpf || 'NÃO INFORMADO'),
+          paciente_cns: (pac as any)?.cns || '---',
+          paciente_nascimento: (pac as any)?.data_nascimento || null
         };
       });
       setGestacoes(formattedGest);
@@ -854,8 +859,23 @@ export default function AtendimentosPage() {
               exit={{ opacity: 0, height: 0 }}
               className="overflow-hidden"
             >
-              <div className="bg-surface-container-lowest p-8 md:p-12 rounded-[40px] shadow-2xl border border-outline-variant/10 space-y-10">
-                <div className="flex items-center gap-4">
+                  <div className="bg-surface-container-lowest p-8 md:p-12 rounded-[40px] shadow-2xl border border-outline-variant/10 space-y-10">
+                    {selectedGestante && (
+                      <PatientBanner 
+                        patient={{
+                          nome: selectedGestante.paciente_nome,
+                          data_nascimento: selectedGestante.paciente_nascimento || '',
+                          cpf: selectedGestante.paciente_cpf,
+                          cns: selectedGestante.paciente_cns || '',
+                          dum: selectedGestante.dum,
+                          dpp: selectedGestante.dpp,
+                          data_cadastro: selectedGestante.data_cadastro,
+                          risco: selectedGestante.classificacao_pn || 'HABITUAL'
+                        }}
+                      />
+                    )}
+
+                    <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
                     <span className="material-symbols-outlined text-2xl">clinical_notes</span>
                   </div>

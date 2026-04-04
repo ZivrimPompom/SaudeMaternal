@@ -9,6 +9,7 @@ import { useAuth } from '@/context/AuthContext';
 import Pagination from '@/components/Pagination';
 import RecordsSummary from '@/components/RecordsSummary';
 import SearchInput from '@/components/SearchInput';
+import PatientBanner from '@/components/PatientBanner';
 
 interface Routine {
   id: string;
@@ -72,8 +73,11 @@ interface Gestacao {
   dpp: string;
   paciente_nome: string;
   paciente_cpf: string;
+  paciente_cns?: string;
+  paciente_nascimento?: string;
   equipe: string;
   data_cadastro: string;
+  classificacao_pn?: string;
 }
 
 const formatSispn = (value: string) => {
@@ -367,8 +371,8 @@ export default function ExamesPage() {
       let gestHasMore = true;
       while (gestHasMore) {
         const { data, error } = await supabase.from('gestacoes').select(`
-          sispn, dum, dpp, equipe, data_cadastro,
-          pacientes (gestante, cpf)
+          sispn, dum, dpp, equipe, data_cadastro, classificacao_pn,
+          pacientes (gestante, cpf, cns, data_nascimento)
         `).range(gestFrom, gestFrom + 999);
         if (error) throw error;
         if (data && data.length > 0) {
@@ -389,7 +393,10 @@ export default function ExamesPage() {
           equipe: g.equipe,
           data_cadastro: g.data_cadastro,
           paciente_nome: (pac as any)?.gestante || 'NÃO INFORMADO',
-          paciente_cpf: String((pac as any)?.cpf || 'NÃO INFORMADO')
+          paciente_cpf: String((pac as any)?.cpf || 'NÃO INFORMADO'),
+          paciente_cns: (pac as any)?.cns || '---',
+          paciente_nascimento: (pac as any)?.data_nascimento || null,
+          classificacao_pn: g.classificacao_pn || 'HABITUAL'
         };
       });
       setGestacoes(formattedGest);
@@ -658,6 +665,20 @@ export default function ExamesPage() {
           {isFormOpen && (
             <motion.section initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
               <div className="bg-surface-container-lowest p-8 md:p-12 rounded-[40px] shadow-2xl border border-outline-variant/10 space-y-10">
+                {selectedGestante && (
+                  <PatientBanner 
+                    patient={{
+                      nome: selectedGestante.paciente_nome,
+                      data_nascimento: selectedGestante.paciente_nascimento || '',
+                      cpf: selectedGestante.paciente_cpf,
+                      cns: selectedGestante.paciente_cns || '',
+                      dum: selectedGestante.dum,
+                      dpp: selectedGestante.dpp,
+                      data_cadastro: selectedGestante.data_cadastro,
+                      risco: selectedGestante.classificacao_pn || 'HABITUAL'
+                    }}
+                  />
+                )}
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
                     <span className="material-symbols-outlined text-2xl">edit_note</span>
