@@ -390,7 +390,7 @@ export default function DesfechosPage() {
             </div>
           </div>
 
-          <SearchInput className="hidden md:flex flex-1 mx-8" />
+          <SearchInput className="w-full md:flex-1 md:mx-8" />
 
           <RecordsSummary 
             total={desfechos.length} 

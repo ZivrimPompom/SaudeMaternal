@@ -13,7 +13,7 @@ export default function SearchInput({
   const { searchQuery, setSearchQuery } = useSearch();
 
   return (
-    <div className={`relative flex-1 max-w-xl ${className}`}>
+    <div className={`relative flex-1 ${className}`}>
       <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-primary/30">search</span>
       <input 
         type="text"

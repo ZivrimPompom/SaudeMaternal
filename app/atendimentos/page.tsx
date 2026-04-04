@@ -837,7 +837,7 @@ export default function AtendimentosPage() {
             <h1 className="text-xl font-black text-primary uppercase tracking-tight">Atendimentos</h1>
           </div>
 
-          <SearchInput className="hidden md:flex flex-1 mx-8" />
+          <SearchInput className="w-full md:flex-1 md:mx-8" />
 
           <RecordsSummary 
             total={atendimentos.length} 
