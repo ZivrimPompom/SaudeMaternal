@@ -36,7 +36,7 @@ export default function Page() {
         if (cons.error) {
           console.error('Erro específico ao buscar atendimentos:', cons.error);
         }
-        
+
         const errors = [ops, cats, pros, rots, pacs, units, gests, cons, exams, outcomes].filter(r => r.error);
         if (errors.length > 0) {
           console.error('Alguns erros ao buscar estatísticas:', errors);
@@ -91,14 +91,12 @@ export default function Page() {
         </header>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 md:gap-10">
-          <Link href="/operadores" className="bg-surface-container-lowest p-5 md:p-6 rounded-[2.5rem] shadow-xl shadow-black/5 border border-outline-variant/10 hover:border-primary/30 hover:shadow-primary/10 transition-all group relative overflow-hidden flex flex-col h-full min-h-[120px]">
+          <Link href="/operadores" className="bg-surface-container-lowest p-5 md:p-6 rounded-[2.5rem] shadow-xl shadow-black/5 border border-outline-variant/10 hover:border-primary/30 hover:shadow-primary/10 transition-all group relative overflow-hidden flex flex-col h-full min-h-[140px]">
             <div className="absolute top-0 right-0 w-20 h-20 bg-primary/5 rounded-full -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-700" />
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex shrink-0 items-center justify-center group-hover:rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
-                <Shield className="text-primary group-hover:text-white w-7 h-7 transition-colors" />
-              </div>
-              <h3 className="text-xl md:text-2xl font-black font-headline text-on-surface tracking-tight leading-tight">Operadores</h3>
+            <div className="w-18 h-18 rounded-3xl bg-primary/10 flex items-center justify-center mb-6 group-hover:bg-primary group-hover:rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
+              <Shield className="text-primary group-hover:text-white w-9 h-9 transition-colors" />
             </div>
+            <h3 className="text-2xl md:text-3xl font-black font-headline mb-3 text-on-surface tracking-tight leading-none">Operadores</h3>
             <p className="text-sm md:text-base text-on-surface-variant/60 font-body mb-4 leading-tight line-clamp-1">Perfis e acessos.</p>
             <div className="mt-auto flex items-center justify-between pt-6 border-t border-outline-variant/10">
               <div className="flex flex-col">
@@ -111,14 +109,12 @@ export default function Page() {
             </div>
           </Link>
 
-          <Link href="/pacientes" className="bg-surface-container-lowest p-5 md:p-6 rounded-[2.5rem] shadow-xl shadow-black/5 border border-outline-variant/10 hover:border-primary/30 hover:shadow-primary/10 transition-all group relative overflow-hidden flex flex-col h-full min-h-[120px]">
+          <Link href="/pacientes" className="bg-surface-container-lowest p-5 md:p-6 rounded-[2.5rem] shadow-xl shadow-black/5 border border-outline-variant/10 hover:border-primary/30 hover:shadow-primary/10 transition-all group relative overflow-hidden flex flex-col h-full min-h-[140px]">
             <div className="absolute top-0 right-0 w-20 h-20 bg-primary/5 rounded-full -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-700" />
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex shrink-0 items-center justify-center group-hover:rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
-                <Users className="text-primary group-hover:text-white w-7 h-7 transition-colors" />
-              </div>
-              <h3 className="text-xl md:text-2xl font-black font-headline text-on-surface tracking-tight leading-tight">Pacientes</h3>
+            <div className="w-18 h-18 rounded-3xl bg-primary/10 flex items-center justify-center mb-6 group-hover:bg-primary group-hover:rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
+              <Users className="text-primary group-hover:text-white w-9 h-9 transition-colors" />
             </div>
+            <h3 className="text-2xl md:text-3xl font-black font-headline mb-3 text-on-surface tracking-tight leading-none">Pacientes</h3>
             <p className="text-sm md:text-base text-on-surface-variant/60 font-body mb-4 leading-tight line-clamp-1">Cadastro de gestantes.</p>
             <div className="mt-auto flex items-center justify-between pt-6 border-t border-outline-variant/10">
               <div className="flex flex-col">
@@ -131,14 +127,12 @@ export default function Page() {
             </div>
           </Link>
 
-          <Link href="/categorias" className="bg-surface-container-lowest p-5 md:p-6 rounded-[2.5rem] shadow-xl shadow-black/5 border border-outline-variant/10 hover:border-primary/30 hover:shadow-primary/10 transition-all group relative overflow-hidden flex flex-col h-full min-h-[120px]">
+          <Link href="/categorias" className="bg-surface-container-lowest p-5 md:p-6 rounded-[2.5rem] shadow-xl shadow-black/5 border border-outline-variant/10 hover:border-primary/30 hover:shadow-primary/10 transition-all group relative overflow-hidden flex flex-col h-full min-h-[140px]">
             <div className="absolute top-0 right-0 w-20 h-20 bg-primary/5 rounded-full -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-700" />
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex shrink-0 items-center justify-center group-hover:-rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
-                <Briefcase className="text-primary group-hover:text-white w-7 h-7 transition-colors" />
-              </div>
-              <h3 className="text-xl md:text-2xl font-black font-headline text-on-surface tracking-tight leading-tight">Categorias</h3>
+            <div className="w-18 h-18 rounded-3xl bg-primary/10 flex items-center justify-center mb-6 group-hover:bg-primary group-hover:-rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
+              <Briefcase className="text-primary group-hover:text-white w-9 h-9 transition-colors" />
             </div>
+            <h3 className="text-2xl md:text-3xl font-black font-headline mb-3 text-on-surface tracking-tight leading-none">Categorias</h3>
             <p className="text-sm md:text-base text-on-surface-variant/60 font-body mb-4 leading-tight line-clamp-1">Cargos e vínculos.</p>
             <div className="mt-auto flex items-center justify-between pt-6 border-t border-outline-variant/10">
               <div className="flex flex-col">
@@ -151,14 +145,12 @@ export default function Page() {
             </div>
           </Link>
 
-          <Link href="/profissionais" className="bg-surface-container-lowest p-5 md:p-6 rounded-[2.5rem] shadow-xl shadow-black/5 border border-outline-variant/10 hover:border-primary/30 hover:shadow-primary/10 transition-all group relative overflow-hidden flex flex-col h-full min-h-[120px]">
+          <Link href="/profissionais" className="bg-surface-container-lowest p-5 md:p-6 rounded-[2.5rem] shadow-xl shadow-black/5 border border-outline-variant/10 hover:border-primary/30 hover:shadow-primary/10 transition-all group relative overflow-hidden flex flex-col h-full min-h-[140px]">
             <div className="absolute top-0 right-0 w-20 h-20 bg-primary/5 rounded-full -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-700" />
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex shrink-0 items-center justify-center group-hover:rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
-                <UserCheck className="text-primary group-hover:text-white w-7 h-7 transition-colors" />
-              </div>
-              <h3 className="text-xl md:text-2xl font-black font-headline text-on-surface tracking-tight leading-tight">Profissionais</h3>
+            <div className="w-18 h-18 rounded-3xl bg-primary/10 flex items-center justify-center mb-6 group-hover:bg-primary group-hover:rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
+              <UserCheck className="text-primary group-hover:text-white w-9 h-9 transition-colors" />
             </div>
+            <h3 className="text-2xl md:text-3xl font-black font-headline mb-3 text-on-surface tracking-tight leading-none">Profissionais</h3>
             <p className="text-sm md:text-base text-on-surface-variant/60 font-body mb-4 leading-tight line-clamp-1">Cadastro clínico.</p>
             <div className="mt-auto flex items-center justify-between pt-6 border-t border-outline-variant/10">
               <div className="flex flex-col">
@@ -171,14 +163,12 @@ export default function Page() {
             </div>
           </Link>
 
-          <Link href="/rotinas" className="bg-surface-container-lowest p-5 md:p-6 rounded-[2.5rem] shadow-xl shadow-black/5 border border-outline-variant/10 hover:border-primary/30 hover:shadow-primary/10 transition-all group relative overflow-hidden flex flex-col h-full min-h-[120px]">
+          <Link href="/rotinas" className="bg-surface-container-lowest p-5 md:p-6 rounded-[2.5rem] shadow-xl shadow-black/5 border border-outline-variant/10 hover:border-primary/30 hover:shadow-primary/10 transition-all group relative overflow-hidden flex flex-col h-full min-h-[140px]">
             <div className="absolute top-0 right-0 w-20 h-20 bg-primary/5 rounded-full -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-700" />
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex shrink-0 items-center justify-center group-hover:-rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
-                <ClipboardList className="text-primary group-hover:text-white w-7 h-7 transition-colors" />
-              </div>
-              <h3 className="text-xl md:text-2xl font-black font-headline text-on-surface tracking-tight leading-tight">Rotinas</h3>
+            <div className="w-18 h-18 rounded-3xl bg-primary/10 flex items-center justify-center mb-6 group-hover:bg-primary group-hover:-rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
+              <ClipboardList className="text-primary group-hover:text-white w-9 h-9 transition-colors" />
             </div>
+            <h3 className="text-2xl md:text-3xl font-black font-headline mb-3 text-on-surface tracking-tight leading-none">Rotinas</h3>
             <p className="text-sm md:text-base text-on-surface-variant/60 font-body mb-4 leading-tight line-clamp-1">Protocolos PN.</p>
             <div className="mt-auto flex items-center justify-between pt-6 border-t border-outline-variant/10">
               <div className="flex flex-col">
@@ -191,14 +181,12 @@ export default function Page() {
             </div>
           </Link>
 
-          <Link href="/unidades" className="bg-surface-container-lowest p-5 md:p-6 rounded-[2.5rem] shadow-xl shadow-black/5 border border-outline-variant/10 hover:border-primary/30 hover:shadow-primary/10 transition-all group relative overflow-hidden flex flex-col h-full min-h-[120px]">
+          <Link href="/unidades" className="bg-surface-container-lowest p-5 md:p-6 rounded-[2.5rem] shadow-xl shadow-black/5 border border-outline-variant/10 hover:border-primary/30 hover:shadow-primary/10 transition-all group relative overflow-hidden flex flex-col h-full min-h-[140px]">
             <div className="absolute top-0 right-0 w-20 h-20 bg-primary/5 rounded-full -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-700" />
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex shrink-0 items-center justify-center group-hover:rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
-                <Building2 className="text-primary group-hover:text-white w-7 h-7 transition-colors" />
-              </div>
-              <h3 className="text-xl md:text-2xl font-black font-headline text-on-surface tracking-tight leading-tight">Unidades</h3>
+            <div className="w-18 h-18 rounded-3xl bg-primary/10 flex items-center justify-center mb-6 group-hover:bg-primary group-hover:rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
+              <Building2 className="text-primary group-hover:text-white w-9 h-9 transition-colors" />
             </div>
+            <h3 className="text-2xl md:text-3xl font-black font-headline mb-3 text-on-surface tracking-tight leading-none">Unidades</h3>
             <p className="text-sm md:text-base text-on-surface-variant/60 font-body mb-4 leading-tight line-clamp-1">Estabelecimentos.</p>
             <div className="mt-auto flex items-center justify-between pt-6 border-t border-outline-variant/10">
               <div className="flex flex-col">
@@ -211,14 +199,12 @@ export default function Page() {
             </div>
           </Link>
 
-          <Link href="/gestacoes" className="bg-surface-container-lowest p-5 md:p-6 rounded-[2.5rem] shadow-xl shadow-black/5 border border-outline-variant/10 hover:border-primary/30 hover:shadow-primary/10 transition-all group relative overflow-hidden flex flex-col h-full min-h-[120px]">
+          <Link href="/gestacoes" className="bg-surface-container-lowest p-5 md:p-6 rounded-[2.5rem] shadow-xl shadow-black/5 border border-outline-variant/10 hover:border-primary/30 hover:shadow-primary/10 transition-all group relative overflow-hidden flex flex-col h-full min-h-[140px]">
             <div className="absolute top-0 right-0 w-20 h-20 bg-primary/5 rounded-full -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-700" />
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex shrink-0 items-center justify-center group-hover:-rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
-                <HeartPulse className="text-primary group-hover:text-white w-7 h-7 transition-colors" />
-              </div>
-              <h3 className="text-xl md:text-2xl font-black font-headline text-on-surface tracking-tight leading-tight">Gestações</h3>
+            <div className="w-18 h-18 rounded-3xl bg-primary/10 flex items-center justify-center mb-6 group-hover:bg-primary group-hover:-rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
+              <HeartPulse className="text-primary group-hover:text-white w-9 h-9 transition-colors" />
             </div>
+            <h3 className="text-2xl md:text-3xl font-black font-headline mb-3 text-on-surface tracking-tight leading-none">Gestações</h3>
             <p className="text-sm md:text-base text-on-surface-variant/60 font-body mb-4 leading-tight line-clamp-1">Acompanhamento.</p>
             <div className="mt-auto flex items-center justify-between pt-6 border-t border-outline-variant/10">
               <div className="flex flex-col">
@@ -231,14 +217,12 @@ export default function Page() {
             </div>
           </Link>
 
-          <Link href="/atendimentos" className="bg-surface-container-lowest p-5 md:p-6 rounded-[2.5rem] shadow-xl shadow-black/5 border border-outline-variant/10 hover:border-primary/30 hover:shadow-primary/10 transition-all group relative overflow-hidden flex flex-col h-full min-h-[120px]">
+          <Link href="/atendimentos" className="bg-surface-container-lowest p-5 md:p-6 rounded-[2.5rem] shadow-xl shadow-black/5 border border-outline-variant/10 hover:border-primary/30 hover:shadow-primary/10 transition-all group relative overflow-hidden flex flex-col h-full min-h-[140px]">
             <div className="absolute top-0 right-0 w-20 h-20 bg-primary/5 rounded-full -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-700" />
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex shrink-0 items-center justify-center group-hover:rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
-                <Stethoscope className="text-primary group-hover:text-white w-7 h-7 transition-colors" />
-              </div>
-              <h3 className="text-xl md:text-2xl font-black font-headline text-on-surface tracking-tight leading-tight">Atendimentos</h3>
+            <div className="w-18 h-18 rounded-3xl bg-primary/10 flex items-center justify-center mb-6 group-hover:bg-primary group-hover:rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
+              <Stethoscope className="text-primary group-hover:text-white w-9 h-9 transition-colors" />
             </div>
+            <h3 className="text-2xl md:text-3xl font-black font-headline mb-3 text-on-surface tracking-tight leading-none">Atendimentos</h3>
             <p className="text-sm md:text-base text-on-surface-variant/60 font-body mb-4 leading-tight line-clamp-1">Consultas.</p>
             <div className="mt-auto flex items-center justify-between pt-6 border-t border-outline-variant/10">
               <div className="flex flex-col">
@@ -251,14 +235,12 @@ export default function Page() {
             </div>
           </Link>
 
-          <Link href="/exames" className="bg-surface-container-lowest p-5 md:p-6 rounded-[2.5rem] shadow-xl shadow-black/5 border border-outline-variant/10 hover:border-primary/30 hover:shadow-primary/10 transition-all group relative overflow-hidden flex flex-col h-full min-h-[120px]">
+          <Link href="/exames" className="bg-surface-container-lowest p-5 md:p-6 rounded-[2.5rem] shadow-xl shadow-black/5 border border-outline-variant/10 hover:border-primary/30 hover:shadow-primary/10 transition-all group relative overflow-hidden flex flex-col h-full min-h-[140px]">
             <div className="absolute top-0 right-0 w-20 h-20 bg-primary/5 rounded-full -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-700" />
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex shrink-0 items-center justify-center group-hover:rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
-                <FlaskConical className="text-primary group-hover:text-white w-7 h-7 transition-colors" />
-              </div>
-              <h3 className="text-xl md:text-2xl font-black font-headline text-on-surface tracking-tight leading-tight">Exames</h3>
+            <div className="w-18 h-18 rounded-3xl bg-primary/10 flex items-center justify-center mb-6 group-hover:bg-primary group-hover:rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
+              <FlaskConical className="text-primary group-hover:text-white w-9 h-9 transition-colors" />
             </div>
+            <h3 className="text-2xl md:text-3xl font-black font-headline mb-3 text-on-surface tracking-tight leading-tight">Exames</h3>
             <p className="text-sm md:text-base text-on-surface-variant/60 font-body mb-4 leading-tight line-clamp-1">Resultados.</p>
             <div className="mt-auto flex items-center justify-between pt-6 border-t border-outline-variant/10">
               <div className="flex flex-col">
@@ -271,14 +253,12 @@ export default function Page() {
             </div>
           </Link>
 
-          <Link href="/desfechos" className="bg-surface-container-lowest p-5 md:p-6 rounded-[2.5rem] shadow-xl shadow-black/5 border border-outline-variant/10 hover:border-primary/30 hover:shadow-primary/10 transition-all group relative overflow-hidden flex flex-col h-full min-h-[120px]">
+          <Link href="/desfechos" className="bg-surface-container-lowest p-5 md:p-6 rounded-[2.5rem] shadow-xl shadow-black/5 border border-outline-variant/10 hover:border-primary/30 hover:shadow-primary/10 transition-all group relative overflow-hidden flex flex-col h-full min-h-[140px]">
             <div className="absolute top-0 right-0 w-20 h-20 bg-primary/5 rounded-full -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-700" />
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex shrink-0 items-center justify-center group-hover:rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
-                <ClipboardList className="text-primary group-hover:text-white w-7 h-7 transition-colors" />
-              </div>
-              <h3 className="text-xl md:text-2xl font-black font-headline text-on-surface tracking-tight leading-tight">Desfechos</h3>
+            <div className="w-18 h-18 rounded-3xl bg-primary/10 flex items-center justify-center mb-6 group-hover:bg-primary group-hover:rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
+              <ClipboardList className="text-primary group-hover:text-white w-9 h-9 transition-colors" />
             </div>
+            <h3 className="text-2xl md:text-3xl font-black font-headline mb-3 text-on-surface tracking-tight leading-tight">Desfechos</h3>
             <p className="text-sm md:text-base text-on-surface-variant/60 font-body mb-4 leading-tight line-clamp-1">Encerramentos.</p>
             <div className="mt-auto flex items-center justify-between pt-6 border-t border-outline-variant/10">
               <div className="flex flex-col">
@@ -291,14 +271,12 @@ export default function Page() {
             </div>
           </Link>
 
-          <Link href="/dashboard/overview" className="bg-surface-container-lowest p-5 md:p-6 rounded-[2.5rem] shadow-xl shadow-black/5 border border-outline-variant/10 hover:border-primary/30 hover:shadow-primary/10 transition-all group relative overflow-hidden flex flex-col h-full min-h-[120px]">
+          <Link href="/dashboard/overview" className="bg-surface-container-lowest p-5 md:p-6 rounded-[2.5rem] shadow-xl shadow-black/5 border border-outline-variant/10 hover:border-primary/30 hover:shadow-primary/10 transition-all group relative overflow-hidden flex flex-col h-full min-h-[140px]">
             <div className="absolute top-0 right-0 w-20 h-20 bg-primary/5 rounded-full -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-700" />
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex shrink-0 items-center justify-center group-hover:rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
-                <Activity className="text-primary group-hover:text-white w-7 h-7 transition-colors" />
-              </div>
-              <h3 className="text-xl md:text-2xl font-black font-headline text-on-surface tracking-tight leading-tight">Dashboard</h3>
+            <div className="w-18 h-18 rounded-3xl bg-primary/10 flex items-center justify-center mb-6 group-hover:bg-primary group-hover:rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
+              <Activity className="text-primary group-hover:text-white w-9 h-9 transition-colors" />
             </div>
+            <h3 className="text-2xl md:text-3xl font-black font-headline mb-3 text-on-surface tracking-tight leading-none">Dashboard</h3>
             <p className="text-sm md:text-base text-on-surface-variant/60 font-body mb-4 leading-tight line-clamp-1">Visão analítica.</p>
             <div className="mt-auto flex items-center justify-between pt-6 border-t border-outline-variant/10">
               <div className="flex flex-col">

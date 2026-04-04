@@ -1277,14 +1277,14 @@ export default function AtendimentosPage() {
         {/* Filters and Table Section */}
         <section className="space-y-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap items-center gap-4 w-full md:w-auto">
-              <div className="flex items-center gap-2 bg-primary/5 px-5 py-2.5 rounded-full border border-primary/10 shrink-0">
-                <span className="material-symbols-outlined text-primary text-sm">filter_list</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap items-center gap-3 w-full md:w-auto">
+              <div className="flex items-center gap-2 bg-primary/10 px-5 py-2.5 rounded-full border border-primary/20 shrink-0">
+                <span className="material-symbols-outlined text-primary text-sm">filter_alt</span>
                 <span className="text-[9px] font-black uppercase tracking-widest text-primary">Filtros Ativos</span>
               </div>
               
               <select 
-                className="w-full lg:w-auto bg-surface-container-low border-none rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
+                className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
                 value={filters.status}
                 onChange={(e) => setFilters({ ...filters, status: e.target.value })}
               >
@@ -1294,7 +1294,7 @@ export default function AtendimentosPage() {
               </select>
 
               <select 
-                className="w-full lg:w-auto bg-surface-container-low border-none rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
+                className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
                 value={filters.dpp}
                 onChange={(e) => setFilters({ ...filters, dpp: e.target.value })}
               >
@@ -1305,7 +1305,7 @@ export default function AtendimentosPage() {
               </select>
 
               <select 
-                className="w-full lg:w-auto bg-surface-container-low border-none rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
+                className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
                 value={filters.trimestre}
                 onChange={(e) => setFilters({ ...filters, trimestre: e.target.value as any })}
               >
@@ -1316,7 +1316,7 @@ export default function AtendimentosPage() {
               </select>
 
               <select 
-                className="w-full lg:w-auto bg-surface-container-low border-none rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
+                className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
                 value={filters.categoria}
                 onChange={(e) => setFilters({ ...filters, categoria: e.target.value })}
               >
@@ -1327,7 +1327,7 @@ export default function AtendimentosPage() {
               </select>
 
               <select 
-                className="w-full lg:w-auto bg-surface-container-low border-none rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
+                className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
                 value={filters.equipe}
                 onChange={(e) => setFilters({ ...filters, equipe: e.target.value })}
               >
@@ -1340,7 +1340,7 @@ export default function AtendimentosPage() {
               {(filters.dpp || filters.trimestre || filters.categoria || filters.equipe || filters.status !== 'ATIVA') && (
                 <button 
                   onClick={() => setFilters({ dpp: '', trimestre: '', categoria: '', equipe: '', status: 'ATIVA' })}
-                  className="w-full lg:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-primary/10 text-primary text-[9px] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all"
+                  className="w-full lg:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-error/10 text-error text-[9px] font-black uppercase tracking-widest hover:bg-error hover:text-white transition-all border border-error/20"
                 >
                   <span className="material-symbols-outlined text-sm">filter_alt_off</span>
                   Limpar

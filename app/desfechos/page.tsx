@@ -80,6 +80,11 @@ export default function DesfechosPage() {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
+  
+  const [filters, setFilters] = useState({
+    tipo_desfecho: '',
+    status_gestacao: '',
+  });
 
   const [formData, setFormData] = useState({
     sispn: '',
@@ -311,11 +316,30 @@ export default function DesfechosPage() {
   const filteredDesfechos = useMemo(() => {
     return desfechos.filter(d => {
       const query = searchQuery.toLowerCase().trim();
-      if (!query) return true;
       const pacienteNome = d.gestacoes?.pacientes?.gestante || '';
-      return pacienteNome.toLowerCase().includes(query) || d.sispn.includes(query);
+      
+      const matchesSearch = !query || pacienteNome.toLowerCase().includes(query) || d.sispn.includes(query);
+      if (!matchesSearch) return false;
+
+      if (filters.tipo_desfecho && d.tipo_desfecho !== filters.tipo_desfecho) return false;
+
+      if (filters.status_gestacao) {
+        // Calculate status on the fly for filtering
+        const dpp = d.gestacoes?.dpp;
+        if (!dpp) return false;
+        
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+        const end = new Date(dpp);
+        end.setHours(0, 0, 0, 0);
+        const status = now >= end ? 'VENCIDA' : 'ATIVA';
+        
+        if (status !== filters.status_gestacao) return false;
+      }
+
+      return true;
     });
-  }, [desfechos, searchQuery]);
+  }, [desfechos, searchQuery, filters]);
 
   const paginatedDesfechos = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
@@ -651,8 +675,8 @@ export default function DesfechosPage() {
 
         {/* History Table */}
         <div className="bg-white rounded-3xl border border-outline-variant/10 shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-outline-variant/5 flex items-center justify-between bg-surface-container-lowest">
-            <div className="flex items-center gap-3">
+          <div className="p-6 border-b border-outline-variant/5 flex flex-col md:flex-row items-center justify-between gap-6 bg-surface-container-lowest">
+            <div className="flex items-center gap-3 w-full md:w-auto">
               <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
                 <span className="material-symbols-outlined text-primary">history</span>
               </div>
@@ -660,6 +684,44 @@ export default function DesfechosPage() {
                 <h2 className="text-lg font-bold text-on-surface tracking-tight">Histórico de Desfechos</h2>
                 <p className="text-[10px] uppercase tracking-widest text-on-surface-variant/60 font-bold">Registros Recentes</p>
               </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap items-center gap-3 w-full md:w-auto">
+              <div className="flex items-center gap-2 bg-primary/10 px-5 py-2.5 rounded-full border border-primary/20 shrink-0">
+                <span className="material-symbols-outlined text-primary text-sm">filter_alt</span>
+                <span className="text-[9px] font-black uppercase tracking-widest text-primary">Filtros Ativos</span>
+              </div>
+              
+              <select 
+                className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
+                value={filters.status_gestacao}
+                onChange={(e) => setFilters({ ...filters, status_gestacao: e.target.value })}
+              >
+                <option value="">Status Gestação</option>
+                <option value="ATIVA">GESTAÇÃO ATIVA</option>
+                <option value="VENCIDA">GESTAÇÃO VENCIDA</option>
+              </select>
+
+              <select 
+                className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
+                value={filters.tipo_desfecho}
+                onChange={(e) => setFilters({ ...filters, tipo_desfecho: e.target.value })}
+              >
+                <option value="">Tipo de Desfecho</option>
+                {TIPO_DESFECHO_OPTIONS.map(opt => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </select>
+
+              {(filters.tipo_desfecho || filters.status_gestacao) && (
+                <button 
+                  onClick={() => setFilters({ tipo_desfecho: '', status_gestacao: '' })}
+                  className="w-full lg:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-error/10 text-error text-[9px] font-black uppercase tracking-widest hover:bg-error hover:text-white transition-all border border-error/20"
+                >
+                  <span className="material-symbols-outlined text-sm">filter_alt_off</span>
+                  Limpar
+                </button>
+              )}
             </div>
           </div>
 
