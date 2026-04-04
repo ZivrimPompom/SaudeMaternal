@@ -1,6 +1,7 @@
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 
 interface SearchContextType {
   searchQuery: string;
@@ -20,6 +21,13 @@ export function SearchProvider({ children }: { children: ReactNode }) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [onExportCSV, setOnExportCSV] = useState<(() => void) | null>(null);
+  const pathname = usePathname();
+
+  // Limpa a busca ao trocar de tela
+  useEffect(() => {
+    setSearchQuery('');
+    setIsFormOpen(false);
+  }, [pathname]);
 
   const triggerRefresh = () => setRefreshTrigger(prev => prev + 1);
 
