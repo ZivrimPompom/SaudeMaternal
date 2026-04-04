@@ -44,6 +44,7 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
   const isGestacoesPage = pathname === '/gestacoes';
   const isAtendimentosPage = pathname === '/atendimentos';
   const isExamesPage = pathname === '/exames';
+  const isDesfechosPage = pathname === '/desfechos';
   
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isSearchMobileOpen, setIsSearchMobileOpen] = useState(false);
@@ -53,9 +54,9 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
   const [gestacoes, setGestacoes] = useState<any[]>([]);
 
   useEffect(() => {
-    if (isGestacoesPage || isExamesPage || isAtendimentosPage) {
+    if (isGestacoesPage || isExamesPage || isAtendimentosPage || isDesfechosPage) {
       const fetchData = async () => {
-        console.log('Fetching data for import validation...', { isGestacoesPage, isExamesPage, isAtendimentosPage });
+        console.log('Fetching data for import validation...', { isGestacoesPage, isExamesPage, isAtendimentosPage, isDesfechosPage });
         
         const fetchChunked = async (tableName: string, selectStr: string) => {
           let allData: any[] = [];
@@ -117,6 +118,7 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
     if (isGestacoesPage) return 'Gestações';
     if (isAtendimentosPage) return 'Atendimentos';
     if (isExamesPage) return 'Exames e Vacinas';
+    if (isDesfechosPage) return 'Desfechos';
     return 'Busca';
   };
 
@@ -130,6 +132,7 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
     if (isGestacoesPage) return 'SISPN ou CPF...';
     if (isAtendimentosPage) return 'Nome, CPF ou SISPN...';
     if (isExamesPage) return 'Nome, SISPN ou Exame...';
+    if (isDesfechosPage) return 'Nome ou SISPN...';
     return 'Pesquisar...';
   };
 
@@ -579,6 +582,65 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
         return { valid, rejected: [] };
       }
     };
+    if (isDesfechosPage) return {
+      tableName: "desfechos",
+      expectedColumns: ['sispn', 'tipo_desfecho', 'data_desfecho'],
+      requiredColumns: ['sispn', 'tipo_desfecho', 'data_desfecho'],
+      conflictColumn: "id",
+      transformData: (data: any[]) => {
+        const valid: any[] = [];
+        const rejected: any[] = [];
+        
+        const formatDate = (dateStr: string) => {
+          if (!dateStr) return null;
+          if (dateStr.includes('/')) {
+            const [d, m, y] = dateStr.split('/');
+            return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+          }
+          return dateStr;
+        };
+
+        const normalizeSispn = (val: any) => {
+          if (!val) return '';
+          return val.toString().replace(/\D/g, '').replace(/^0+/, '');
+        };
+
+        const desfechoOptions = ['PARTO', 'ABORTO', 'MUDOU-SE', 'ÓBITO', 'CONVÊNIO MÉDICO', 'OUTROS'];
+
+        data.forEach(item => {
+          const sispn = normalizeSispn(item.sispn);
+          let rejectionReason = '';
+
+          if (!sispn) {
+            rejectionReason = 'SISPN ausente';
+          } else {
+            const gestacao = gestacoes.find(g => normalizeSispn(g.sispn) === sispn);
+            if (!gestacao) {
+              rejectionReason = `Gestação com SISPN ${sispn} não encontrada no Cadastro de Gestações.`;
+            }
+          }
+
+          const tipo = (item.tipo_desfecho || '').toUpperCase().trim();
+          if (!desfechoOptions.includes(tipo)) {
+            rejectionReason = rejectionReason ? `${rejectionReason} | ` : '';
+            rejectionReason += `Tipo de desfecho "${tipo}" inválido. Opções: ${desfechoOptions.join(', ')}`;
+          }
+
+          if (rejectionReason) {
+            rejected.push({ ...item, MOTIVO_REJEICAO: rejectionReason });
+          } else {
+            valid.push({
+              ...item,
+              sispn,
+              tipo_desfecho: tipo,
+              data_desfecho: formatDate(item.data_desfecho),
+              unidade_cnes: user?.unidade_cnes || null
+            });
+          }
+        });
+        return { valid, rejected };
+      }
+    };
     return null;
   };
 
@@ -681,7 +743,7 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
                   </button>
                 )}
 
-                {(isCategoriesPage || isProfessionalsPage || isOperatorsPage || isRotinasPage || isPacientesPage || isUnidadesPage || isGestacoesPage || isAtendimentosPage || isExamesPage) && (
+                {(isCategoriesPage || isProfessionalsPage || isOperatorsPage || isRotinasPage || isPacientesPage || isUnidadesPage || isGestacoesPage || isAtendimentosPage || isExamesPage || isDesfechosPage) && (
                   <button
                     onClick={() => setIsFormOpen(!isFormOpen)}
                     className={`flex items-center gap-2 px-3 md:px-4 py-1.5 rounded-full text-xs md:text-sm font-bold transition-all duration-300 ${
