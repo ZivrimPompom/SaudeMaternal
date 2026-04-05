@@ -824,7 +824,6 @@ export default function GestacoesPage() {
           <RecordsSummary 
             total={gestacoes.length} 
             filtered={filteredGestacoes.length} 
-            itemName="GESTANTE"
           />
         </div>
 
