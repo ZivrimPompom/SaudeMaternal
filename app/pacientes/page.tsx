@@ -422,7 +422,18 @@ export default function PacientesPage() {
                       )}
                     </AnimatePresence>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-4 gap-4">
+                      <div className="col-span-2 space-y-2">
+                        <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Nome da Gestante</label>
+                        <input 
+                          type="text"
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none uppercase"
+                          placeholder="NOME DA GESTANTE"
+                          value={formData.gestante || ''}
+                          onChange={(e) => setFormData({ ...formData, gestante: e.target.value.toUpperCase() })}
+                          required
+                        />
+                      </div>
                       <div className="space-y-2">
                         <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">CPF</label>
                         <input 
@@ -436,42 +447,6 @@ export default function PacientesPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Prontuário</label>
-                        <input 
-                          type="text"
-                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none"
-                          placeholder="00-000"
-                          value={formData.prontuario || ''}
-                          onChange={(e) => setFormData({ ...formData, prontuario: formatProntuario(e.target.value) })}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Nome da Gestante</label>
-                      <input 
-                        type="text"
-                        className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none uppercase"
-                        placeholder="NOME DA GESTANTE"
-                        value={formData.gestante || ''}
-                        onChange={(e) => setFormData({ ...formData, gestante: e.target.value.toUpperCase() })}
-                        required
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Nome da Mãe</label>
-                      <input 
-                        type="text"
-                        className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none uppercase"
-                        placeholder="NOME DA MÃE"
-                        value={formData.nome_mae || ''}
-                        onChange={(e) => setFormData({ ...formData, nome_mae: e.target.value.toUpperCase() })}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
                         <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">CNS</label>
                         <input 
                           type="text"
@@ -481,8 +456,21 @@ export default function PacientesPage() {
                           onChange={(e) => setFormData({ ...formData, cns: formatCns(e.target.value) })}
                         />
                       </div>
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-4">
                       <div className="space-y-2">
-                        <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Data Nascimento</label>
+                        <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Prontuário</label>
+                        <input 
+                          type="text"
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none"
+                          placeholder="00-000"
+                          value={formData.prontuario || ''}
+                          onChange={(e) => setFormData({ ...formData, prontuario: formatProntuario(e.target.value) })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Data de Nascimento</label>
                         <input 
                           type="date"
                           className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none"
@@ -490,22 +478,41 @@ export default function PacientesPage() {
                           onChange={(e) => setFormData({ ...formData, data_nascimento: e.target.value })}
                         />
                       </div>
-                    </div>
-
-                    {formData.data_nascimento && (
-                      <div className="p-4 rounded-2xl bg-primary/5 border border-primary/10 flex justify-between items-center">
-                        <div className="space-y-1">
-                          <p className="text-[8px] font-black uppercase tracking-widest text-primary/60">Idade Calculada</p>
-                          <p className="text-xs font-black text-primary">{calculateAge(formData.data_nascimento).ageText}</p>
-                        </div>
-                        <div className="text-right space-y-1">
-                          <p className="text-[8px] font-black uppercase tracking-widest text-primary/60">Fase da Vida</p>
-                          <p className="text-xs font-black text-primary">{calculateAge(formData.data_nascimento).lifeStage}</p>
+                      <div className="space-y-2">
+                        <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Idade</label>
+                        <div className="w-full bg-surface-container-low/50 border-2 border-dashed border-outline-variant/20 rounded-2xl px-6 py-4 min-h-[52px] flex items-center">
+                          <span className="text-xs font-black text-primary">
+                            {formData.data_nascimento ? calculateAge(formData.data_nascimento).ageText : '---'}
+                          </span>
                         </div>
                       </div>
-                    )}
+                      <div className="space-y-2">
+                        <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Fase da Vida</label>
+                        <div className="w-full bg-surface-container-low/50 border-2 border-dashed border-outline-variant/20 rounded-2xl px-6 py-4 min-h-[52px] flex items-center">
+                          <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest ${
+                            !formData.data_nascimento ? 'text-on-surface-variant/30' :
+                            calculateAge(formData.data_nascimento).lifeStage === 'CRIANÇA' ? 'bg-blue-100 text-blue-700' :
+                            calculateAge(formData.data_nascimento).lifeStage === 'ADOLESCENTE' ? 'bg-purple-100 text-purple-700' :
+                            calculateAge(formData.data_nascimento).lifeStage === 'IDOSO' ? 'bg-orange-100 text-orange-700' :
+                            'bg-green-100 text-green-700'
+                          }`}>
+                            {formData.data_nascimento ? calculateAge(formData.data_nascimento).lifeStage : '---'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-4 gap-4">
+                      <div className="col-span-2 space-y-2">
+                        <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Nome da Mãe</label>
+                        <input 
+                          type="text"
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none uppercase"
+                          placeholder="NOME DA MÃE"
+                          value={formData.nome_mae || ''}
+                          onChange={(e) => setFormData({ ...formData, nome_mae: e.target.value.toUpperCase() })}
+                        />
+                      </div>
                       <div className="space-y-2">
                         <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Contato</label>
                         <input 
@@ -528,7 +535,7 @@ export default function PacientesPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-4 gap-4">
                       <div className="col-span-2 space-y-2">
                         <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Logradouro</label>
                         <input 
@@ -549,9 +556,6 @@ export default function PacientesPage() {
                           onChange={(e) => setFormData({ ...formData, numero: e.target.value.toUpperCase() })}
                         />
                       </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Complemento</label>
                         <input 
@@ -562,19 +566,9 @@ export default function PacientesPage() {
                           onChange={(e) => setFormData({ ...formData, complemento: e.target.value.toUpperCase() })}
                         />
                       </div>
-                      <div className="space-y-2">
-                        <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Bairro</label>
-                        <input 
-                          type="text"
-                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none uppercase"
-                          placeholder="BAIRRO"
-                          value={formData.bairro || ''}
-                          onChange={(e) => setFormData({ ...formData, bairro: e.target.value.toUpperCase() })}
-                        />
-                      </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-4 gap-4">
                       <div className="space-y-2">
                         <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Cidade</label>
                         <input 
@@ -582,6 +576,16 @@ export default function PacientesPage() {
                           className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none uppercase opacity-60 cursor-not-allowed"
                           value="SÃO PAULO"
                           readOnly
+                        />
+                      </div>
+                      <div className="col-span-2 space-y-2">
+                        <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Bairro</label>
+                        <input 
+                          type="text"
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none uppercase"
+                          placeholder="BAIRRO"
+                          value={formData.bairro || ''}
+                          onChange={(e) => setFormData({ ...formData, bairro: e.target.value.toUpperCase() })}
                         />
                       </div>
                       <div className="space-y-2">
