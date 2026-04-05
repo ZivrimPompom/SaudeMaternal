@@ -1,60 +1,65 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Sidebar from './Sidebar';
-import Topbar from './Topbar';
+import TopBar from './TopBar';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { motion } from 'motion/react';
 
-interface DashboardLayoutProps {
-  children: React.ReactNode;
-  title: string;
-}
-
-export default function DashboardLayout({ children, title }: DashboardLayoutProps) {
+export default function DashboardLayout({ children, title }: { children: React.ReactNode; title?: string }) {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const [mounted, setMounted] = React.useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
 
   React.useEffect(() => {
-    if (!loading && !user) {
+    setMounted(true);
+    // Inicia fechada em todos os dispositivos
+    setIsSidebarOpen(false);
+  }, []);
+
+  useEffect(() => {
+    if (mounted && !loading && !user) {
       router.push('/login');
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, mounted]);
 
-  if (loading) {
+  const toggleSidebar = React.useCallback(() => setIsSidebarOpen(prev => !prev), []);
+  const closeSidebar = React.useCallback(() => setIsSidebarOpen(false), []);
+
+  if (!mounted || loading) {
     return (
-      <div className="min-h-screen bg-surface-container-lowest flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin w-12 h-12 border-4 border-primary border-t-transparent rounded-full"></div>
-          <p className="text-xs font-black uppercase tracking-[0.4em] text-primary/40 animate-pulse">Iniciando Sistema</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-surface" suppressHydrationWarning>
+        <span className="material-symbols-outlined w-8 h-8 animate-spin text-primary text-3xl">progress_activity</span>
       </div>
     );
   }
 
-  if (!user) return null;
+  if (!user) {
+    return null; // Will redirect in useEffect
+  }
 
   return (
-    <div className="min-h-screen bg-surface-container-lowest font-body selection:bg-primary/10 selection:text-primary">
-      <Sidebar />
-      <div className="lg:ml-72 min-h-screen flex flex-col">
-        <Topbar title={title} />
-        <motion.main 
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-          className="flex-1 p-4 md:p-8 lg:p-10"
+    <div className="bg-surface text-on-surface min-h-screen font-body relative" suppressHydrationWarning>
+      <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} />
+      <TopBar onToggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
+      
+      {/* Botão para reabrir Sidebar no Desktop quando recolhida */}
+      {!isSidebarOpen && (
+        <button
+          onClick={toggleSidebar}
+          className="hidden lg:flex fixed bottom-6 left-6 z-50 w-10 h-10 bg-surface-container-lowest border border-outline-variant/10 rounded-full items-center justify-center shadow-lg hover:bg-surface-container-high transition-all duration-300 text-on-surface-variant hover:text-primary"
+          title="Expandir Painel"
         >
+          <span className="material-symbols-outlined">chevron_right</span>
+        </button>
+      )}
+
+      <main className={`transition-all duration-300 pt-16 min-h-screen pb-24 overflow-y-auto ${isSidebarOpen ? 'lg:pl-64' : 'pl-0'}`}>
+        <div className="p-3 md:p-6">
           {children}
-        </motion.main>
-        
-        <footer className="p-8 text-center">
-          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/20">
-            &copy; {new Date().getFullYear()} MÃE PAULISTANA &bull; SISTEMA DE GESTÃO E MONITORAMENTO
-          </p>
-        </footer>
-      </div>
+        </div>
+      </main>
     </div>
   );
 }
