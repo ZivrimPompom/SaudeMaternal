@@ -44,18 +44,18 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
   const isGestacoesPage = pathname === '/gestacoes';
   const isAtendimentosPage = pathname === '/atendimentos';
   const isExamesPage = pathname === '/exames';
+  const isDesfechosPage = pathname === '/desfechos';
   
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [isSearchMobileOpen, setIsSearchMobileOpen] = useState(false);
   const [pacientes, setPacientes] = useState<any[]>([]);
   const [profissionais, setProfissionais] = useState<any[]>([]);
   const [rotinas, setRotinas] = useState<any[]>([]);
   const [gestacoes, setGestacoes] = useState<any[]>([]);
 
   useEffect(() => {
-    if (isGestacoesPage || isExamesPage || isAtendimentosPage) {
+    if (isGestacoesPage || isExamesPage || isAtendimentosPage || isDesfechosPage) {
       const fetchData = async () => {
-        console.log('Fetching data for import validation...', { isGestacoesPage, isExamesPage, isAtendimentosPage });
+        console.log('Fetching data for import validation...', { isGestacoesPage, isExamesPage, isAtendimentosPage, isDesfechosPage });
         
         const fetchChunked = async (tableName: string, selectStr: string) => {
           let allData: any[] = [];
@@ -105,39 +105,14 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
       };
       fetchData();
     }
-  }, [isGestacoesPage, isExamesPage, isAtendimentosPage, triggerRefresh]);
+  }, [isGestacoesPage, isExamesPage, isAtendimentosPage, isDesfechosPage, triggerRefresh]);
 
-  const getSearchLabel = () => {
-    if (isCategoriesPage) return 'Categorias Profissionais';
-    if (isProfessionalsPage) return 'Profissionais';
-    if (isOperatorsPage) return 'Operadores';
-    if (isRotinasPage) return 'Rotinas';
-    if (isPacientesPage) return 'Pacientes';
-    if (isUnidadesPage) return 'Unidades de Saúde';
-    if (isGestacoesPage) return 'Gestações';
-    if (isAtendimentosPage) return 'Atendimentos';
-    if (isExamesPage) return 'Exames e Vacinas';
-    return 'Busca';
-  };
-
-  const getSearchPlaceholder = () => {
-    if (isCategoriesPage) return 'CBO ou Categoria...';
-    if (isProfessionalsPage) return 'Nome, CPF ou CNS...';
-    if (isOperatorsPage) return 'Nome ou CPF...';
-    if (isRotinasPage) return 'Descrição ou Tipo...';
-    if (isPacientesPage) return 'Nome ou CPF...';
-    if (isUnidadesPage) return 'CNES ou Nome...';
-    if (isGestacoesPage) return 'SISPN ou CPF...';
-    if (isAtendimentosPage) return 'Nome, CPF ou SISPN...';
-    if (isExamesPage) return 'Nome, SISPN ou Exame...';
-    return 'Pesquisar...';
-  };
 
   const getImporterProps = () => {
     if (isPacientesPage) return {
       tableName: "pacientes",
-      expectedColumns: ['gestante', 'cpf', 'nome_mae', 'prontuario', 'cns', 'data_nascimento', 'logradouro', 'numero', 'complemento', 'bairro', 'contato', 'email', 'cpf_operador'],
-      requiredColumns: ['nome', 'cpf'],
+      expectedColumns: ['gestante', 'cpf', 'cns', 'prontuario', 'data_nascimento', 'nome_mae', 'contato', 'email', 'logradouro', 'numero', 'complemento', 'cidade', 'bairro', 'uf'],
+      requiredColumns: ['gestante', 'cpf'],
       conflictColumn: "cpf",
       transformData: (data: any[]) => {
         const valid: any[] = [];
@@ -167,10 +142,10 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
             logradouro: (item.logradouro || '').toUpperCase(),
             complemento: (item.complemento || '').toUpperCase(),
             bairro: (item.bairro || '').toUpperCase(),
-            cidade: 'SÃO PAULO',
-            uf: 'SP',
+            cidade: (item.cidade || 'SÃO PAULO').toUpperCase(),
+            uf: (item.uf || 'SP').toUpperCase(),
             operador_responsavel: user?.nome || 'SISTEMA',
-            cpf_operador: item.cpf_operador || user?.cpf || null
+            cpf_operador: user?.cpf || null
           });
         });
         return { valid, rejected };
@@ -178,7 +153,7 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
     };
     if (isProfessionalsPage) return {
       tableName: "profissionais",
-      expectedColumns: ['nome', 'cpf', 'cbo', 'cns', 'conselho', 'uf_conselho', 'numero_conselho'],
+      expectedColumns: ['nome', 'cpf', 'cns', 'cbo', 'unidade_cnes', 'equipe', 'situacao', 'vinculo', 'tipo_vinculo', 'chs'],
       requiredColumns: ['nome', 'cpf', 'cbo'],
       conflictColumn: "cpf",
       transformData: (data: any[]) => {
@@ -195,8 +170,12 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
               cpf,
               cbo: (item.cbo || '').replace(/\D/g, ''),
               cns: (item.cns || '').replace(/\D/g, ''),
-              conselho: (item.conselho || '').toUpperCase(),
-              uf_conselho: (item.uf_conselho || 'SP').toUpperCase()
+              unidade_cnes: item.unidade_cnes || null,
+              equipe: item.equipe || 'SEM EQUIPE',
+              situacao: (item.situacao || 'ATIVO').toUpperCase(),
+              vinculo: (item.vinculo || 'INTERMEDIADO').toUpperCase(),
+              tipo_vinculo: (item.tipo_vinculo || 'CLT').toUpperCase(),
+              chs: parseInt(item.chs) || 20
             });
           }
         });
@@ -347,7 +326,7 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
     };
     if (isAtendimentosPage) return {
       tableName: "atendimentos",
-      expectedColumns: ['sispn', 'data_consulta', 'cbo', 'cpf', 'data_proxima_consulta', 'observacoes_clinicas'],
+      expectedColumns: ['sispn', 'data_consulta', 'trimestre_consulta', 'cbo', 'cpf', 'data_proxima_consulta', 'observacoes_clinicas'],
       requiredColumns: ['sispn', 'data_consulta', 'cbo'],
       conflictColumn: "id_atendimento",
       transformData: (data: any[]) => {
@@ -391,6 +370,7 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
               data_consulta: formatDate(item.data_consulta),
               data_proxima_consulta: formatDate(item.data_proxima_consulta),
               cbo: (item.cbo || '').replace(/\D/g, ''),
+              trimestre_consulta: (item.trimestre_consulta || '1º TRIMESTRE').toUpperCase(),
               cpf_operador: user?.cpf || null,
               observacoes_clinicas: (item.observacoes_clinicas || '').toUpperCase()
             });
@@ -401,7 +381,7 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
     };
     if (isExamesPage) return {
       tableName: "registro_rotinas",
-      expectedColumns: ['sispn', 'id_rotina', 'data_realizacao', 'resultado', 'cbo', 'cpf_profissional'],
+      expectedColumns: ['sispn', 'id_rotina', 'tipo', 'data_realizacao', 'resultado', 'observacoes', 'trimestre_realizacao', 'cbo', 'cpf_profissional'],
       requiredColumns: ['sispn', 'id_rotina', 'data_realizacao'],
       conflictColumn: "id_registro",
       transformData: (data: any[]) => {
@@ -451,7 +431,7 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
             rejectionReason = `Gestação com SISPN ${sispn} não encontrada no Cadastro de Gestações.`;
           }
 
-          const calculatedTrimestre = calculateTrimestre(gestacao?.dum || '', dataRealizacao || '');
+          const calculatedTrimestre = item.trimestre_realizacao || calculateTrimestre(gestacao?.dum || '', dataRealizacao || '');
           const rotinaTrimestre = mapToRotinaTrimestre(calculatedTrimestre);
 
           const normalizeDescription = (desc: string) => {
@@ -500,7 +480,9 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
             resultado: (item.resultado || '').toUpperCase(),
             trimestre_realizacao: calculatedTrimestre,
             cbo: (item.cbo || '').replace(/\D/g, ''),
-            cpf_operador: user?.cpf || null
+            cpf_operador: user?.cpf || null,
+            observacoes: (item.observacoes || '').toUpperCase(),
+            tipo: (item.tipo || rotina?.tipo || 'EXAME').toUpperCase()
           };
 
           const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(transformedItem.id_rotina);
@@ -526,8 +508,8 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
     };
     if (isOperatorsPage) return {
       tableName: "operadores",
-      expectedColumns: ['nome', 'cpf', 'senha', 'status', 'nivel_acesso', 'sigla', 'unidade_cnes'],
-      requiredColumns: ['nome', 'cpf', 'senha'],
+      expectedColumns: ['name', 'cpf', 'unidade_cnes', 'status', 'nivel_acesso', 'password'],
+      requiredColumns: ['name', 'cpf', 'password'],
       conflictColumn: "cpf",
       transformData: (data: any[]) => {
         const valid: any[] = [];
@@ -539,10 +521,12 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
           } else {
             valid.push({
               ...item,
-              nome: (item.nome || '').toUpperCase(),
+              name: (item.name || item.nome || '').toUpperCase(),
               cpf,
               status: item.status || 'Ativo',
-              unidade_cnes: item.unidade_cnes || null
+              unidade_cnes: item.unidade_cnes || null,
+              nivel_acesso: item.nivel_acesso || 'Usuário',
+              password: item.password || item.senha || null
             });
           }
         });
@@ -579,6 +563,65 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
         return { valid, rejected: [] };
       }
     };
+    if (isDesfechosPage) return {
+      tableName: "desfechos",
+      expectedColumns: ['sispn', 'tipo_desfecho', 'data_desfecho'],
+      requiredColumns: ['sispn', 'tipo_desfecho', 'data_desfecho'],
+      conflictColumn: "id",
+      transformData: (data: any[]) => {
+        const valid: any[] = [];
+        const rejected: any[] = [];
+        
+        const formatDate = (dateStr: string) => {
+          if (!dateStr) return null;
+          if (dateStr.includes('/')) {
+            const [d, m, y] = dateStr.split('/');
+            return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+          }
+          return dateStr;
+        };
+
+        const normalizeSispn = (val: any) => {
+          if (!val) return '';
+          return val.toString().replace(/\D/g, '').replace(/^0+/, '');
+        };
+
+        const desfechoOptions = ['PARTO', 'ABORTO', 'MUDOU-SE', 'ÓBITO', 'CONVÊNIO MÉDICO', 'OUTROS'];
+
+        data.forEach(item => {
+          const sispn = normalizeSispn(item.sispn);
+          let rejectionReason = '';
+
+          if (!sispn) {
+            rejectionReason = 'SISPN ausente';
+          } else {
+            const gestacao = gestacoes.find(g => normalizeSispn(g.sispn) === sispn);
+            if (!gestacao) {
+              rejectionReason = `Gestação com SISPN ${sispn} não encontrada no Cadastro de Gestações.`;
+            }
+          }
+
+          const tipo = (item.tipo_desfecho || '').toUpperCase().trim();
+          if (!desfechoOptions.includes(tipo)) {
+            rejectionReason = rejectionReason ? `${rejectionReason} | ` : '';
+            rejectionReason += `Tipo de desfecho "${tipo}" inválido. Opções: ${desfechoOptions.join(', ')}`;
+          }
+
+          if (rejectionReason) {
+            rejected.push({ ...item, MOTIVO_REJEICAO: rejectionReason });
+          } else {
+            valid.push({
+              ...item,
+              sispn,
+              tipo_desfecho: tipo,
+              data_desfecho: formatDate(item.data_desfecho),
+              unidade_cnes: user?.unidade_cnes || null
+            });
+          }
+        });
+        return { valid, rejected };
+      }
+    };
     return null;
   };
 
@@ -606,130 +649,103 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
   return (
     <header className={`fixed top-0 right-0 h-16 z-40 bg-surface/80 backdrop-blur-xl border-b border-outline-variant/10 flex justify-between items-center px-4 md:px-8 transition-all duration-300 ${isSidebarOpen ? 'w-full lg:w-[calc(100%-16rem)]' : 'w-full'}`}>
       <div className="flex items-center gap-1 md:gap-4 flex-1">
-        {!isSearchMobileOpen && (
-          <>
-            <button 
-              onClick={onToggleSidebar}
-              className="p-2 rounded-lg hover:bg-surface-container-high text-on-surface-variant transition-colors"
-              title={isSidebarOpen ? 'Recolher Menu' : 'Expandir Menu'}
-            >
-              <span className="material-symbols-outlined">{isSidebarOpen ? 'menu_open' : 'menu'}</span>
-            </button>
+        <button 
+          onClick={onToggleSidebar}
+          className="p-2 rounded-lg hover:bg-surface-container-high text-on-surface-variant transition-colors"
+          title={isSidebarOpen ? 'Recolher Menu' : 'Expandir Menu'}
+        >
+          <span className="material-symbols-outlined">{isSidebarOpen ? 'menu_open' : 'menu'}</span>
+        </button>
 
-            <Link 
-              href="/"
-              className="p-2 rounded-lg hover:bg-surface-container-high text-on-surface-variant transition-colors flex items-center gap-2"
-              title="Ir para Home"
-            >
-              <span className="material-symbols-outlined">home</span>
-              <span className="hidden sm:inline text-sm font-semibold">Home</span>
-            </Link>
-          </>
-        )}
+        <Link 
+          href="/"
+          className="p-2 rounded-lg hover:bg-surface-container-high text-on-surface-variant transition-colors flex items-center gap-2"
+          title="Ir para Home"
+        >
+          <span className="material-symbols-outlined">home</span>
+          <span className="hidden sm:inline text-sm font-semibold">Home</span>
+        </Link>
         
         {!isHomePage && (
-          <div className={`flex items-center gap-2 flex-1 ${isSearchMobileOpen ? 'px-0' : 'ml-1 md:ml-2'}`}>
-            {!isSearchMobileOpen && (
-              <>
-                <span className="hidden lg:block text-lg font-black text-primary font-headline whitespace-nowrap">{getSearchLabel()}</span>
-                <div className="hidden lg:block h-6 w-px bg-outline-variant/20 mx-2"></div>
-              </>
+          <div className="flex items-center gap-1 md:gap-2 ml-auto">
+            {importerProps && (
+              <CSVImporter 
+                {...importerProps}
+                onSuccess={triggerRefresh}
+                title="Importar"
+                hideTitleOnMobile={true}
+                className="flex items-center gap-2 px-3 md:px-4 py-1.5 rounded-full text-xs md:text-sm font-bold transition-all duration-300 bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20"
+              />
             )}
 
-            <div className="relative flex-1 max-w-md">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/30 text-lg">search</span>
-              <input
-                type="text"
-                placeholder={getSearchPlaceholder()}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-1.5 bg-surface-container-low border-none rounded-full text-xs font-bold focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-on-surface-variant/30"
-              />
-            </div>
+            {importerProps && (
+              <button
+                onClick={handleExportLayout}
+                className="flex items-center gap-2 px-3 md:px-4 py-1.5 rounded-full text-xs md:text-sm font-bold transition-all duration-300 bg-white text-primary border border-primary hover:bg-primary/5 shadow-lg shadow-primary/5"
+                title="Baixar modelo de planilha para importação"
+              >
+                <span className="material-symbols-outlined text-sm">download</span>
+                <span className="hidden md:inline">Exportar Layout</span>
+              </button>
+            )}
 
-            {!isSearchMobileOpen && (
-              <div className="flex items-center gap-1 md:gap-2">
-                {importerProps && (
-                  <CSVImporter 
-                    {...importerProps}
-                    onSuccess={triggerRefresh}
-                    title="Importar"
-                    hideTitleOnMobile={true}
-                    className="flex items-center gap-2 px-3 md:px-4 py-1.5 rounded-full text-xs md:text-sm font-bold transition-all duration-300 bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20"
-                  />
-                )}
+            {onExportCSV && (
+              <button
+                onClick={onExportCSV}
+                className="flex items-center gap-2 px-3 md:px-4 py-1.5 rounded-full text-xs md:text-sm font-bold transition-all duration-300 bg-white text-primary border border-primary hover:bg-primary/5 shadow-lg shadow-primary/5"
+                title="Exportar dados atuais para CSV"
+              >
+                <span className="material-symbols-outlined text-sm">download</span>
+                <span className="hidden md:inline">Exportar CSV</span>
+              </button>
+            )}
 
-                {importerProps && (
-                  <button
-                    onClick={handleExportLayout}
-                    className="flex items-center gap-2 px-3 md:px-4 py-1.5 rounded-full text-xs md:text-sm font-bold transition-all duration-300 bg-white text-primary border border-primary hover:bg-primary/5 shadow-lg shadow-primary/5"
-                    title="Baixar modelo de planilha para importação"
-                  >
-                    <span className="material-symbols-outlined text-sm">download</span>
-                    <span className="hidden md:inline">Exportar Layout</span>
-                  </button>
-                )}
-
-                {onExportCSV && (
-                  <button
-                    onClick={onExportCSV}
-                    className="flex items-center gap-2 px-3 md:px-4 py-1.5 rounded-full text-xs md:text-sm font-bold transition-all duration-300 bg-white text-primary border border-primary hover:bg-primary/5 shadow-lg shadow-primary/5"
-                    title="Exportar dados atuais para CSV"
-                  >
-                    <span className="material-symbols-outlined text-sm">upload</span>
-                    <span className="hidden md:inline">Exportar CSV</span>
-                  </button>
-                )}
-
-                {(isCategoriesPage || isProfessionalsPage || isOperatorsPage || isRotinasPage || isPacientesPage || isUnidadesPage || isGestacoesPage || isAtendimentosPage || isExamesPage) && (
-                  <button
-                    onClick={() => setIsFormOpen(!isFormOpen)}
-                    className={`flex items-center gap-2 px-3 md:px-4 py-1.5 rounded-full text-xs md:text-sm font-bold transition-all duration-300 ${
-                      isFormOpen 
-                        ? 'bg-red-600 text-white hover:bg-red-700 shadow-lg shadow-red-200' 
-                        : 'bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20'
-                    }`}
-                  >
-                    <span className="material-symbols-outlined text-sm">{isFormOpen ? 'close' : 'add'}</span>
-                    <span className="hidden md:inline">{isFormOpen ? 'Fechar' : 'Cadastrar'}</span>
-                  </button>
-                )}
-              </div>
+            {(isCategoriesPage || isProfessionalsPage || isOperatorsPage || isRotinasPage || isPacientesPage || isUnidadesPage || isGestacoesPage || isAtendimentosPage || isExamesPage || isDesfechosPage) && (
+              <button
+                onClick={() => setIsFormOpen(!isFormOpen)}
+                className={`flex items-center gap-2 px-3 md:px-4 py-1.5 rounded-full text-xs md:text-sm font-bold transition-all duration-300 ${
+                  isFormOpen 
+                    ? 'bg-red-600 text-white hover:bg-red-700 shadow-lg shadow-red-200' 
+                    : 'bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20'
+                }`}
+              >
+                <span className="material-symbols-outlined text-sm">{isFormOpen ? 'close' : 'add'}</span>
+                <span className="hidden md:inline">{isFormOpen ? 'Fechar' : 'Cadastrar'}</span>
+              </button>
             )}
           </div>
         )}
       </div>
 
-      {!isSearchMobileOpen && (
-        <div className="flex items-center gap-2 md:gap-6 ml-2">
-          <div className="flex items-center gap-1 md:gap-4">
-            <button 
-              onClick={toggleTheme}
-              className="p-2 rounded-lg hover:bg-surface-container-high text-on-surface-variant transition-colors flex items-center justify-center"
-              title={getThemeTitle()}
-            >
-              <span className="material-symbols-outlined text-lg">
-                {getThemeIcon()}
-              </span>
-            </button>
-            <button className="hidden sm:block material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">notifications</button>
-            <button className="hidden sm:block material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">apps</button>
-          </div>
-          
-          <div className="relative">
-            <button 
-              onClick={() => setIsProfileOpen(!isProfileOpen)}
-              className="flex items-center gap-2 md:gap-3 hover:bg-surface-container-low p-1 rounded-xl transition-colors"
-            >
-              <span className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs shrink-0">
-                {userInitials}
-              </span>
-              <span className="hidden lg:block text-left">
-                <span className="block text-xs font-bold leading-none mb-1 capitalize text-on-surface">{userName}</span>
-                <span className="block text-[10px] text-on-surface-variant/60 leading-none truncate max-w-[120px]">{userRole}</span>
-              </span>
-              <span className={`material-symbols-outlined text-on-surface-variant/40 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`}>expand_more</span>
-            </button>
+      <div className="flex items-center gap-2 md:gap-6 ml-2">
+        <div className="flex items-center gap-1 md:gap-4">
+          <button 
+            onClick={toggleTheme}
+            className="p-2 rounded-lg hover:bg-surface-container-high text-on-surface-variant transition-colors flex items-center justify-center"
+            title={getThemeTitle()}
+          >
+            <span className="material-symbols-outlined text-lg">
+              {getThemeIcon()}
+            </span>
+          </button>
+          <button className="hidden sm:block material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">notifications</button>
+          <button className="hidden sm:block material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">apps</button>
+        </div>
+        
+        <div className="relative">
+          <button 
+            onClick={() => setIsProfileOpen(!isProfileOpen)}
+            className="flex items-center gap-2 md:gap-3 hover:bg-surface-container-low p-1 rounded-xl transition-colors"
+          >
+            <span className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs shrink-0">
+              {userInitials}
+            </span>
+            <span className="hidden lg:block text-left">
+              <span className="block text-xs font-bold leading-none mb-1 capitalize text-on-surface">{userName}</span>
+              <span className="block text-[10px] text-on-surface-variant/60 leading-none truncate max-w-[120px]">{userRole}</span>
+            </span>
+            <span className={`material-symbols-outlined text-on-surface-variant/40 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`}>expand_more</span>
+          </button>
 
           {isProfileOpen && (
             <div className="absolute top-full right-0 mt-2 w-48 bg-surface-container-lowest rounded-xl shadow-xl border border-outline-variant/10 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
@@ -748,7 +764,6 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
           )}
         </div>
       </div>
-    )}
-  </header>
+    </header>
   );
 }

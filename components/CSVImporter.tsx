@@ -3,7 +3,7 @@
 import React, { useRef, useState } from 'react';
 import Papa from 'papaparse';
 import { supabase } from '@/lib/supabase';
-import { FileUp, AlertCircle, CheckCircle2, Loader2, X } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Loader2, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '@/context/AuthContext';
 
@@ -249,7 +249,7 @@ export default function CSVImporter({
         onClick={() => fileInputRef.current?.click()}
         className={className || "inline-flex items-center gap-2 bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white px-4 py-2 rounded-xl transition-all font-headline text-[10px] font-black uppercase tracking-widest shadow-sm"}
       >
-        <FileUp className="w-4 h-4" />
+        <span className="material-symbols-outlined text-lg">upload</span>
         <span className={hideTitleOnMobile ? "hidden md:inline" : ""}>{title}</span>
       </button>
       
@@ -273,7 +273,7 @@ export default function CSVImporter({
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
-                    <FileUp className="text-primary w-5 h-5" />
+                    <span className="material-symbols-outlined text-primary text-xl">upload</span>
                   </div>
                   <h3 className="text-xl font-black font-headline text-on-surface">Confirmar Importação</h3>
                 </div>
@@ -329,7 +329,7 @@ export default function CSVImporter({
                       onClick={downloadRejected}
                       className="w-full p-4 rounded-2xl bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white transition-all text-xs font-bold flex items-center justify-center gap-3 uppercase tracking-widest"
                     >
-                      <FileUp className="w-4 h-4 rotate-180" />
+                      <span className="material-symbols-outlined text-lg">download</span>
                       Baixar Registros Rejeitados (.csv)
                     </button>
                   )}
