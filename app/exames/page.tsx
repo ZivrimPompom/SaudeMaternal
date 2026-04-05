@@ -182,7 +182,10 @@ export default function ExamesPage() {
           tipo_temp: '',
           data_realizacao: '',
           resultado: 'NEGATIVO / NÃO REAGENTE',
-          trimestre_realizacao: '---'
+          trimestre_realizacao: '---',
+          cpf_profissional: '',
+          categoria_profissional: 'MEDICO',
+          nome_profissional: ''
         }
       ]);
     }
@@ -456,16 +459,17 @@ export default function ExamesPage() {
 
     if (!isSupabaseConfigured) return;
     if (!formData.sispn) return setError('Selecione uma gestante.');
-    if (!selectedProfessionalCpf) return setError('Selecione um profissional.');
 
     const gest = gestacoes.find(g => g.sispn === formData.sispn);
     if (!gest) return setError('Gestação não encontrada.');
     if (getGestacaoStatus(gest.dpp) === 'VENCIDA') return setError('Gestação VENCIDA.');
 
     try {
-      const professional = allProfessionals.find(p => p.cpf === selectedProfessionalCpf);
-      
       const payloads = formEntries.map(entry => {
+        if (!entry.cpf_profissional) {
+          throw new Error('Selecione um profissional para todas as linhas.');
+        }
+
         const trimestre = calculateTrimestre(gest.dum, entry.data_realizacao || '');
         
         if (trimestre === 'FORA DO PERÍODO') {
@@ -482,6 +486,8 @@ export default function ExamesPage() {
           (!entry.tipo_temp || r.tipo === entry.tipo_temp)
         );
 
+        const professional = allProfessionals.find(p => p.cpf === entry.cpf_profissional);
+
         return {
           sispn: formData.sispn,
           id_rotina: routine?.id || entry.id_rotina,
@@ -489,7 +495,7 @@ export default function ExamesPage() {
           resultado: entry.resultado,
           trimestre_realizacao: trimestre,
           cbo: professional?.cbo || null,
-          cpf_profissional: selectedProfessionalCpf || 'NÃO INFORMADO',
+          cpf_profissional: entry.cpf_profissional || 'NÃO INFORMADO',
           unidade_cnes: authUser?.unidade_cnes || null,
           cpf_operador: authUser?.cpf || null
         };
@@ -507,8 +513,11 @@ export default function ExamesPage() {
         setSuccess(`${payloads.length} resultados registrados!`);
       }
 
-      setIsFormOpen(false);
-      fetchData();
+      await fetchData();
+      const launchSection = document.getElementById('launch-section');
+      if (launchSection) {
+        launchSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     } catch (err: any) {
       setError(err.message);
     }
@@ -542,10 +551,14 @@ export default function ExamesPage() {
         tipo_temp: res.tipo || res.rotinas?.tipo || 'EXAME',
         data_realizacao: res.data_realizacao,
         resultado: res.resultado,
-        trimestre_realizacao: res.trimestre_realizacao
+        trimestre_realizacao: res.trimestre_realizacao,
+        cpf_profissional: res.cpf_profissional || '',
+        categoria_profissional: prof?.cbo ? (categories.find(c => prof.cbo.startsWith(c.cbo))?.categoria || 'MEDICO') : 'MEDICO',
+        nome_profissional: prof?.nome || ''
       }
     ]);
 
+    setIsViewingHistory(false);
     setIsFormOpen(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -573,6 +586,7 @@ export default function ExamesPage() {
       const pacObj = Array.isArray(pac) ? pac[0] : pac;
       const pacienteNome = (pacObj as any)?.gestante || '';
       const rotinaNome = r.rotinas?.descricao || '';
+      const gestacaoStatus = gest ? getGestacaoStatus((gest as any).dpp) : '---';
       
       const matchesSearch = !query || (
         normalize(pacienteNome).includes(queryNormalizada) ||
@@ -581,6 +595,7 @@ export default function ExamesPage() {
       );
 
       if (!matchesSearch) return false;
+      if (filters.status && gestacaoStatus !== filters.status) return false;
       if (filters.tipo && (r.tipo || r.rotinas?.tipo) !== filters.tipo) return false;
       if (filters.trimestre && r.trimestre_realizacao !== filters.trimestre) return false;
       if (filters.rotina && r.rotinas?.descricao !== filters.rotina) return false;
@@ -646,7 +661,7 @@ export default function ExamesPage() {
 
   return (
     <DashboardLayout title="Exames e Vacinas">
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className="max-w-7xl mx-auto space-y-3">
         {/* Topbar Pattern - Figura 1 */}
         <div className="bg-white p-4 rounded-2xl border border-outline-variant/10 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -664,7 +679,7 @@ export default function ExamesPage() {
         <AnimatePresence>
           {isFormOpen && (
             <motion.section initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-              <div className="bg-surface-container-lowest p-8 md:p-12 rounded-[40px] shadow-2xl border border-outline-variant/10 space-y-10">
+              <div id="launch-section" className="bg-surface-container-lowest p-4 md:p-6 rounded-[40px] shadow-2xl border border-outline-variant/10 space-y-3">
                 {selectedGestante && (
                   <PatientBanner 
                     patient={{
@@ -679,351 +694,364 @@ export default function ExamesPage() {
                     }}
                   />
                 )}
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
-                    <span className="material-symbols-outlined text-2xl">edit_note</span>
-                  </div>
-                  <div>
-                    <h3 className="text-2xl font-black text-primary uppercase tracking-tight">Novos Dados da Rotina</h3>
-                    <p className="text-sm text-on-surface-variant/60 font-body">Insira as informações do laudo laboratorial.</p>
-                  </div>
-                </div>
-
-                <form onSubmit={handleSubmit} className="space-y-8">
-                  <div className={isViewingHistory && !editingId ? 'hidden' : 'block'}>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    {/* Patient Selection */}
-                    <div className="space-y-2 relative" ref={patientDropdownRef}>
-                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Busca por SISPN ou Nome <span className="text-error">*</span></label>
-                      <div className="relative">
-                        <input 
-                          type="text"
-                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none shadow-inner"
-                          placeholder="Busca por SISPN ou Nome"
-                          value={patientSearch}
-                          onChange={(e) => { setPatientSearch(e.target.value); setIsPatientDropdownOpen(true); }}
-                          onFocus={() => setIsPatientDropdownOpen(true)}
-                        />
-                        <AnimatePresence>
-                          {isPatientDropdownOpen && patientSearchResults.length > 0 && (
-                            <motion.div 
-                              initial={{ opacity: 0, y: 10 }} 
-                              animate={{ opacity: 1, y: 0 }} 
-                              exit={{ opacity: 0, y: 10 }} 
-                              className="absolute top-full left-0 right-0 mt-2 bg-surface-container-lowest rounded-2xl shadow-2xl border-4 border-primary z-50 overflow-hidden"
-                            >
-                              <div className="bg-primary px-6 py-3">
-                                <p className="text-white font-black text-[10px] uppercase tracking-widest">Selecione a gestante...</p>
-                              </div>
-                              <div className="max-h-60 overflow-y-auto">
-                                {patientSearchResults.map((g, idx) => (
-                                  <button 
-                                    key={`${g.sispn}-${idx}`} 
-                                    type="button" 
-                                    onClick={() => { 
-                                      setFormData({ ...formData, sispn: g.sispn }); 
-                                      setPatientSearch(g.paciente_nome); 
-                                      setIsPatientDropdownOpen(false); 
-                                    }} 
-                                    className="w-full px-6 py-4 text-left hover:bg-primary/5 border-b border-outline-variant/5 last:border-0 group"
-                                  >
-                                    <p className="font-bold text-xs text-on-surface uppercase group-hover:text-primary transition-colors">{g.paciente_nome} ({g.sispn})</p>
-                                  </button>
-                                ))}
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    </div>
-
-                    {/* SISPN */}
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">SISPN</label>
-                      <input 
-                        type="text" 
-                        readOnly 
-                        className="w-full bg-surface-container-low border-2 border-transparent rounded-2xl px-6 py-4 font-body text-sm outline-none text-primary font-bold uppercase" 
-                        value={selectedGestante?.sispn || ''} 
-                        placeholder="-"
-                      />
-                    </div>
 
 
-                    {/* Professional Search */}
-                    <div className="space-y-2 relative" ref={professionalDropdownRef}>
-                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Profissional <span className="text-error">*</span></label>
-                      <div className="relative">
-                        <input 
-                          type="text"
-                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-sm outline-none shadow-inner"
-                          placeholder="Busque o profissional..."
-                          value={professionalSearch}
-                          onChange={(e) => { setProfessionalSearch(e.target.value); setIsProfessionalDropdownOpen(true); }}
-                          onFocus={() => setIsProfessionalDropdownOpen(true)}
-                        />
-                        <AnimatePresence>
-                          {isProfessionalDropdownOpen && professionalSearchResults.length > 0 && (
-                            <motion.div 
-                              initial={{ opacity: 0, y: 10 }} 
-                              animate={{ opacity: 1, y: 0 }} 
-                              exit={{ opacity: 0, y: 10 }} 
-                              className="absolute top-full left-0 right-0 mt-2 bg-surface-container-lowest rounded-2xl shadow-2xl border-4 border-primary z-50 overflow-hidden"
-                            >
-                              <div className="bg-primary px-6 py-3">
-                                <p className="text-white font-black text-[10px] uppercase tracking-widest">Selecione o profissional...</p>
-                              </div>
-                              <div className="max-h-60 overflow-y-auto">
-                                {professionalSearchResults.map((p, idx) => (
-                                  <button 
-                                    key={`${p.cpf}-${idx}`} 
-                                    type="button" 
-                                    onClick={() => { 
-                                      setSelectedProfessionalCpf(p.cpf); 
-                                      setProfessionalSearch(p.nome); 
-                                      setIsProfessionalDropdownOpen(false);
-                                      const cat = categories.find(c => p.cbo.startsWith(c.cbo));
-                                      if (cat) setSelectedCategory(cat.categoria);
-                                    }} 
-                                    className="w-full px-6 py-4 text-left hover:bg-primary/5 border-b border-outline-variant/5 last:border-0 group"
-                                  >
-                                    <p className="font-bold text-xs text-on-surface uppercase group-hover:text-primary transition-colors">{p.nome}</p>
-                                    <p className="text-[10px] text-on-surface-variant/60 uppercase">{p.cbo}</p>
-                                  </button>
-                                ))}
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    </div>
-
-                    {/* Category (Automatic) */}
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Categoria</label>
-                      <input type="text" readOnly className="w-full bg-surface-container-low border-2 border-transparent rounded-2xl px-6 py-4 font-body text-sm outline-none text-primary font-bold uppercase" value={selectedCategory} />
-                    </div>
-                  </div>
-
-                  {/* Patient Info Header */}
-                  {selectedGestante && (
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 p-6 bg-primary/5 rounded-[32px] border border-primary/10">
-                      <div className="space-y-1">
-                        <p className="text-[9px] font-black text-primary/60 uppercase tracking-widest">Status</p>
-                        <p className="text-xs font-black text-primary uppercase">{getStatusCaptacao(selectedGestante.dum, selectedGestante.data_cadastro)}</p>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-[9px] font-black text-primary/60 uppercase tracking-widest">DUM</p>
-                        <p className="text-xs font-black text-on-surface">{new Date(selectedGestante.dum).toLocaleDateString('pt-BR')}</p>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-[9px] font-black text-primary/60 uppercase tracking-widest">DPP</p>
-                        <p className="text-xs font-black text-on-surface">{new Date(selectedGestante.dpp).toLocaleDateString('pt-BR')}</p>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-[9px] font-black text-primary/60 uppercase tracking-widest">DPP Ref.</p>
-                        <p className="text-xs font-black text-on-surface">{getDppReferencia(selectedGestante.dpp)}</p>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-[9px] font-black text-primary/60 uppercase tracking-widest">Equipe</p>
-                        <p className="text-xs font-black text-on-surface uppercase">{selectedGestante.equipe}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Spreadsheet Grid */}
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-sm font-black text-primary uppercase tracking-widest">Lançamento de Rotinas</h4>
-                      {!editingId && (
-                        <button 
-                          type="button" 
-                          onClick={() => {
-                            setFormEntries([...formEntries, {
-                              id: Math.random().toString(36).substr(2, 9),
-                              id_rotina: '',
-                              descricao: '',
-                              tipo_temp: '',
-                              data_realizacao: '',
-                              resultado: 'NEGATIVO / NÃO REAGENTE',
-                              trimestre_realizacao: '---'
-                            }]);
-                          }}
-                          className="flex items-center gap-2 text-primary hover:text-primary/70 transition-colors"
-                        >
-                          <span className="material-symbols-outlined text-lg">add_circle</span>
-                          <span className="text-[10px] font-black uppercase tracking-widest">Adicionar Linha</span>
-                        </button>
-                      )}
-                    </div>
-
-                    <div className="bg-surface-container-low rounded-[32px] overflow-hidden border border-outline-variant/10">
-                      <table className="w-full text-left border-separate border-spacing-0">
-                        <thead className="bg-surface-container-high">
-                          <tr>
-                            <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Data Realização</th>
-                            <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Trimestre</th>
-                            <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Rotina</th>
-                            <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Tipo</th>
-                            <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Resultado</th>
-                            {!editingId && <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60 text-center">Ações</th>}
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-outline-variant/5">
-                          {formEntries.map((entry, index) => (
-                            <tr key={entry.id} className="hover:bg-white/50 transition-colors">
-                              <td className="px-6 py-4">
-                                <div className="bg-surface-container-low/50 rounded-xl px-3 py-2">
-                                  <input 
-                                    type="date" 
-                                    className="bg-transparent border-none p-0 text-[11px] font-bold outline-none focus:ring-0 w-full text-on-surface"
-                                    value={entry.data_realizacao}
-                                    onChange={(e) => {
-                                      const newEntries = [...formEntries];
-                                      newEntries[index].data_realizacao = e.target.value;
-                                      setFormEntries(newEntries);
-                                    }}
-                                  />
-                                </div>
-                              </td>
-                               <td className="px-6 py-4">
-                                <div className="bg-surface-container-low/50 rounded-xl px-3 py-2">
-                                  <span className={`text-[11px] font-bold ${selectedGestante && calculateTrimestre(selectedGestante.dum, entry.data_realizacao) === 'FORA DO PERÍODO' ? 'text-error' : 'text-on-surface'}`}>
-                                    {selectedGestante ? calculateTrimestre(selectedGestante.dum, entry.data_realizacao) : '---'}
-                                  </span>
-                                </div>
-                              </td>
-                              <td className="px-6 py-4">
-                                <div className="bg-surface-container-low/50 rounded-xl px-3 py-2">
-                                  <select 
-                                    className="bg-transparent border-none p-0 text-[11px] font-bold outline-none focus:ring-0 w-full uppercase text-on-surface cursor-pointer appearance-none"
-                                    value={entry.descricao || ''}
-                                    onChange={(e) => {
-                                      const newEntries = [...formEntries];
-                                      const desc = e.target.value;
-                                      newEntries[index].descricao = desc;
-                                      // Find the type for this description
-                                      const routine = routines.find(r => r.descricao === desc);
-                                      if (routine) {
-                                        newEntries[index].tipo_temp = routine.tipo;
-                                      } else {
-                                        newEntries[index].tipo_temp = '';
-                                      }
-                                      setFormEntries(newEntries);
-                                    }}
-                                  >
-                                    <option value="">Selecione a Rotina</option>
-                                    {Array.from(new Set(routines.map(r => r.descricao)))
-                                      .sort()
-                                      .map(desc => (
-                                        <option key={desc} value={desc}>{desc}</option>
-                                      ))}
-                                  </select>
-                                </div>
-                              </td>
-                              <td className="px-6 py-4">
-                                <div className="bg-surface-container-low/50 rounded-xl px-3 py-2 opacity-60">
-                                  <input 
-                                    type="text"
-                                    readOnly
-                                    disabled
-                                    className="bg-transparent border-none p-0 text-[11px] font-bold outline-none focus:ring-0 w-full uppercase text-on-surface cursor-default"
-                                    value={entry.tipo_temp || ''}
-                                    placeholder="Tipo"
-                                  />
-                                </div>
-                              </td>
-                              <td className="px-6 py-4">
-                                <div className="bg-surface-container-low/50 rounded-xl px-3 py-2">
-                                  <select 
-                                    className={`bg-transparent border-none p-0 text-[11px] font-bold outline-none focus:ring-0 w-full uppercase cursor-pointer appearance-none ${
-                                      entry.resultado === '-' 
-                                        ? 'text-on-surface-variant/40' 
-                                        : (entry.resultado.includes('POSITIVO') || entry.resultado.includes('REAGENTE')) 
-                                          ? 'text-error' 
-                                          : 'text-green-600'
-                                    }`}
-                                    value={entry.resultado}
-                                    onChange={(e) => {
-                                      const newEntries = [...formEntries];
-                                      newEntries[index].resultado = e.target.value;
-                                      setFormEntries(newEntries);
-                                    }}
-                                  >
-                                    <option value="POSITIVO / REAGENTE">POSITIVO / REAGENTE</option>
-                                    <option value="NEGATIVO / NÃO REAGENTE">NEGATIVO / NÃO REAGENTE</option>
-                                    <option value="-">-</option>
-                                  </select>
-                                </div>
-                              </td>
-                              {!editingId && (
-                                <td className="px-6 py-4 text-center">
-                                  <button 
-                                    type="button" 
-                                    onClick={() => {
-                                      if (formEntries.length > 1) {
-                                        setFormEntries(formEntries.filter((_, i) => i !== index));
-                                      }
-                                    }}
-                                    className="text-error hover:scale-110 transition-transform disabled:opacity-20"
-                                    disabled={formEntries.length === 1}
-                                  >
-                                    <span className="material-symbols-outlined text-lg">delete</span>
-                                  </button>
-                                </td>
-                              )}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-
-                    </div>
-
-                  {/* Movimento de Exames da Gestante Selecionada */}
-                  {formData.sispn && selectedPatientHistory.length > 0 && (
-                    <div id="history-table" className="space-y-4 pt-6 border-t border-outline-variant/10">
+                {!isViewingHistory ? (
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    {/* Spreadsheet Grid */}
+                    <div className="space-y-4">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="material-symbols-outlined text-primary text-sm">history</span>
-                          <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Movimento de Rotinas Realizadas</h4>
-                        </div>
-                        
-                        {isViewingHistory && !editingId && (
+                        <h4 className="text-sm font-black text-primary uppercase tracking-widest">Lançamento de Rotinas</h4>
+                        {!editingId && (
                           <button 
-                            type="button"
-                            onClick={() => setIsViewingHistory(false)}
-                            className="bg-primary text-white px-6 py-2 rounded-full font-black text-[9px] uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+                            type="button" 
+                            onClick={() => {
+                              setFormEntries([...formEntries, {
+                                id: Math.random().toString(36).substr(2, 9),
+                                id_rotina: '',
+                                descricao: '',
+                                tipo_temp: '',
+                                data_realizacao: '',
+                                resultado: 'NEGATIVO / NÃO REAGENTE',
+                                trimestre_realizacao: '---',
+                                cpf_profissional: '',
+                                categoria_profissional: 'MEDICO',
+                                nome_profissional: ''
+                              }]);
+                            }}
+                            className="flex items-center gap-2 text-primary hover:text-primary/70 transition-colors"
                           >
-                            <span className="material-symbols-outlined text-sm">add</span>
-                            Adicionar Exame
+                            <span className="material-symbols-outlined text-lg">add_circle</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest">Adicionar Linha</span>
                           </button>
                         )}
                       </div>
-                      <div className="bg-surface-container-low rounded-3xl overflow-hidden border border-outline-variant/5">
-                        <table className="w-full text-left text-[10px]">
+
+                      <div className="bg-surface-container-low rounded-[32px] overflow-x-auto border border-outline-variant/10">
+                        <table className="w-full text-left border-separate border-spacing-0" style={{ tableLayout: 'fixed' }}>
+                          <colgroup>
+                            <col style={{ width: '12%' }} />
+                            <col style={{ width: '10%' }} />
+                            <col style={{ width: '15%' }} />
+                            <col style={{ width: '8%' }} />
+                            <col style={{ width: '20%' }} />
+                            <col style={{ width: '20%' }} />
+                            <col style={{ width: '8%' }} />
+                          </colgroup>
                           <thead className="bg-surface-container-high">
                             <tr>
-                              <th className="px-4 py-3 font-black uppercase tracking-widest text-on-surface-variant/60">Rotina</th>
-                              <th className="px-4 py-3 font-black uppercase tracking-widest text-on-surface-variant/60">Data</th>
-                              <th className="px-4 py-3 font-black uppercase tracking-widest text-on-surface-variant/60">Resultado</th>
-                              <th className="px-4 py-3 font-black uppercase tracking-widest text-on-surface-variant/60">Trimestre</th>
-                              <th className="px-4 py-3 font-black uppercase tracking-widest text-on-surface-variant/60 text-center">Ações</th>
+                              <th className="px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Data Realização</th>
+                              <th className="px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Trimestre</th>
+                              <th className="px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Rotina</th>
+                              <th className="px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Tipo</th>
+                              <th className="px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Profissional</th>
+                              <th className="px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Resultado</th>
+                              {!editingId && <th className="px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60 text-center">Ações</th>}
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-outline-variant/5">
+                            {formEntries.map((entry, index) => (
+                              <tr key={entry.id} className="hover:bg-white/50 transition-colors">
+                                <td className="px-2 py-1.5">
+                                  <div className="bg-surface-container-low/50 rounded-xl px-2 py-1">
+                                    <input 
+                                      type="date" 
+                                      className="bg-transparent border-none p-0 text-[10px] font-bold outline-none focus:ring-0 w-full text-on-surface"
+                                      value={entry.data_realizacao}
+                                      onChange={(e) => {
+                                        const newEntries = [...formEntries];
+                                        newEntries[index].data_realizacao = e.target.value;
+                                        setFormEntries(newEntries);
+                                      }}
+                                    />
+                                  </div>
+                                </td>
+                                 <td className="px-2 py-1.5">
+                                  <div className="bg-surface-container-low/50 rounded-xl px-2 py-1">
+                                    <span className={`text-[10px] font-bold ${selectedGestante && calculateTrimestre(selectedGestante.dum, entry.data_realizacao) === 'FORA DO PERÍODO' ? 'text-error' : 'text-on-surface'}`}>
+                                      {selectedGestante ? calculateTrimestre(selectedGestante.dum, entry.data_realizacao) : '---'}
+                                    </span>
+                                  </div>
+                                </td>
+                                <td className="px-2 py-1.5">
+                                  <div className="bg-surface-container-low/50 rounded-xl px-2 py-1">
+                                    <select 
+                                      className="bg-transparent border-none p-0 text-[10px] font-bold outline-none focus:ring-0 w-full uppercase text-on-surface cursor-pointer appearance-none"
+                                      value={entry.descricao || ''}
+                                      onChange={(e) => {
+                                        const newEntries = [...formEntries];
+                                        const desc = e.target.value;
+                                        newEntries[index].descricao = desc;
+                                        const routine = routines.find(r => r.descricao === desc);
+                                        if (routine) {
+                                          newEntries[index].tipo_temp = routine.tipo;
+                                        } else {
+                                          newEntries[index].tipo_temp = '';
+                                        }
+                                        setFormEntries(newEntries);
+                                      }}
+                                    >
+                                      <option value="">Selecione a Rotina</option>
+                                      {Array.from(new Set(routines.map(r => r.descricao)))
+                                        .sort()
+                                        .map(desc => (
+                                          <option key={desc} value={desc}>{desc}</option>
+                                        ))}
+                                    </select>
+                                  </div>
+                                </td>
+                                <td className="px-2 py-1.5">
+                                  <div className="bg-surface-container-low/50 rounded-xl px-2 py-1 opacity-60">
+                                    <input 
+                                      type="text"
+                                      readOnly
+                                      disabled
+                                      className="bg-transparent border-none p-0 text-[10px] font-bold outline-none focus:ring-0 w-full uppercase text-on-surface cursor-default"
+                                      value={entry.tipo_temp || ''}
+                                      placeholder="Tipo"
+                                    />
+                                  </div>
+                                </td>
+                                <td className="px-2 py-1.5">
+                                  <div className="bg-surface-container-low/50 rounded-xl px-2 py-1 relative min-h-[36px]">
+                                    <select 
+                                      className="absolute opacity-0 w-full h-full cursor-pointer top-0 left-0 text-[10px]"
+                                      value={entry.cpf_profissional || ''}
+                                      onChange={(e) => {
+                                        const newEntries = [...formEntries];
+                                        const cpf = e.target.value;
+                                        newEntries[index].cpf_profissional = cpf;
+                                        const prof = allProfessionals.find(p => p.cpf === cpf);
+                                        if (prof) {
+                                          newEntries[index].nome_profissional = prof.nome;
+                                          const cat = categories.find(c => prof.cbo.startsWith(c.cbo));
+                                          newEntries[index].categoria_profissional = cat?.categoria || 'MEDICO';
+                                        }
+                                        setFormEntries(newEntries);
+                                      }}
+                                    >
+                                      <option value="">SELECIONE PROFISSIONAL</option>
+                                      {allProfessionals.map((p) => {
+                                        const cat = categories.find(c => p.cbo.startsWith(c.cbo));
+                                        return (
+                                          <option key={p.cpf} value={p.cpf}>{p.nome} - {cat?.categoria || 'OUTROS'}</option>
+                                        );
+                                      })}
+                                    </select>
+                                    <div className="text-[9px] font-bold uppercase text-on-surface break-words whitespace-normal pointer-events-none">
+                                      {entry.nome_profissional ? (
+                                        <>
+                                          <p className="font-black text-primary">{entry.nome_profissional}</p>
+                                          <p className="text-[8px]">{entry.categoria_profissional}</p>
+                                        </>
+                                      ) : (
+                                        <p>SELECIONE PROFISSIONAL</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="px-2 py-1.5">
+                                  <div className="bg-surface-container-low/50 rounded-xl px-2 py-1">
+                                    <select 
+                                      className={`bg-transparent border-none p-0 text-[10px] font-bold outline-none focus:ring-0 w-full uppercase cursor-pointer appearance-none ${
+                                        entry.resultado === '-' 
+                                          ? 'text-on-surface-variant/40' 
+                                          : (entry.resultado.includes('POSITIVO') || entry.resultado.includes('REAGENTE')) 
+                                            ? 'text-error' 
+                                            : 'text-green-600'
+                                      }`}
+                                      value={entry.resultado}
+                                      onChange={(e) => {
+                                        const newEntries = [...formEntries];
+                                        newEntries[index].resultado = e.target.value;
+                                        setFormEntries(newEntries);
+                                      }}
+                                    >
+                                      <option value="POSITIVO / REAGENTE">POSITIVO / REAGENTE</option>
+                                      <option value="NEGATIVO / NÃO REAGENTE">NEGATIVO / NÃO REAGENTE</option>
+                                      <option value="-">-</option>
+                                    </select>
+                                  </div>
+                                </td>
+                                {!editingId && (
+                                  <td className="px-2 py-1.5 text-center">
+                                    <button 
+                                      type="button" 
+                                      onClick={() => {
+                                        if (formEntries.length > 1) {
+                                          setFormEntries(formEntries.filter((_, i) => i !== index));
+                                        }
+                                      }}
+                                      className="text-error hover:scale-110 transition-transform disabled:opacity-20"
+                                      disabled={formEntries.length === 1}
+                                    >
+                                      <span className="material-symbols-outlined text-sm">delete</span>
+                                    </button>
+                                  </td>
+                                )}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+<div className="flex justify-end gap-2 mt-4">
+                      <button type="button" onClick={() => setIsFormOpen(false)} className="flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold transition-all duration-300 bg-white text-primary border border-primary hover:bg-primary/5 shadow-lg shadow-primary/5">
+                        <span className="material-symbols-outlined text-sm">close</span>
+                        Cancelar
+                      </button>
+                      <button type="submit" className="flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold transition-all duration-300 bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20">
+                        <span className="material-symbols-outlined text-sm">save</span>
+                        Salvar Resultado
+                      </button>
+                    </div>
+
+                    {/* Movimento de Exames da Gestante Selecionada */}
+                    {formData.sispn && selectedPatientHistory.length > 0 && (
+                      <div id="history-table" className="space-y-2 pt-2 border-t border-outline-variant/10">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-primary text-lg">history</span>
+                            <h4 className="text-sm font-black text-primary uppercase tracking-widest">Movimento de Rotinas Realizadas</h4>
+                          </div>
+                        </div>
+                        <div className="bg-surface-container-low rounded-[32px] overflow-x-auto border border-outline-variant/10">
+                          <table className="w-full text-left border-separate border-spacing-0" style={{ tableLayout: 'fixed' }}>
+                            <colgroup>
+                              <col style={{ width: '12%' }} />
+                              <col style={{ width: '10%' }} />
+                              <col style={{ width: '15%' }} />
+                              <col style={{ width: '8%' }} />
+                              <col style={{ width: '20%' }} />
+                              <col style={{ width: '20%' }} />
+                              <col style={{ width: '8%' }} />
+                            </colgroup>
+                            <thead className="bg-surface-container-high">
+                              <tr>
+                                <th className="px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Data Realização</th>
+                                <th className="px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Trimestre</th>
+                                <th className="px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Rotina</th>
+                                <th className="px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Tipo</th>
+                                <th className="px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Profissional</th>
+                                <th className="px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Resultado</th>
+                                <th className="px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60 text-center">Ações</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-outline-variant/5">
+                              {selectedPatientHistory.map((h) => (
+                                <tr key={h.id_registro} className="hover:bg-white/50 transition-colors group">
+                                  <td className="px-2 py-1.5">
+                                    <div className="text-[10px] font-bold text-on-surface">{new Date(h.data_realizacao).toLocaleDateString('pt-BR')}</div>
+                                  </td>
+                                  <td className="px-2 py-1.5">
+                                    <div className="text-[10px] font-bold text-on-surface uppercase">{h.trimestre_realizacao}</div>
+                                  </td>
+                                  <td className="px-2 py-1.5">
+                                    <div className="text-[10px] font-black text-primary uppercase">{h.rotinas?.descricao}</div>
+                                  </td>
+                                  <td className="px-2 py-1.5">
+                                    <div className="text-[10px] font-bold text-on-surface-variant uppercase">{h.tipo || h.rotinas?.tipo || '---'}</div>
+                                  </td>
+                                  <td className="px-2 py-1.5">
+                                    <div className="text-[9px]">
+                                      <p className="font-black text-on-surface uppercase">{allProfessionals.find(p => p.cpf === h.cpf_profissional)?.nome || '---'}</p>
+                                      <p className="font-bold text-on-surface-variant/60 uppercase">{h.cpf_profissional || '---'}</p>
+                                    </div>
+                                  </td>
+                                  <td className="px-2 py-1.5">
+                                    <div className={`text-[10px] font-black uppercase ${
+                                      (() => {
+                                        const res = h.resultado.toUpperCase();
+                                        const isPositive = (res.includes('POSITIVO') || res.includes('REAGENTE')) && !res.includes('NEGATIVO') && !res.includes('NAO') && !res.includes('NÃO');
+                                        if (isPositive) return 'text-red-600';
+                                        if (h.resultado === '-') return 'text-on-surface-variant/40';
+                                        return 'text-green-600';
+                                      })()
+                                    }`}>
+                                      {h.resultado}
+                                    </div>
+                                  </td>
+                                  <td className="px-2 py-1.5">
+                                    <div className="flex items-center justify-center gap-1">
+                                      <button 
+                                        type="button"
+                                        onClick={() => handleEdit(h)} 
+                                        className="p-1 rounded-lg bg-white/50 text-on-surface-variant hover:bg-primary hover:text-white transition-all"
+                                        title="Editar"
+                                      >
+                                        <span className="material-symbols-outlined text-sm">edit</span>
+                                      </button>
+                                      <button 
+                                        type="button"
+                                        onClick={() => setDeleteConfirmId(h.id_registro)} 
+                                        className="p-1 rounded-lg bg-white/50 text-on-surface-variant hover:bg-error hover:text-white transition-all"
+                                        title="Excluir"
+                                      >
+                                        <span className="material-symbols-outlined text-sm">delete</span>
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+                  </form>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-primary text-lg">history</span>
+                      <h4 className="text-sm font-black text-primary uppercase tracking-widest">Movimento de Rotinas Realizadas</h4>
+                    </div>
+                    {formData.sispn && selectedPatientHistory.length > 0 ? (
+                      <div id="history-table" className="bg-surface-container-low rounded-[32px] overflow-x-auto border border-outline-variant/10">
+                        <table className="w-full text-left border-separate border-spacing-0" style={{ tableLayout: 'fixed' }}>
+                          <colgroup>
+                            <col style={{ width: '12%' }} />
+                            <col style={{ width: '10%' }} />
+                            <col style={{ width: '15%' }} />
+                            <col style={{ width: '8%' }} />
+                            <col style={{ width: '20%' }} />
+                            <col style={{ width: '20%' }} />
+                            <col style={{ width: '8%' }} />
+                          </colgroup>
+                          <thead className="bg-surface-container-high">
+                            <tr>
+                              <th className="px-3 py-2 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Data Realização</th>
+                              <th className="px-3 py-2 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Trimestre</th>
+                              <th className="px-3 py-2 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Rotina</th>
+                              <th className="px-3 py-2 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Tipo</th>
+                              <th className="px-3 py-2 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Profissional</th>
+                              <th className="px-3 py-2 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Resultado</th>
+                              <th className="px-3 py-2 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60 text-center">Ações</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-outline-variant/5">
                             {selectedPatientHistory.map((h) => (
                               <tr key={h.id_registro} className="hover:bg-white/50 transition-colors group">
-                                <td className="px-4 py-3 font-bold uppercase">
-                                  <p className="font-black text-primary uppercase tracking-wider">{h.rotinas?.descricao}</p>
-                                  <p className="text-[9px] font-bold text-on-surface-variant/40 uppercase tracking-widest">
-                                    {allProfessionals.find(p => p.cpf === h.cpf_profissional)?.nome || '---'}
-                                  </p>
+                                <td className="px-3 py-2">
+                                  <div className="text-[10px] font-bold text-on-surface">{new Date(h.data_realizacao).toLocaleDateString('pt-BR')}</div>
                                 </td>
-                                <td className="px-4 py-3">{new Date(h.data_realizacao).toLocaleDateString('pt-BR')}</td>
-                                <td className="px-4 py-3">
-                                  <span className={`font-black uppercase ${
+                                <td className="px-3 py-2">
+                                  <div className="text-[10px] font-bold text-on-surface uppercase">{h.trimestre_realizacao}</div>
+                                </td>
+                                <td className="px-3 py-2">
+                                  <div className="text-[10px] font-black text-primary uppercase">{h.rotinas?.descricao}</div>
+                                </td>
+                                <td className="px-3 py-2">
+                                  <div className="text-[10px] font-bold text-on-surface-variant uppercase">{h.tipo || h.rotinas?.tipo || '---'}</div>
+                                </td>
+                                <td className="px-3 py-2">
+                                  <div className="text-[9px]">
+                                    <p className="font-black text-on-surface uppercase">{allProfessionals.find(p => p.cpf === h.cpf_profissional)?.nome || '---'}</p>
+                                    <p className="font-bold text-on-surface-variant/60 uppercase">{h.cpf_profissional || '---'}</p>
+                                  </div>
+                                </td>
+                                <td className="px-3 py-2">
+                                  <div className={`text-[10px] font-black uppercase ${
                                     (() => {
                                       const res = h.resultado.toUpperCase();
                                       const isPositive = (res.includes('POSITIVO') || res.includes('REAGENTE')) && !res.includes('NEGATIVO') && !res.includes('NAO') && !res.includes('NÃO');
@@ -1033,15 +1061,14 @@ export default function ExamesPage() {
                                     })()
                                   }`}>
                                     {h.resultado}
-                                  </span>
+                                  </div>
                                 </td>
-                                <td className="px-4 py-3 font-medium uppercase">{h.trimestre_realizacao}</td>
-                                <td className="px-4 py-3">
-                                  <div className="flex items-center justify-center gap-2">
+                                <td className="px-3 py-2">
+                                  <div className="flex items-center justify-center gap-1">
                                     <button 
                                       type="button"
                                       onClick={() => handleEdit(h)} 
-                                      className="p-1.5 rounded-lg bg-white/50 text-on-surface-variant hover:bg-primary hover:text-white transition-all"
+                                      className="p-1 rounded-lg bg-white/50 text-on-surface-variant hover:bg-primary hover:text-white transition-all"
                                       title="Editar"
                                     >
                                       <span className="material-symbols-outlined text-sm">edit</span>
@@ -1049,7 +1076,7 @@ export default function ExamesPage() {
                                     <button 
                                       type="button"
                                       onClick={() => setDeleteConfirmId(h.id_registro)} 
-                                      className="p-1.5 rounded-lg bg-white/50 text-on-surface-variant hover:bg-error hover:text-white transition-all"
+                                      className="p-1 rounded-lg bg-white/50 text-on-surface-variant hover:bg-error hover:text-white transition-all"
                                       title="Excluir"
                                     >
                                       <span className="material-symbols-outlined text-sm">delete</span>
@@ -1061,17 +1088,13 @@ export default function ExamesPage() {
                           </tbody>
                         </table>
                       </div>
-                    </div>
-                  )}
-
-                  <div className={`flex justify-end gap-4 pt-8 border-t border-outline-variant/10 ${isViewingHistory && !editingId ? 'hidden' : 'flex'}`}>
-                    <button type="button" onClick={() => setIsFormOpen(false)} className="px-8 py-4 rounded-full font-black text-[10px] uppercase tracking-widest text-on-surface-variant hover:bg-surface-container-high transition-colors">Cancelar</button>
-                    <button type="submit" className="bg-primary text-white px-12 py-4 rounded-full font-black text-[10px] uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-3">
-                      <span className="material-symbols-outlined text-lg">save</span>
-                      Salvar Resultado
-                    </button>
+                    ) : (
+                      <div className="rounded-[32px] border border-outline-variant/10 bg-surface-container-low p-6 text-sm text-on-surface-variant font-bold uppercase tracking-wide">
+                        Nenhum registro encontrado para essa gestante.
+                      </div>
+                    )}
                   </div>
-                </form>
+                )}
                 {error && <div className="p-4 bg-error/10 rounded-2xl text-error text-xs font-bold">{error}</div>}
                 {success && <div className="p-4 bg-green-500/10 rounded-2xl text-green-600 text-xs font-bold">{success}</div>}
               </div>
@@ -1079,7 +1102,7 @@ export default function ExamesPage() {
           )}
         </AnimatePresence>
 
-        <section className="space-y-8">
+        <section className="space-y-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap items-center gap-3 w-full md:w-auto">
               <div className="flex items-center gap-2 bg-primary/10 px-5 py-2.5 rounded-full border border-primary/20 shrink-0">
@@ -1155,45 +1178,45 @@ export default function ExamesPage() {
               <table className="w-full text-left border-separate border-spacing-0">
                 <thead className="sticky top-0 z-30 bg-surface-container-low">
                   <tr>
-                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Gestante</th>
-                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Status</th>
-                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">SISPN</th>
-                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Registros</th>
-                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Última Atividade</th>
-                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Alertas</th>
-                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-center">Ações</th>
+                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Gestante</th>
+                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Status</th>
+                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">SISPN</th>
+                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Registros</th>
+                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Última Atividade</th>
+                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Alertas</th>
+                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-center">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-outline-variant/5">
                   {loading ? (
-                    <tr><td colSpan={6} className="p-32 text-center"><div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full mx-auto"></div></td></tr>
+                    <tr><td colSpan={6} className="p-24 text-center"><div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full mx-auto"></div></td></tr>
                   ) : filteredPatients.length === 0 ? (
-                    <tr><td colSpan={6} className="p-32 text-center opacity-20 text-xl font-black uppercase tracking-widest">Nenhum paciente encontrado</td></tr>
+                    <tr><td colSpan={6} className="p-24 text-center opacity-20 text-xl font-black uppercase tracking-widest">Nenhum paciente encontrado</td></tr>
                   ) : (
                     filteredPatients.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((p) => (
                       <tr key={p.sispn} className="hover:bg-primary/[0.02] transition-colors group">
-                        <td className="px-8 py-6">
+                        <td className="px-6 py-4">
                           <p className="font-black text-sm text-on-surface uppercase tracking-tight group-hover:text-primary transition-colors">
                             {p.paciente_nome}
                           </p>
                           <span className="text-[10px] font-bold text-primary/40 uppercase tracking-widest">{p.equipe}</span>
                         </td>
-                        <td className="px-8 py-6">
+                        <td className="px-6 py-4">
                           <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${p.status === 'ATIVA' ? 'bg-blue-100 text-blue-600' : 'bg-surface-container-high text-on-surface-variant/40'}`}>
                             {p.status}
                           </span>
                         </td>
-                        <td className="px-8 py-6 text-[10px] font-bold text-on-surface-variant/60 font-mono">{p.sispn}</td>
-                        <td className="px-8 py-6">
+                        <td className="px-6 py-4 text-[10px] font-bold text-on-surface-variant/60 font-mono">{p.sispn}</td>
+                        <td className="px-6 py-4">
                           <div className="flex items-center gap-2">
                             <span className="material-symbols-outlined text-sm text-primary/40">lab_research</span>
                             <span className="text-xs font-bold text-on-surface">{p.resultsCount} registros</span>
                           </div>
                         </td>
-                        <td className="px-8 py-6 text-xs font-bold text-on-surface">
+                        <td className="px-6 py-4 text-xs font-bold text-on-surface">
                           {p.lastResultDate ? new Date(p.lastResultDate).toLocaleDateString('pt-BR') : '---'}
                         </td>
-                        <td className="px-8 py-6">
+                        <td className="px-6 py-4">
                           {p.hasPositive ? (
                             <span className="px-3 py-1 rounded-full bg-red-100 text-red-600 text-[9px] font-black uppercase tracking-widest flex items-center gap-1 w-fit">
                               <span className="material-symbols-outlined text-[10px]">warning</span>
@@ -1206,7 +1229,7 @@ export default function ExamesPage() {
                             </span>
                           )}
                         </td>
-                        <td className="px-8 py-6">
+                        <td className="px-6 py-4">
                           <div className="flex items-center justify-center gap-3">
                             <button onClick={() => handleViewPatient(p.sispn)} className="p-3 rounded-2xl bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white transition-all" title="Visualizar Detalhes"><span className="material-symbols-outlined text-lg">visibility</span></button>
                             <button onClick={() => { 

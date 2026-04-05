@@ -236,6 +236,15 @@ export default function GestacoesPage() {
     status: 'ATIVA'
   });
 
+  useEffect(() => {
+    if (filters.referencia) {
+      const match = enfermeiros.find(p => p.nome === filters.referencia);
+      if (match && match.equipe && filters.equipe !== match.equipe) {
+        setFilters(prev => ({ ...prev, equipe: match.equipe }));
+      }
+    }
+  }, [filters.referencia, enfermeiros, filters.equipe]);
+
   const uniqueDppMonths = useMemo(() => {
     const months = new Set<string>();
     gestacoes.forEach(g => {
@@ -254,10 +263,16 @@ export default function GestacoesPage() {
     return Array.from(new Set(equipes)).sort();
   }, [gestacoes]);
 
+  const enfermeiros = useMemo(() => {
+    return profissionais
+      .filter(p => p.categoria_nome?.toUpperCase().startsWith('ENFERMEIRO'))
+      .sort((a, b) => a.nome.localeCompare(b.nome));
+  }, [profissionais]);
+
   const uniqueReferencias = useMemo(() => {
-    const refs = gestacoes.map(g => g.referencia_tecnica_nome).filter(Boolean);
+    const refs = enfermeiros.map(p => p.nome).filter(Boolean);
     return Array.from(new Set(refs)).sort();
-  }, [gestacoes]);
+  }, [enfermeiros]);
 
   const uniqueACS = useMemo(() => {
     const acs = gestacoes.map(g => g.acs_nome).filter(Boolean);
@@ -700,10 +715,6 @@ export default function GestacoesPage() {
     return pacientes.find(p => p.cpf === cpf);
   }, [formData.cpf_paciente, pacientes]);
 
-  const enfermeiros = profissionais.filter(p => {
-    const cbo = p.cbo || '';
-    return cbo.startsWith('2235');
-  });
   const displayEnfermeiros = enfermeiros;
 
   const acsList = profissionais.filter(p => {
@@ -1045,7 +1056,7 @@ export default function GestacoesPage() {
                                         key={p.cpf}
                                         type="button"
                                         onClick={() => {
-                                          setFormData({ ...formData, referencia_tecnica: p.cpf });
+                                          setFormData({ ...formData, referencia_tecnica: p.cpf, equipe: p.equipe || 'NÃO DEFINIDA' });
                                           setRtSearchQuery(p.nome);
                                           setIsRtDropdownOpen(false);
                                         }}
@@ -1247,10 +1258,20 @@ export default function GestacoesPage() {
 
                   <select 
                     className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
+                    value={filters.status}
+                    onChange={(e) => { setFilters({ ...filters, status: e.target.value }); setCurrentPage(1); }}
+                  >
+                    <option value="">Status</option>
+                    <option value="ATIVA">ATIVA</option>
+                    <option value="VENCIDA">VENCIDA</option>
+                  </select>
+
+                  <select 
+                    className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
                     value={filters.dpp}
                     onChange={(e) => { setFilters({ ...filters, dpp: e.target.value }); setCurrentPage(1); }}
                   >
-                    <option value="">DPP (AAAA/MM)</option>
+                    <option value="">DPP</option>
                     {uniqueDppMonths.map(month => <option key={month} value={month}>{month}</option>)}
                   </select>
 
@@ -1289,16 +1310,6 @@ export default function GestacoesPage() {
                   >
                     <option value="">ACS</option>
                     {uniqueACS.map(acs => <option key={acs} value={acs}>{acs}</option>)}
-                  </select>
-
-                  <select 
-                    className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
-                    value={filters.status}
-                    onChange={(e) => { setFilters({ ...filters, status: e.target.value }); setCurrentPage(1); }}
-                  >
-                    <option value="">Status</option>
-                    <option value="ATIVA">ATIVA</option>
-                    <option value="VENCIDA">VENCIDA</option>
                   </select>
 
                   {(filters.dpp || filters.captacao || filters.equipe || filters.referencia || filters.acs || filters.status !== 'ATIVA') && (
