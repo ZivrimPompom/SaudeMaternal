@@ -245,9 +245,8 @@ export default function UnidadesSaudePage() {
       .delete()
       .eq('cnes', cnes);
 
-    if (deleteError) {
-      console.error('Erro ao excluir unidade:', deleteError);
-      setError(`Erro ao excluir unidade: ${deleteError.message}`);
+    if (deleteError?.message) {
+      setError(`Não foi possível excluir: ${deleteError.message}`);
     } else {
       setSuccess('Unidade excluída com sucesso!');
       fetchUnits();
