@@ -4,7 +4,7 @@ import React, { useRef, useState } from 'react';
 import Papa from 'papaparse';
 import { supabase } from '@/lib/supabase';
 import { AlertCircle, CheckCircle2, Loader2, X } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/context/AuthContext';
 
 interface CSVImporterProps {

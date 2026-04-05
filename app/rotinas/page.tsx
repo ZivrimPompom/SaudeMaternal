@@ -6,9 +6,10 @@ import { useSearch } from '@/context/SearchContext';
 import { useAuth } from '@/context/AuthContext';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { ClipboardList, Plus, Edit2, Trash2, Search, AlertCircle, CheckCircle2, X, FileUp, ChevronLeft, ChevronRight } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Pagination from '@/components/Pagination';
 import RecordsSummary from '@/components/RecordsSummary';
+import SearchInput from '@/components/SearchInput';
 
 interface Rotina {
   id: string;
@@ -224,6 +225,11 @@ export default function RotinasPage() {
             <h1 className="text-xl font-black text-primary uppercase tracking-tight">Rotinas</h1>
           </div>
 
+          <SearchInput 
+            className="w-full md:flex-1 md:mx-8" 
+            placeholder="Digite Descrição"
+          />
+
           <RecordsSummary 
             total={routines.length} 
             filtered={filteredRoutines.length} 
@@ -276,9 +282,9 @@ export default function RotinasPage() {
                       )}
                     </AnimatePresence>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-3 gap-4">
                       <div className="space-y-2">
-                        <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Tipo de Rotina</label>
+                        <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Tipo</label>
                         <select 
                           className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none appearance-none"
                           value={formData.tipo || 'EXAME'}
@@ -302,6 +308,19 @@ export default function RotinasPage() {
                           <option value="TERCEIRO">TERCEIRO TRIMESTRE</option>
                         </select>
                       </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Categoria</label>
+                        <select 
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none appearance-none"
+                          value={formData.categoria || 'OBRIGATORIO'}
+                          onChange={(e) => setFormData({ ...formData, categoria: e.target.value as any })}
+                        >
+                          <option value="OBRIGATORIO">OBRIGATORIO</option>
+                          <option value="OPCIONAL">OPCIONAL</option>
+                          <option value="EVENTUAL">EVENTUAL</option>
+                        </select>
+                      </div>
                     </div>
 
                     <div className="space-y-2">
@@ -312,19 +331,6 @@ export default function RotinasPage() {
                         value={formData.descricao || ''}
                         onChange={(e) => setFormData({ ...formData, descricao: e.target.value.toUpperCase() })}
                       />
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Categoria</label>
-                      <select 
-                        className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none appearance-none"
-                        value={formData.categoria || 'OBRIGATORIO'}
-                        onChange={(e) => setFormData({ ...formData, categoria: e.target.value as any })}
-                      >
-                        <option value="OBRIGATORIO">OBRIGATORIO</option>
-                        <option value="OPCIONAL">OPCIONAL</option>
-                        <option value="EVENTUAL">EVENTUAL</option>
-                      </select>
                     </div>
 
                     <div className="pt-4 flex flex-col gap-3">

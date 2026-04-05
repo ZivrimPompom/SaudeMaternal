@@ -5,9 +5,10 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { useSearch } from '@/context/SearchContext';
 import { useAuth } from '@/context/AuthContext';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Pagination from '@/components/Pagination';
 import RecordsSummary from '@/components/RecordsSummary';
+import SearchInput from '@/components/SearchInput';
 
 interface Categoria {
   cbo: string;
@@ -342,6 +343,11 @@ export default function ProfissionaisPage() {
             <h1 className="text-xl font-black text-primary uppercase tracking-tight">Profissionais</h1>
           </div>
 
+          <SearchInput 
+            className="w-full md:flex-1 md:mx-8" 
+            placeholder="Buscar por Nome, CPF, CNS ou CBO"
+          />
+
           <RecordsSummary 
             total={professionals.length} 
             filtered={filteredProfessionals.length} 
@@ -394,87 +400,105 @@ export default function ProfissionaisPage() {
                       )}
                     </AnimatePresence>
 
-                    <div className="space-y-2">
-                      <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">CPF</label>
-                      <input 
-                        type="text"
-                        disabled={!!editingCpf}
-                        className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none disabled:opacity-50"
-                        placeholder="000.000.000-00"
-                        value={formData.cpf || ''}
-                        onChange={(e) => setFormData({ ...formData, cpf: formatCpf(e.target.value) })}
-                      />
+                    <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+                      <div className="space-y-4 xl:col-span-2">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Nome Completo</label>
+                            <input 
+                              type="text"
+                              className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none uppercase"
+                              placeholder="Nome do profissional"
+                              value={formData.nome || ''}
+                              onChange={(e) => setFormData({ ...formData, nome: e.target.value.toUpperCase() })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">CPF</label>
+                            <input 
+                              type="text"
+                              disabled={!!editingCpf}
+                              className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none disabled:opacity-50"
+                              placeholder="000.000.000-00"
+                              value={formData.cpf || ''}
+                              onChange={(e) => setFormData({ ...formData, cpf: formatCpf(e.target.value) })}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">CNS</label>
+                            <input 
+                              type="text"
+                              className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none"
+                              placeholder="0000.0000.0000.000"
+                              value={formData.cns || ''}
+                              onChange={(e) => setFormData({ ...formData, cns: formatCns(e.target.value) })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Categoria (CBO)</label>
+                            <select 
+                              className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none appearance-none"
+                              value={formData.cbo || ''}
+                              onChange={(e) => setFormData({ ...formData, cbo: e.target.value })}
+                            >
+                              <option value="">Selecione a categoria...</option>
+                              {categories.map(cat => (
+                                <option key={cat.cbo} value={cat.cbo}>{cat.categoria} ({cat.cbo})</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Unidade de Saúde</label>
+                          <select 
+                            className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none appearance-none"
+                            value={formData.unidade_cnes || ''}
+                            onChange={(e) => setFormData({ ...formData, unidade_cnes: e.target.value })}
+                          >
+                            <option value="">Selecione a unidade...</option>
+                            {units.map(unit => (
+                              <option key={unit.cnes} value={unit.cnes}>{unit.nome_fantasia}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Equipe</label>
+                          <select 
+                            className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none appearance-none"
+                            value={formData.equipe || ''}
+                            onChange={(e) => setFormData({ ...formData, equipe: e.target.value })}
+                          >
+                            <option value="SEM EQUIPE">SEM EQUIPE</option>
+                            <option value="FORA DE AREA">FORA DE AREA</option>
+                            {Array.from({ length: 99 }, (_, i) => {
+                              const num = (i + 1).toString().padStart(3, '0');
+                              return (
+                                <option key={num} value={`Equipe ${num}`}>Equipe {num}</option>
+                              );
+                            })}
+                          </select>
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Nome Completo</label>
-                      <input 
-                        type="text"
-                        className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none uppercase"
-                        placeholder="NOME DO PROFISSIONAL"
-                        value={formData.nome || ''}
-                        onChange={(e) => setFormData({ ...formData, nome: e.target.value.toUpperCase() })}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">CNS (Cartão Nacional de Saúde)</label>
-                      <input 
-                        type="text"
-                        className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none"
-                        placeholder="0000.0000.0000.000"
-                        value={formData.cns || ''}
-                        onChange={(e) => setFormData({ ...formData, cns: formatCns(e.target.value) })}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Categoria (CBO)</label>
-                      <select 
-                        className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none appearance-none"
-                        value={formData.cbo || ''}
-                        onChange={(e) => setFormData({ ...formData, cbo: e.target.value })}
-                      >
-                        <option value="">Selecione uma categoria...</option>
-                        {categories.map(cat => (
-                          <option key={cat.cbo} value={cat.cbo}>{cat.categoria} ({cat.cbo})</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Unidade de Saúde</label>
-                      <select 
-                        className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none appearance-none"
-                        value={formData.unidade_cnes || ''}
-                        onChange={(e) => setFormData({ ...formData, unidade_cnes: e.target.value })}
-                      >
-                        <option value="">Selecione uma unidade...</option>
-                        {units.map(unit => (
-                          <option key={unit.cnes} value={unit.cnes}>{unit.nome_fantasia}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Equipe</label>
-                      <select 
-                        className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none appearance-none"
-                        value={formData.equipe || ''}
-                        onChange={(e) => setFormData({ ...formData, equipe: e.target.value })}
-                      >
-                        <option value="SEM EQUIPE">SEM EQUIPE</option>
-                        <option value="FORA DE AREA">FORA DE AREA</option>
-                        {Array.from({ length: 99 }, (_, i) => {
-                          const num = (i + 1).toString().padStart(3, '0');
-                          return (
-                            <option key={num} value={`Equipe ${num}`}>Equipe {num}</option>
-                          );
-                        })}
-                      </select>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Situação</label>
+                        <select 
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none appearance-none"
+                          value={formData.situacao || 'ATIVO'}
+                          onChange={(e) => setFormData({ ...formData, situacao: e.target.value as any })}
+                        >
+                          <option value="ATIVO">ATIVO</option>
+                          <option value="INATIVO">INATIVO</option>
+                        </select>
+                      </div>
                       <div className="space-y-2">
                         <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Vínculo</label>
                         <select 
@@ -484,6 +508,18 @@ export default function ProfissionaisPage() {
                         >
                           <option value="DIRETO">DIRETO</option>
                           <option value="INTERMEDIADO">INTERMEDIADO</option>
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Tipo de Vínculo</label>
+                        <select 
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none appearance-none"
+                          value={formData.tipo_vinculo || 'CLT'}
+                          onChange={(e) => setFormData({ ...formData, tipo_vinculo: e.target.value as any })}
+                        >
+                          <option value="CLT">CLT</option>
+                          <option value="ESTATUTARIO">ESTATUTÁRIO</option>
+                          <option value="AUTÔNOMO">AUTÔNOMO</option>
                         </select>
                       </div>
                       <div className="space-y-2">
@@ -500,36 +536,10 @@ export default function ProfissionaisPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Tipo de Vínculo</label>
-                        <select 
-                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none appearance-none"
-                          value={formData.tipo_vinculo || 'CLT'}
-                          onChange={(e) => setFormData({ ...formData, tipo_vinculo: e.target.value as any })}
-                        >
-                          <option value="CLT">CLT</option>
-                          <option value="ESTATUTARIO">ESTATUTÁRIO</option>
-                          <option value="AUTÔNOMO">AUTÔNOMO</option>
-                        </select>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Situação</label>
-                        <select 
-                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none appearance-none"
-                          value={formData.situacao || 'ATIVO'}
-                          onChange={(e) => setFormData({ ...formData, situacao: e.target.value as any })}
-                        >
-                          <option value="ATIVO">ATIVO</option>
-                          <option value="INATIVO">INATIVO</option>
-                        </select>
-                      </div>
-                    </div>
-
                     <div className="pt-4 flex flex-col gap-3">
                       <button 
                         type="submit"
-                        className="w-full bg-primary text-white font-black py-5 rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 font-headline uppercase tracking-widest text-[10px]"
+                        className="w-full bg-primary text-white font-black py-3 rounded-full shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 font-headline uppercase tracking-widest text-[10px]"
                       >
                         <span className="material-symbols-outlined text-lg">{editingCpf ? 'save' : 'person_add'}</span>
                         {editingCpf ? 'Atualizar Profissional' : 'Cadastrar Profissional'}
@@ -539,7 +549,7 @@ export default function ProfissionaisPage() {
                           <button 
                             type="button"
                             onClick={() => setDeleteConfirmCpf(editingCpf)}
-                            className="bg-red-50 text-red-600 font-black py-4 rounded-2xl hover:bg-red-100 transition-all flex items-center justify-center gap-2 font-headline uppercase tracking-widest text-[8px]"
+                            className="w-full bg-error/10 text-error font-black py-3 rounded-full hover:bg-error hover:text-white transition-all flex items-center justify-center gap-2 font-headline uppercase tracking-widest text-[9px] border border-error/20"
                           >
                             <span className="material-symbols-outlined text-[14px]">delete</span>
                             Excluir
@@ -554,7 +564,7 @@ export default function ProfissionaisPage() {
                                 vinculo: 'INTERMEDIADO', tipo_vinculo: 'CLT', chs: 20
                               });
                             }}
-                            className="bg-surface-container-high text-on-surface-variant font-black py-4 rounded-2xl hover:bg-surface-container-highest transition-all flex items-center justify-center gap-2 font-headline uppercase tracking-widest text-[8px]"
+                            className="w-full bg-surface-container-high text-on-surface-variant font-black py-3 rounded-full hover:bg-surface-container-highest transition-all flex items-center justify-center gap-2 font-headline uppercase tracking-widest text-[9px]"
                           >
                             <span className="material-symbols-outlined text-[14px]">close</span>
                             Cancelar

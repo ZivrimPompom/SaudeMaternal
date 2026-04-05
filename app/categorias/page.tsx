@@ -6,7 +6,7 @@ import { useSearch } from '@/context/SearchContext';
 import { useAuth } from '@/context/AuthContext';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { Briefcase, Plus, Edit2, Trash2, Search, AlertCircle, CheckCircle2, X, FileUp, ChevronLeft, ChevronRight } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Pagination from '@/components/Pagination';
 import RecordsSummary from '@/components/RecordsSummary';
 import SearchInput from '@/components/SearchInput';

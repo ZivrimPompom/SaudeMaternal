@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 import { LucideUser, LucideLock, LucideLoader2, LucideAlertCircle } from 'lucide-react';
 
 export default function LoginPage() {
