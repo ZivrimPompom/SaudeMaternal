@@ -355,13 +355,33 @@ export default function DesfechosPage() {
   }, [filteredDesfechos, currentPage]);
 
   const handleExportCSV = useCallback(() => {
-    const headers = ['SISPN', 'GESTANTE', 'DATA DESFECHO', 'DESFECHO'];
-    const rows = filteredDesfechos.map(d => [
-      d.sispn,
-      d.gestacoes?.pacientes?.gestante || 'N/A',
-      new Date(d.data_desfecho).toLocaleDateString('pt-BR'),
-      d.tipo_desfecho
-    ]);
+    const headers = ['SISPN', 'GESTANTE', 'DATA DESFECHO', 'DESFECHO', 'RN NOME', 'RN CPF', 'RN DATA NASC', 'RN CONSULTA', 'RN COMPARECEU'];
+    const rows: any[] = [];
+    
+    filteredDesfechos.forEach(d => {
+      const baseRow = [
+        d.sispn,
+        d.gestacoes?.pacientes?.gestante || 'N/A',
+        new Date(d.data_desfecho).toLocaleDateString('pt-BR'),
+        d.tipo_desfecho
+      ];
+
+      if (d.tipo_desfecho === 'PARTO' && d.recem_nascidos && d.recem_nascidos.length > 0) {
+        d.recem_nascidos.forEach(rn => {
+          rows.push([
+            ...baseRow,
+            rn.nome_rn,
+            rn.cpf_rn,
+            rn.data_nascimento ? new Date(rn.data_nascimento).toLocaleDateString('pt-BR') : '',
+            rn.data_consulta_rn ? new Date(rn.data_consulta_rn).toLocaleDateString('pt-BR') : '',
+            rn.comparecimento ? 'SIM' : 'NÃO'
+          ]);
+        });
+      } else {
+        rows.push([...baseRow, '', '', '', '', '']);
+      }
+    });
+
     const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");

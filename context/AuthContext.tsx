@@ -1,96 +1,82 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
-interface Operator {
+interface User {
   id: string;
-  nome: string;
   cpf: string;
-  status: string;
-  sigla: string;
-  nivel_acesso?: string;
+  nome: string;
+  perfil: 'ADMINISTRADOR' | 'OPERADOR';
+  unidade_id?: string;
   unidade_cnes?: string;
 }
 
 interface AuthContextType {
-  user: Operator | null;
+  user: User | null;
   loading: boolean;
-  signInWithCpf: (cpf: string, password: string) => Promise<{ error: string | null }>;
-  signOut: () => void;
+  signIn: (cpf: string, senha: string) => Promise<void>;
+  signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<Operator | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isInitialized, setIsInitialized] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    const savedUser = localStorage.getItem('saude_maternal_user');
-    if (savedUser) {
-      try {
-        const parsed = JSON.parse(savedUser);
-        // Fallback for older versions that might have 'name' instead of 'nome'
-        if (parsed && !parsed.nome && parsed.name) {
-          parsed.nome = parsed.name;
-        }
-        setUser(parsed);
-      } catch (e) {
-        localStorage.removeItem('saude_maternal_user');
+    const checkUser = () => {
+      const storedUser = localStorage.getItem('mae_paulistana_user');
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
       }
-    }
-    setLoading(false);
-    setIsInitialized(true);
+      setLoading(false);
+    };
+    checkUser();
   }, []);
 
-  const signInWithCpf = async (cpf: string, password: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('operadores')
-        .select('*')
-        .eq('cpf', cpf)
-        .eq('senha', password)
-        .single();
-
-      if (error || !data) {
-        return { error: 'CPF ou senha inválidos.' };
-      }
-
-      if (data.status === 'Bloqueado') {
-        return { error: 'Procure o Administrador do Sistema para liberar seu acesso.' };
-      }
-
-      const operator: Operator = {
-        id: data.id,
-        nome: data.nome,
-        cpf: data.cpf,
-        status: data.status,
-        sigla: data.sigla,
-        nivel_acesso: data.nivel_acesso,
-        unidade_cnes: data.unidade_cnes
-      };
-
-      setUser(operator);
-      localStorage.setItem('saude_maternal_user', JSON.stringify(operator));
-      router.push('/');
-      return { error: null };
-    } catch (err) {
-      return { error: 'Erro ao conectar com o servidor.' };
+  const signIn = async (cpf: string, senha: string) => {
+    if (!isSupabaseConfigured) {
+      throw new Error('Supabase não configurado.');
     }
+
+    const { data, error } = await supabase
+      .from('operadores')
+      .select('*')
+      .eq('cpf', cpf.replace(/\D/g, ''))
+      .eq('senha', senha)
+      .eq('ativo', true)
+      .single();
+
+    if (error || !data) {
+      throw new Error('CPF ou senha incorretos, ou usuário inativo.');
+    }
+
+    const userData: User = {
+      id: data.id,
+      cpf: data.cpf,
+      nome: data.nome,
+      perfil: data.perfil,
+      unidade_id: data.unidade_id,
+      unidade_cnes: data.unidade_cnes
+    };
+
+    setUser(userData);
+    localStorage.setItem('mae_paulistana_user', JSON.stringify(userData));
+    router.push('/');
   };
 
-  const signOut = () => {
+  const signOut = async () => {
     setUser(null);
-    localStorage.removeItem('saude_maternal_user');
+    localStorage.removeItem('mae_paulistana_user');
     router.push('/login');
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signInWithCpf, signOut }}>
+    <AuthContext.Provider value={{ user, loading, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );

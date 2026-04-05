@@ -1,240 +1,162 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { motion, AnimatePresence } from 'motion/react';
+import { 
+  LayoutDashboard, 
+  Users, 
+  Heart, 
+  Stethoscope, 
+  TestTube, 
+  Baby, 
+  Building2, 
+  Briefcase, 
+  LogOut, 
+  Menu, 
+  X, 
+  ChevronRight,
+  ShieldCheck,
+  UserCircle
+} from 'lucide-react';
 
-interface SubItem {
-  name: string;
-  href: string;
-}
+const menuItems = [
+  { name: 'Dashboard', path: '/', icon: LayoutDashboard, color: 'text-primary' },
+  { name: 'Pacientes', path: '/pacientes', icon: Users, color: 'text-primary' },
+  { name: 'Gestações', path: '/gestacoes', icon: Heart, color: 'text-primary' },
+  { name: 'Consultas', path: '/consultas', icon: Stethoscope, color: 'text-primary' },
+  { name: 'Exames', path: '/exames', icon: TestTube, color: 'text-primary' },
+  { name: 'Desfechos', path: '/desfechos', icon: Baby, color: 'text-primary' },
+];
 
-interface MenuItem {
-  name: string;
-  icon: string;
-  href?: string;
-  subItems?: SubItem[];
-}
+const configItems = [
+  { name: 'Unidades', path: '/unidades', icon: Building2, color: 'text-on-surface-variant' },
+  { name: 'Categorias', path: '/categorias', icon: Briefcase, color: 'text-on-surface-variant' },
+  { name: 'Operadores', path: '/operadores', icon: ShieldCheck, color: 'text-on-surface-variant', adminOnly: true },
+];
 
-export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+export default function Sidebar() {
   const pathname = usePathname();
-  const { user } = useAuth();
-  const [openMenus, setOpenMenus] = useState<string[]>([]);
+  const { user, signOut } = useAuth();
+  const [isOpen, setIsOpen] = useState(false);
 
-  const isAdministrator = user?.nivel_acesso === 'Administrador';
+  const isAdmin = user?.perfil === 'ADMINISTRADOR';
 
-  // Close sidebar on mobile when route changes
-  useEffect(() => {
-    if (window.innerWidth < 1024) {
-      onClose();
-    }
-  }, [pathname, onClose]);
+  const NavLink = ({ item }: { item: any }) => {
+    const isActive = pathname === item.path;
+    if (item.adminOnly && !isAdmin) return null;
 
-  const toggleMenu = (name: string) => {
-    setOpenMenus((prev) =>
-      prev.includes(name) ? prev.filter((item) => item !== name) : [...prev, name]
+    return (
+      <Link 
+        href={item.path}
+        onClick={() => setIsOpen(false)}
+        className={`group flex items-center gap-4 px-6 py-4 rounded-3xl transition-all duration-300 relative overflow-hidden ${
+          isActive 
+            ? 'bg-primary text-white shadow-xl shadow-primary/20 scale-[1.02]' 
+            : 'hover:bg-surface-container-low text-on-surface-variant hover:text-primary hover:translate-x-1'
+        }`}
+      >
+        {isActive && (
+          <motion.div 
+            layoutId="sidebar-active"
+            className="absolute inset-0 bg-primary"
+            transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
+          />
+        )}
+        <item.icon className={`w-5 h-5 relative z-10 ${isActive ? 'text-white' : item.color} group-hover:scale-110 transition-transform`} />
+        <span className={`text-[11px] font-black uppercase tracking-[0.2em] relative z-10 ${isActive ? 'text-white' : ''}`}>
+          {item.name}
+        </span>
+        {isActive && (
+          <ChevronRight className="w-4 h-4 ml-auto relative z-10 text-white/50" />
+        )}
+      </Link>
     );
-  };
-
-  const menuItems: MenuItem[] = [
-    { name: 'Home', icon: 'home', href: '/' },
-    { 
-      name: 'Pacientes', 
-      icon: 'group', 
-      subItems: [
-        { name: 'Pacientes', href: '/pacientes' },
-        { name: 'Gestações', href: '/gestacoes' },
-      ] 
-    },
-    {
-      name: 'Cadastros',
-      icon: 'person_add',
-      subItems: [
-        { name: 'Unidades de Saúde', href: '/unidades' },
-        ...(isAdministrator ? [{ name: 'Operadores', href: '/operadores' }] : []),
-        { name: 'Categorias Profissionais', href: '/categorias' },
-        { name: 'Profissionais', href: '/profissionais' },
-        { name: 'Rotinas', href: '/rotinas' },
-      ],
-    },
-    { 
-      name: 'Movimento', 
-      icon: 'sync_alt', 
-      subItems: [
-        { name: 'Atendimentos', href: '/atendimentos' },
-        { name: 'Exames e Vacinas', href: '/exames' },
-        { name: 'Desfecho da Gestação', href: '/desfechos' },
-      ]
-    },
-    { 
-      name: 'Dashboards', 
-      icon: 'dashboard', 
-      subItems: [
-        { name: 'Visão Geral', href: '/dashboard/overview' },
-      ]
-    },
-    { 
-      name: 'Relatórios', 
-      icon: 'analytics', 
-      href: '#' 
-    }
-  ];
-
-  const handleExportLayout = (table: string) => {
-    const layouts: Record<string, string[]> = {
-      pacientes: ['gestante', 'cpf', 'nome_mae', 'prontuario', 'cns', 'data_nascimento', 'logradouro', 'numero', 'complemento', 'bairro', 'contato', 'email', 'cpf_operador'],
-      profissionais: ['nome', 'cpf', 'cbo', 'cns', 'conselho', 'uf_conselho', 'numero_conselho'],
-      unidades: ['cnes', 'nome_fantasia', 'logradouro', 'numero', 'complemento', 'bairro', 'municipio', 'uf', 'cep', 'telefone'],
-      gestacoes: ['sispn', 'cpf_paciente', 'dum', 'dpp', 'data_abertura', 'data_cadastro', 'referencia_tecnica', 'acs', 'equipe', 'idade_cadastro', 'fase_vida_cadastro', 'gestacao_anterior', 'aborto', 'parto', 'sifilis', 'sifilis_tratada', 'hiv', 'hepatite_b', 'hepatite_c', 'classificacao_pn', 'alto_risco_compartilhado'],
-      atendimentos: ['sispn', 'data_consulta', 'cbo', 'cpf', 'data_proxima_consulta', 'observacoes_clinicas'],
-      desfechos: ['sispn', 'tipo_desfecho', 'data_desfecho', 'unidade_cnes'],
-      recem_nascidos: ['id_desfecho', 'nome_rn', 'cpf_rn', 'data_nascimento', 'data_consulta_rn', 'comparecimento'],
-      exames: ['sispn', 'id_rotina', 'data_realizacao', 'resultado', 'cbo', 'cpf_profissional'],
-      operadores: ['nome', 'cpf', 'senha', 'status', 'nivel_acesso', 'sigla', 'unidade_cnes'],
-      rotinas: ['tipo', 'descricao', 'trimestre', 'categoria'],
-      categorias: ['cbo', 'categoria']
-    };
-
-    const columns = layouts[table];
-    if (!columns) return;
-
-    const csvContent = columns.join(',') + '\n';
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `layout_${table}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
 
   return (
     <>
-      {/* Mobile Overlay */}
-      <div 
-        className={`fixed inset-0 bg-black/50 z-40 lg:hidden transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-        onClick={onClose}
-      />
+      {/* Mobile Menu Toggle */}
+      <button 
+        onClick={() => setIsOpen(!isOpen)}
+        className="lg:hidden fixed top-4 left-4 z-[60] w-12 h-12 bg-white rounded-2xl shadow-xl border border-outline-variant/10 flex items-center justify-center text-primary active:scale-90 transition-transform"
+      >
+        {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+      </button>
 
-      <aside className={`bg-surface-container-low h-screen w-64 fixed left-0 top-0 overflow-y-auto flex flex-col py-8 px-4 z-50 transition-transform duration-300 shadow-2xl lg:shadow-none ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="mb-10 px-2 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-primary-container flex items-center justify-center">
-              <span className="material-symbols-outlined text-on-primary-container" style={{ fontVariationSettings: '"FILL" 1' }}>health_and_safety</span>
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-on-surface tracking-tighter">Saúde Maternal</h1>
-              <p className="text-[10px] uppercase tracking-widest text-on-surface-variant/60 font-bold">Curadoria Clínica</p>
-            </div>
-          </div>
-          <button 
-            onClick={onClose}
-            className="p-2 rounded-lg hover:bg-surface-container-high text-on-surface-variant transition-colors"
-            title="Recolher Painel"
+      {/* Sidebar Container */}
+      <AnimatePresence mode="wait">
+        {(isOpen || (typeof window !== 'undefined' && window.innerWidth >= 1024)) && (
+          <motion.aside 
+            initial={{ x: -300, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: -300, opacity: 0 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className={`fixed top-0 left-0 h-screen w-72 bg-surface-container-lowest border-r border-outline-variant/10 z-50 flex flex-col p-6 lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
           >
-            <span className="material-symbols-outlined">menu_open</span>
-          </button>
-        </div>
-        <nav className="flex-1 space-y-1">
-        {menuItems.map((item) => {
-          const hasSubItems = item.subItems && item.subItems.length > 0;
-          const isExpanded = openMenus.includes(item.name);
-          const isParentActive = hasSubItems && item.subItems?.some(sub => pathname === sub.href);
-          const isActive = pathname === item.href || isParentActive;
-
-          return (
-            <div key={item.name} className="space-y-1">
-              {item.href ? (
-                <Link
-                  href={item.href}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 font-headline text-sm font-semibold tracking-tight ${
-                    isActive
-                      ? 'text-on-surface border-l-4 border-primary bg-surface-container-highest/50 translate-x-1'
-                      : 'text-on-surface-variant/60 hover:text-on-surface hover:bg-surface-container-high'
-                  }`}
-                >
-                  <span className={`material-symbols-outlined ${isActive ? 'text-primary' : ''}`}>
-                    {item.icon}
-                  </span>
-                  <span>{item.name}</span>
-                </Link>
-              ) : (
-                <button
-                  onClick={() => toggleMenu(item.name)}
-                  className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all duration-200 font-headline text-sm font-semibold tracking-tight ${
-                    isActive
-                      ? 'text-on-surface border-l-4 border-primary bg-surface-container-highest/50'
-                      : 'text-on-surface-variant/60 hover:text-on-surface hover:bg-surface-container-high'
-                  }`}
-                >
-                  <span className="flex items-center gap-3">
-                    <span className={`material-symbols-outlined ${isActive ? 'text-primary' : ''}`}>
-                      {item.icon}
-                    </span>
-                    <span>{item.name}</span>
-                  </span>
-                  <span className={`material-symbols-outlined text-xs transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}>
-                    expand_more
-                  </span>
-                </button>
-              )}
-
-              {hasSubItems && isExpanded && (
-                <div className="ml-9 space-y-1 border-l border-outline-variant/10">
-                  {item.subItems?.map((sub) => {
-                    const isSubActive = pathname === sub.href;
-                    const isExport = sub.href.startsWith('export:');
-                    
-                    if (isExport) {
-                      return (
-                        <button
-                          key={sub.name}
-                          onClick={() => handleExportLayout(sub.href.split(':')[1])}
-                          className="w-full flex items-center gap-3 px-4 py-2 rounded-r-lg transition-all duration-200 font-headline text-[10px] font-medium tracking-tight text-on-surface-variant/60 hover:text-primary hover:bg-primary/5 text-left"
-                        >
-                          <span>{sub.name}</span>
-                        </button>
-                      );
-                    }
-
-                    return (
-                      <Link
-                        key={sub.name}
-                        href={sub.href}
-                        className={`flex items-center gap-3 px-4 py-2 rounded-r-lg transition-all duration-200 font-headline text-xs font-medium tracking-tight ${
-                          isSubActive
-                            ? 'text-primary bg-primary/5'
-                            : 'text-on-surface-variant/60 hover:text-on-surface hover:bg-surface-container-high/50'
-                        }`}
-                      >
-                        <span>{sub.name}</span>
-                      </Link>
-                    );
-                  })}
+            {/* Logo Section */}
+            <div className="mb-10 px-4">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 bg-primary rounded-2xl flex items-center justify-center shadow-lg shadow-primary/20">
+                  <Heart className="text-white w-6 h-6" fill="currentColor" />
                 </div>
-              )}
+                <div>
+                  <h1 className="text-xl font-black text-primary uppercase tracking-tighter leading-none">Mãe</h1>
+                  <p className="text-[10px] font-black text-on-surface-variant uppercase tracking-[0.3em] leading-none">Paulistana</p>
+                </div>
+              </div>
+              <div className="h-1 w-12 bg-primary/10 rounded-full mt-4" />
             </div>
-          );
-        })}
-      </nav>
-      <div className="mt-auto pt-8 border-t border-outline-variant/10 space-y-1">
-        <Link href="#" className="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant/60 hover:text-on-surface hover:bg-surface-container-high transition-colors duration-200 font-headline text-sm font-semibold tracking-tight">
-          <span className="material-symbols-outlined">help_outline</span>
-          <span>Support</span>
-        </Link>
-        <button 
-          onClick={onClose}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant/60 hover:text-primary hover:bg-surface-container-high transition-colors duration-200 font-headline text-sm font-semibold tracking-tight mt-4"
-          title="Recolher Painel"
-        >
-          <span className="material-symbols-outlined">chevron_left</span>
-          <span>Recolher Painel</span>
-        </button>
-      </div>
-    </aside>
-  </>
+
+            {/* Navigation Sections */}
+            <div className="flex-1 space-y-10 overflow-y-auto scrollbar-none pb-8">
+              <div className="space-y-2">
+                <p className="px-6 text-[9px] font-black text-on-surface-variant/30 uppercase tracking-[0.4em] mb-4">Menu Principal</p>
+                {menuItems.map((item) => <NavLink key={item.path} item={item} />)}
+              </div>
+
+              <div className="space-y-2">
+                <p className="px-6 text-[9px] font-black text-on-surface-variant/30 uppercase tracking-[0.4em] mb-4">Configurações</p>
+                {configItems.map((item) => <NavLink key={item.path} item={item} />)}
+              </div>
+            </div>
+
+            {/* User Profile & Logout Section */}
+            <div className="mt-auto pt-6 border-t border-outline-variant/10">
+              <div className="bg-surface-container-low rounded-[2.5rem] p-4 mb-4 flex items-center gap-4 group">
+                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center group-hover:bg-primary transition-colors">
+                  <UserCircle className="text-primary w-7 h-7 group-hover:text-white transition-colors" />
+                </div>
+                <div className="flex-1 overflow-hidden">
+                  <p className="text-[11px] font-black text-on-surface uppercase truncate tracking-tight">{user?.nome || 'Usuário'}</p>
+                  <p className="text-[9px] font-bold text-on-surface-variant/50 uppercase truncate tracking-widest">{user?.perfil || 'Perfil'}</p>
+                </div>
+              </div>
+
+              <button 
+                onClick={signOut}
+                className="w-full flex items-center gap-4 px-6 py-4 rounded-3xl text-red-500 hover:bg-red-50 transition-all group"
+              >
+                <LogOut className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                <span className="text-[11px] font-black uppercase tracking-[0.3em]">Sair do Sistema</span>
+              </button>
+            </div>
+          </motion.aside>
+        )}
+      </AnimatePresence>
+
+      {/* Mobile Overlay */}
+      {isOpen && (
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={() => setIsOpen(false)}
+          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 lg:hidden"
+        />
+      )}
+    </>
   );
 }

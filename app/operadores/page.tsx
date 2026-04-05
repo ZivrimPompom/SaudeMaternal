@@ -575,58 +575,56 @@ export default function OperadoresPage() {
                         <span className="flex-1">{error}</span>
                       </div>
                     )}
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="col-span-2 space-y-2">
-                        <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Nome Completo</label>
-                        <div className="relative group">
-                          <UserPlus className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-5 h-5" />
-                          <input 
-                            className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-12 pr-4 py-3.5 transition-all font-body outline-none text-xs" 
-                            placeholder="Ex: Jean Luc Picard" 
-                            type="text" 
-                            value={formData.name || ''}
-                            onChange={(e) => {
-                              setFormData({ ...formData, name: e.target.value });
-                              setError(null);
-                            }}
-                            required
-                          />
-                        </div>
-                      </div>
-                      <div className="col-span-1 space-y-2">
-                        <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">CPF</label>
-                        <div className="relative group">
-                          <Fingerprint className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-5 h-5" />
-                          <input 
-                            className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-12 pr-4 py-3.5 transition-all font-body outline-none text-xs" 
-                            placeholder="000.000.000-00" 
-                            type="text" 
-                            value={formData.cpf || ''}
-                            onChange={handleCpfChange}
-                            maxLength={14}
-                            required
-                          />
-                        </div>
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Nome Completo</label>
+                      <div className="relative group">
+                        <UserPlus className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-5 h-5" />
+                        <input 
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-12 pr-4 py-3.5 transition-all font-body outline-none text-xs" 
+                          placeholder="Ex: Jean Luc Picard" 
+                          type="text" 
+                          value={formData.name || ''}
+                          onChange={(e) => {
+                            setFormData({ ...formData, name: e.target.value });
+                            setError(null);
+                          }}
+                          required
+                        />
                       </div>
                     </div>
-                    <div className="grid grid-cols-4 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Unidade de Saúde</label>
-                        <div className="relative group">
-                          <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-5 h-5" />
-                          <select 
-                            className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-12 pr-4 py-3.5 transition-all font-body outline-none text-xs appearance-none"
-                            value={formData.unidade_cnes || ''}
-                            onChange={(e) => setFormData({ ...formData, unidade_cnes: e.target.value })}
-                            required
-                          >
-                            <option value="">Selecione...</option>
-                            {units.map(unit => (
-                              <option key={unit.cnes} value={unit.cnes}>{unit.nome_fantasia}</option>
-                            ))}
-                          </select>
-                        </div>
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">CPF</label>
+                      <div className="relative group">
+                        <Fingerprint className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-5 h-5" />
+                        <input 
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-12 pr-4 py-3.5 transition-all font-body outline-none text-xs" 
+                          placeholder="000.000.000-00" 
+                          type="text" 
+                          value={formData.cpf || ''}
+                          onChange={handleCpfChange}
+                          maxLength={14}
+                          required
+                        />
                       </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Unidade de Saúde</label>
+                      <div className="relative group">
+                        <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-5 h-5" />
+                        <select 
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-12 pr-4 py-3.5 transition-all font-body outline-none text-xs appearance-none"
+                          value={formData.unidade_cnes || ''}
+                          onChange={(e) => setFormData({ ...formData, unidade_cnes: e.target.value })}
+                          required
+                        >
+                          <option value="">Selecione uma unidade...</option>
+                          {units.map(unit => (
+                            <option key={unit.cnes} value={unit.cnes}>{unit.nome_fantasia}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
                       <div className="space-y-2">
                         <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Status</label>
                         <div className="relative group">

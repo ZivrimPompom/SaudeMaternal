@@ -624,19 +624,24 @@ export default function ExamesPage() {
   }, [selectedCategory, categories, allProfessionals]);
 
   const handleExportCSV = useCallback(() => {
-    const headers = ['SISPN', 'GESTANTE', 'ROTINA', 'TIPO', 'DATA REALIZAÇÃO', 'RESULTADO', 'TRIMESTRE', 'EQUIPE'];
+    const headers = ['SISPN', 'GESTANTE', 'DATA REALIZAÇÃO', 'TRIMESTRE', 'ROTINA', 'TIPO', 'PROFISSIONAL', 'RESULTADO', 'EQUIPE'];
     const rows = filteredExames.map(r => {
       const gest = Array.isArray(r.gestacoes) ? r.gestacoes[0] : r.gestacoes;
       const pac = gest?.pacientes;
       const pacObj = Array.isArray(pac) ? pac[0] : pac;
+      
+      const prof = allProfessionals.find(p => p.cpf === r.cpf_profissional);
+      const profissionalNome = prof?.nome || 'N/A';
+
       return [
         r.sispn,
         (pacObj as any)?.gestante || '',
+        r.data_realizacao,
+        r.trimestre_realizacao,
         r.rotinas?.descricao || '',
         r.tipo || r.rotinas?.tipo || 'EXAME',
-        r.data_realizacao,
+        profissionalNome,
         r.resultado,
-        r.trimestre_realizacao,
         (gest as any)?.equipe || ''
       ];
     });
@@ -650,7 +655,7 @@ export default function ExamesPage() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  }, [filteredExames]);
+  }, [filteredExames, allProfessionals]);
 
   useEffect(() => {
     setOnExportCSV(() => handleExportCSV);

@@ -1,44 +1,42 @@
-import type {Metadata} from 'next';
-import { Inter, Manrope, Public_Sans } from 'next/font/google';
-import './globals.css';
+import type { Metadata } from "next";
+import { Inter, Outfit } from "next/font/google";
+import "./globals.css";
+import { AuthProvider } from "@/context/AuthContext";
+import { SearchProvider } from "@/context/SearchContext";
 
-const inter = Inter({
-  subsets: ['latin'],
-  variable: '--font-inter',
+const inter = Inter({ 
+  subsets: ["latin"], 
+  variable: "--font-inter",
   display: 'swap',
 });
 
-const manrope = Manrope({
-  subsets: ['latin'],
-  variable: '--font-manrope',
-  display: 'swap',
-});
-
-const publicSans = Public_Sans({
-  subsets: ['latin'],
-  variable: '--font-public-sans',
+const outfit = Outfit({ 
+  subsets: ["latin"], 
+  variable: "--font-outfit",
   display: 'swap',
 });
 
 export const metadata: Metadata = {
-  title: 'Saúde Maternal',
-  description: 'Sistema de curadoria clínica para saúde maternal',
-  icons: {
-    icon: '/favicon.ico',
-  },
+  title: "Mãe Paulistana | Sistema de Gestão",
+  description: "Sistema de monitoramento e gestão do programa Mãe Paulistana",
 };
 
-import Providers from '@/components/Providers';
-
-export default function RootLayout({children}: {children: React.ReactNode}) {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
-    <html lang="pt-BR" className={`${inter.variable} ${manrope.variable} ${publicSans.variable}`} suppressHydrationWarning>
+    <html lang="pt-BR" className={`${inter.variable} ${outfit.variable}`}>
       <head>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" />
-        <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
       </head>
-      <body className="bg-surface text-on-surface min-h-screen" suppressHydrationWarning>
-        <Providers>{children}</Providers>
+      <body className="antialiased bg-surface-container-lowest text-on-surface selection:bg-primary/10 selection:text-primary">
+        <AuthProvider>
+          <SearchProvider>
+            {children}
+          </SearchProvider>
+        </AuthProvider>
       </body>
     </html>
   );

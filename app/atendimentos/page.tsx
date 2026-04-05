@@ -819,15 +819,43 @@ export default function AtendimentosPage() {
   }, [selectedCategory, categories, allProfessionals]);
 
   const handleExportCSV = useCallback(() => {
-    const headers = ['SISPN', 'GESTANTE', 'DATA CONSULTA', 'TRIMESTRE', 'PROFISSIONAL', 'CBO'];
-    const rows = filteredAtendimentos.map(a => [
-      a.sispn,
-      a.gestacoes?.pacientes?.gestante || 'N/A',
-      new Date(a.data_consulta).toLocaleDateString('pt-BR'),
-      a.trimestre_consulta,
-      a.profissionais?.nome || 'N/A',
-      a.cbo
-    ]);
+    const headers = ['SISPN', 'GESTANTE', 'DATA CONSULTA', 'TRIMESTRE', 'PROFISSIONAL', 'CBO', 'PRÓXIMA CONSULTA', 'OBSERVAÇÕES'];
+    const rows = atendimentos.filter(a => {
+      const query = searchQuery.toLowerCase().trim();
+      const normalize = (str: string) => str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : "";
+      const queryNormalizada = normalize(query);
+      const gest = Array.isArray(a.gestacoes) ? a.gestacoes[0] : a.gestacoes;
+      const pac = gest?.pacientes;
+      const pacObj = Array.isArray(pac) ? pac[0] : pac;
+      const pacienteNome = (pacObj as any)?.gestante || '';
+      const profissionalNome = a.profissionais?.nome || '';
+      const matchesSearch = !query || (
+        normalize(pacienteNome).includes(queryNormalizada) ||
+        normalize(a.sispn).includes(queryNormalizada) ||
+        normalize(profissionalNome).includes(queryNormalizada) ||
+        normalize(a.cbo).includes(queryNormalizada)
+      );
+      if (!matchesSearch) return false;
+      if (filters.trimestre && a.trimestre_consulta !== filters.trimestre) return false;
+      if (filters.categoria && getCboCategory(a.cbo) !== filters.categoria) return false;
+      const equipe = a.profissionais?.equipe || (gest as any)?.equipe || '';
+      if (filters.equipe && equipe !== filters.equipe) return false;
+      return true;
+    }).map(a => {
+      const gest = Array.isArray(a.gestacoes) ? a.gestacoes[0] : a.gestacoes;
+      const pac = gest?.pacientes;
+      const pacObj = Array.isArray(pac) ? pac[0] : pac;
+      return [
+        a.sispn,
+        (pacObj as any)?.gestante || '',
+        a.data_consulta,
+        a.trimestre_consulta,
+        a.profissionais?.nome || 'N/A',
+        a.cbo || '',
+        a.data_proxima_consulta || '',
+        (a.observacoes_clinicas || '').replace(/,/g, ';')
+      ];
+    });
     const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
@@ -838,7 +866,7 @@ export default function AtendimentosPage() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  }, [filteredAtendimentos]);
+  }, [atendimentos, searchQuery, filters]);
 
   useEffect(() => {
     setOnExportCSV(() => handleExportCSV);
