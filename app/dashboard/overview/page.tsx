@@ -23,12 +23,14 @@ import {
   LabelList
 } from 'recharts';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth, Operator } from '@/context/AuthContext';
 
 const COLORS = ['#0066FF', '#00C2FF', '#FF6B00', '#FFC700', '#00E096'];
 
 export default function DashboardOverview() {
-  const { user, loading: authLoading } = useAuth();
+  const auth = useAuth();
+  const user = auth.user as Operator | null;
+  const authLoading = auth.loading;
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [units, setUnits] = useState<any[]>([]);
