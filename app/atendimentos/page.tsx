@@ -191,6 +191,24 @@ export default function AtendimentosPage() {
   const [selectedCategory, setSelectedCategory] = useState('MEDICO');
   const [selectedProfessionalCpf, setSelectedProfessionalCpf] = useState('');
 
+  // New states for multiple entries
+  const [formEntries, setFormEntries] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (mounted && formEntries.length === 0) {
+      setFormEntries([
+        {
+          id: Math.random().toString(36).substr(2, 9),
+          data_consulta: '',
+          trimestre_consulta: '---',
+          cpf_profissional: '',
+          data_proxima_consulta: '',
+          observacoes_clinicas: ''
+        }
+      ]);
+    }
+  }, [mounted, formEntries.length]);
+
   // Filters
   const [filters, setFilters] = useState({
     dpp: '',
@@ -232,11 +250,6 @@ export default function AtendimentosPage() {
 
   const [formData, setFormData] = useState<Partial<Atendimento>>({
     sispn: '',
-    data_consulta: '',
-    cbo: '',
-    cpf: 'NÃO INFORMADO',
-    data_proxima_consulta: '',
-    observacoes_clinicas: ''
   });
 
   const [selectedPatientSispn, setSelectedPatientSispn] = useState<string | null>(null);
@@ -257,6 +270,12 @@ export default function AtendimentosPage() {
           atendimentosCount: 0,
           lastAtendimentoDate: null,
           nextAtendimentoDate: null,
+          trim1Count: 0,
+          trim2Count: 0,
+          trim3Count: 0,
+          currentTrimester: '---',
+          hasAlert: false,
+          alertMessage: '',
           status: status
         });
       }
@@ -269,13 +288,43 @@ export default function AtendimentosPage() {
         if (!p.lastAtendimentoDate || new Date(a.data_consulta) > new Date(p.lastAtendimentoDate)) {
           p.lastAtendimentoDate = a.data_consulta;
         }
+        if (a.trimestre_consulta === '1º TRIMESTRE') p.trim1Count++;
+        if (a.trimestre_consulta === '2º TRIMESTRE') p.trim2Count++;
+        if (a.trimestre_consulta === '3º TRIMESTRE') p.trim3Count++;
         if (a.data_proxima_consulta) {
-          if (!p.nextAtendimentoDate || new Date(a.data_proxima_consulta) < new Date(p.nextAtendimentoDate)) {
-            // We want the *soonest* next appointment
-            if (new Date(a.data_proxima_consulta) >= new Date()) {
+          const nextDate = new Date(a.data_proxima_consulta);
+          if (!p.nextAtendimentoDate || nextDate < new Date(p.nextAtendimentoDate)) {
+            if (nextDate >= new Date()) {
                p.nextAtendimentoDate = a.data_proxima_consulta;
             }
           }
+        }
+      }
+    });
+
+    // Calculate alert based on current trimester and consultation counts
+    patientMap.forEach((p) => {
+      if (p.dum) {
+        const weeks = calculateWeeks(p.dum);
+        if (weeks <= 13) p.currentTrimester = '1º TRIMESTRE';
+        else if (weeks <= 27) p.currentTrimester = '2º TRIMESTRE';
+        else p.currentTrimester = '3º TRIMESTRE';
+
+        const minConsultas: Record<string, number> = {
+          '1º TRIMESTRE': 3,
+          '2º TRIMESTRE': 6,
+          '3º TRIMESTRE': 9,
+        };
+
+        const required = minConsultas[p.currentTrimester] || 0;
+        const totalConsultas = p.trim1Count + p.trim2Count + p.trim3Count;
+
+        if (totalConsultas === 0) {
+          p.hasAlert = true;
+          p.alertMessage = `SEM CONSULTAS (${p.currentTrimester})`;
+        } else if (totalConsultas < required) {
+          p.hasAlert = true;
+          p.alertMessage = `${totalConsultas}/${required} CONSULTAS`;
         }
       }
     });
@@ -296,10 +345,11 @@ export default function AtendimentosPage() {
 
       if (!matchesSearch) return false;
       
-      if (filters.trimestre || filters.categoria) {
+      if (filters.trimestre && p.currentTrimester !== filters.trimestre) return false;
+
+      if (filters.categoria) {
         const patientAtendimentos = atendimentos.filter(a => a.sispn === p.sispn);
         const hasMatchingAtendimento = patientAtendimentos.some(a => {
-          if (filters.trimestre && a.trimestre_consulta !== filters.trimestre) return false;
           if (filters.categoria && getCboCategory(a.cbo) !== filters.categoria) return false;
           return true;
         });
@@ -313,50 +363,30 @@ export default function AtendimentosPage() {
     });
   }, [patientsWithAtendimentos, atendimentos, searchQuery, filters]);
 
-  const groupedAtendimentos = useMemo(() => {
-    if (!selectedPatientSispn) return {};
-    const patientAtendimentos = atendimentos.filter(a => a.sispn === selectedPatientSispn);
-    const groups: Record<string, any[]> = {
-      '1º TRIMESTRE': [],
-      '2º TRIMESTRE': [],
-      '3º TRIMESTRE': [],
-      'FORA DO PERÍODO': []
-    };
-    patientAtendimentos.forEach(a => {
-      const trim = a.trimestre_consulta || 'FORA DO PERÍODO';
-      if (!groups[trim]) groups[trim] = [];
-      groups[trim].push(a);
-    });
+  const selectedGestante = useMemo(() => {
+    return gestacoes.find(g => g.sispn === formData.sispn);
+  }, [formData.sispn, gestacoes]);
 
-    // Sort by date within each trimester (ascending order as requested "order of date")
-    Object.keys(groups).forEach(key => {
-      groups[key].sort((a, b) => new Date(a.data_consulta).getTime() - new Date(b.data_consulta).getTime());
-    });
-
-    return groups;
-  }, [selectedPatientSispn, atendimentos]);
+  const selectedPatientHistory = useMemo(() => {
+    if (!formData.sispn) return [];
+    return atendimentos
+      .filter(a => a.sispn === formData.sispn)
+      .sort((a, b) => new Date(b.data_consulta).getTime() - new Date(a.data_consulta).getTime());
+  }, [formData.sispn, atendimentos]);
 
   const handleViewPatient = (sispn: string) => {
-    setSelectedPatientSispn(sispn);
-    setFormData({
-      sispn,
-      data_consulta: new Date().toISOString().split('T')[0],
-      cbo: '',
-      cpf: 'NÃO INFORMADO',
-      data_proxima_consulta: '',
-      observacoes_clinicas: ''
-    });
+    setFormData({ sispn });
     setPatientSearch(gestacoes.find(g => g.sispn === sispn)?.paciente_nome || sispn);
     setIsViewingHistory(true);
     setIsFormOpen(true);
     
-    // Scroll to history table after a short delay to allow rendering
+    // Wait for animation to complete, then scroll to show full banner
     setTimeout(() => {
-      const historyElement = document.getElementById('history-table');
-      if (historyElement) {
-        historyElement.scrollIntoView({ behavior: 'smooth' });
+      const formElement = document.getElementById('launch-section');
+      if (formElement) {
+        formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
-    }, 100);
+    }, 350);
   };
 
   useEffect(() => {
@@ -366,15 +396,22 @@ export default function AtendimentosPage() {
       setIsViewingHistory(false);
       setFormData({
         sispn: '',
-        data_consulta: new Date().toISOString().split('T')[0],
-        cbo: '',
-        cpf: 'NÃO INFORMADO',
-        data_proxima_consulta: '',
-        observacoes_clinicas: ''
       });
+      const today = new Date().toISOString().split('T')[0];
+      setFormEntries([
+        {
+          id: Math.random().toString(36).substr(2, 9),
+          data_consulta: today,
+          trimestre_consulta: '1º TRIMESTRE',
+          cpf_profissional: '',
+          data_proxima_consulta: '',
+          observacoes_clinicas: ''
+        }
+      ]);
       setPatientSearch('');
-      setSelectedCategory('NÃO INFORMADO');
+      setProfessionalSearch('');
       setSelectedProfessionalCpf('');
+      setSelectedCategory('MEDICO');
       setError(null);
       setSuccess(null);
     }
@@ -569,77 +606,65 @@ export default function AtendimentosPage() {
       return;
     }
 
-    // Regra: só podemos lançar pessoas que tenham sido cadastradas no registro de gestações
     const gest = gestacoes.find(g => g.sispn === formData.sispn);
     if (!gest) {
       setError('Gestaçāo não encontrada no registro de gestações.');
       return;
     }
 
-    // Regra: só podem receber registros de atendimento pessoas com o status da gestação = ATIVA
     const status = getGestacaoStatus(gest.dpp);
     if (status === 'VENCIDA') {
       setError('Não é possível registrar atendimentos para gestações com status VENCIDA.');
       return;
     }
 
-    if (!selectedProfessionalCpf) {
-      setError('Selecione um profissional.');
-      return;
-    }
-
     try {
-      const trimestre = calculateTrimestre(gest?.dum || '', formData.data_consulta || '');
-      
-      if (trimestre === 'FORA DO PERÍODO') {
-        setError(`Data da consulta (${formData.data_consulta}) está fora do período gestacional (0-280 dias).`);
-        return;
-      }
+      const payloads = formEntries.map(entry => {
+        if (!entry.cpf_profissional) {
+          throw new Error('Selecione um profissional para todas as linhas.');
+        }
 
-      const professional = allProfessionals.find(p => p.cpf === selectedProfessionalCpf);
+        const trimestre = calculateTrimestre(gest.dum, entry.data_consulta || '');
+        
+        if (trimestre === 'FORA DO PERÍODO') {
+          throw new Error(`Data da consulta (${entry.data_consulta}) está fora do período gestacional (0-280 dias).`);
+        }
 
-      const payload = {
-        sispn: formData.sispn,
-        data_consulta: formData.data_consulta,
-        trimestre_consulta: trimestre,
-        cbo: professional?.cbo || formData.cbo,
-        cpf: selectedProfessionalCpf,
-        data_proxima_consulta: formData.data_proxima_consulta || null,
-        observacoes_clinicas: formData.observacoes_clinicas || null,
-        unidade_cnes: authUser?.unidade_cnes || null,
-        cpf_operador: authUser?.cpf || null
-      };
+        const professional = allProfessionals.find(p => p.cpf === entry.cpf_profissional);
+
+        return {
+          sispn: formData.sispn,
+          data_consulta: entry.data_consulta,
+          trimestre_consulta: trimestre,
+          cbo: professional?.cbo || null,
+          cpf: entry.cpf_profissional,
+          data_proxima_consulta: entry.data_proxima_consulta || null,
+          observacoes_clinicas: entry.observacoes_clinicas || null,
+          unidade_cnes: authUser?.unidade_cnes || null,
+          cpf_operador: authUser?.cpf || null
+        };
+      });
 
       if (editingId) {
         const { error: updateError } = await supabase
           .from('atendimentos')
-          .update(payload)
+          .update(payloads[0])
           .eq('id_atendimento', editingId);
         if (updateError) throw updateError;
-        setSuccess('Atendimento atualizado com sucesso!');
+        setSuccess('Atendimento atualizado!');
       } else {
         const { error: insertError } = await supabase
           .from('atendimentos')
-          .insert([payload]);
+          .insert(payloads);
         if (insertError) throw insertError;
-        setSuccess('Atendimento registrado com sucesso!');
+        setSuccess(`${payloads.length} atendimentos registrados!`);
       }
 
-      setFormData({
-        sispn: '',
-        data_consulta: new Date().toISOString().split('T')[0],
-        cbo: '',
-        cpf: 'NÃO INFORMADO',
-        data_proxima_consulta: '',
-        observacoes_clinicas: ''
-      });
-      setPatientSearch('');
-      setProfessionalSearch('');
-      setSelectedCategory('MEDICO');
-      setSelectedProfessionalCpf('');
-      setEditingId(null);
-      setIsFormOpen(false);
-      fetchData();
+      await fetchData();
+      const launchSection = document.getElementById('launch-section');
+      if (launchSection) {
+        launchSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     } catch (err: any) {
       setError(err.message);
     }
@@ -649,45 +674,38 @@ export default function AtendimentosPage() {
     if (!con) return;
     
     setEditingId(con.id_atendimento);
-    setIsViewingHistory(false);
-    setSelectedPatientSispn(con.sispn);
+    const gest = Array.isArray(con.gestacoes) ? con.gestacoes[0] : con.gestacoes;
+    const pac = gest?.pacientes;
+    const pacObj = Array.isArray(pac) ? pac[0] : pac;
     
-    // Get patient name safely
-    let gestanteNome = con.sispn;
-    if (con.gestacoes) {
-      const gest = Array.isArray(con.gestacoes) ? con.gestacoes[0] : con.gestacoes;
-      const pac = gest?.pacientes;
-      const pacObj = Array.isArray(pac) ? pac[0] : pac;
-      if (pacObj?.gestante) {
-        gestanteNome = pacObj.gestante;
-      }
-    }
-    
-    setPatientSearch(gestanteNome);
-    setProfessionalSearch(con.profissionais?.nome || con.cpf || '');
+    setPatientSearch((pacObj as any)?.gestante || con.sispn);
     setSelectedProfessionalCpf(con.cpf || '');
     
-    // Find category
-    if (con.cpf) {
-      const professional = allProfessionals.find(p => p.cpf === con.cpf);
-      if (professional) {
-        const category = categories.find(c => c.cbo === professional.cbo.substring(0, 4));
-        if (category) setSelectedCategory(category.categoria);
-      }
+    const prof = allProfessionals.find(p => p.cpf === con.cpf);
+    if (prof) {
+      setProfessionalSearch(prof.nome);
+      const cat = categories.find(c => prof.cbo.startsWith(c.cbo));
+      if (cat) setSelectedCategory(cat.categoria);
     }
 
     setFormData({
-      sispn: con.sispn || '',
-      data_consulta: con.data_consulta || '',
-      cbo: con.cbo || '',
-      cpf: con.cpf || '',
-      data_proxima_consulta: con.data_proxima_consulta || '',
-      observacoes_clinicas: con.observacoes_clinicas || ''
+      sispn: con.sispn,
     });
     
+    setFormEntries([
+      {
+        id: Math.random().toString(36).substr(2, 9),
+        data_consulta: con.data_consulta,
+        trimestre_consulta: con.trimestre_consulta,
+        cpf_profissional: con.cpf || '',
+        data_proxima_consulta: con.data_proxima_consulta || '',
+        observacoes_clinicas: con.observacoes_clinicas || '',
+        nome_profissional: prof?.nome || ''
+      }
+    ]);
+
+    setIsViewingHistory(false);
     setIsFormOpen(true);
-    
-    // Scroll to top to show the form
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -793,10 +811,6 @@ export default function AtendimentosPage() {
     }).slice(0, 10);
   }, [professionalSearch, allProfessionals]);
 
-  const selectedGestante = useMemo(() => {
-    return gestacoes.find(g => g.sispn === formData.sispn);
-  }, [formData.sispn, gestacoes]);
-
   const filteredProfessionals = useMemo(() => {
     if (!selectedCategory) return [];
     const category = categories.find(c => c.categoria === selectedCategory);
@@ -849,6 +863,370 @@ export default function AtendimentosPage() {
             filtered={filteredPatients.length} 
           />
         </div>
+
+        <AnimatePresence>
+          {isFormOpen && (
+            <motion.section initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+              <div id="launch-section" className="bg-surface-container-lowest p-4 md:p-6 rounded-2xl shadow-2xl border border-outline-variant/10 space-y-3">
+                {selectedGestante && (
+                  <PatientBanner 
+                    patient={{
+                      nome: selectedGestante.paciente_nome,
+                      data_nascimento: selectedGestante.paciente_nascimento || '',
+                      cpf: selectedGestante.paciente_cpf,
+                      cns: selectedGestante.paciente_cns || '',
+                      dum: selectedGestante.dum,
+                      dpp: selectedGestante.dpp,
+                      data_cadastro: selectedGestante.data_cadastro,
+                      risco: selectedGestante.classificacao_pn || 'HABITUAL'
+                    }}
+                  />
+                )}
+
+                {!isViewingHistory ? (
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    {/* Spreadsheet Grid */}
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-sm font-black text-primary uppercase tracking-widest">Lançamento de Atendimentos</h4>
+                        {!editingId && (
+                          <button 
+                            type="button" 
+                            onClick={() => {
+                              setFormEntries([...formEntries, {
+                                id: Math.random().toString(36).substr(2, 9),
+                                data_consulta: '',
+                                trimestre_consulta: '---',
+                                cpf_profissional: '',
+                                data_proxima_consulta: '',
+                                observacoes_clinicas: ''
+                              }]);
+                            }}
+                            className="flex items-center gap-2 text-primary hover:text-primary/70 transition-colors"
+                          >
+                            <span className="material-symbols-outlined text-lg">add_circle</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest">Adicionar Linha</span>
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="bg-surface-container-low rounded-2xl overflow-x-auto border border-outline-variant/10">
+                        <table className="w-full text-left border-separate border-spacing-0" style={{ tableLayout: 'fixed' }}>
+                          <colgroup>
+                            <col style={{ width: '12%' }} />
+                            <col style={{ width: '10%' }} />
+                            <col style={{ width: '20%' }} />
+                            <col style={{ width: '12%' }} />
+                            <col style={{ width: '20%' }} />
+                            <col style={{ width: '8%' }} />
+                          </colgroup>
+                          <thead className="bg-surface-container-high">
+                            <tr>
+                              <th className="px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Data Consulta</th>
+                              <th className="px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Trimestre</th>
+                              <th className="px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Profissional</th>
+                              <th className="px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Próxima Consulta</th>
+                              <th className="px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Observações</th>
+                              {!editingId && <th className="px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60 text-center">Ações</th>}
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-outline-variant/5">
+                            {formEntries.map((entry, index) => (
+                              <tr key={entry.id} className="hover:bg-white/50 transition-colors">
+                                <td className="px-2 py-1.5">
+                                  <div className="bg-surface-container-low/50 rounded-xl px-2 py-1">
+                                    <input 
+                                      type="date" 
+                                      className="bg-transparent border-none p-0 text-[10px] font-bold outline-none focus:ring-0 w-full text-on-surface"
+                                      value={entry.data_consulta}
+                                      onChange={(e) => {
+                                        const newEntries = [...formEntries];
+                                        newEntries[index].data_consulta = e.target.value;
+                                        const trimestre = calculateTrimestre(selectedGestante?.dum || '', e.target.value);
+                                        newEntries[index].trimestre_consulta = trimestre || '---';
+                                        setFormEntries(newEntries);
+                                      }}
+                                    />
+                                  </div>
+                                </td>
+                                <td className="px-2 py-1.5">
+                                  <div className="bg-surface-container-low/50 rounded-xl px-2 py-1">
+                                    <span className={`text-[10px] font-bold ${selectedGestante && calculateTrimestre(selectedGestante.dum, entry.data_consulta) === 'FORA DO PERÍODO' ? 'text-error' : 'text-on-surface'}`}>
+                                      {selectedGestante ? calculateTrimestre(selectedGestante.dum, entry.data_consulta) : '---'}
+                                    </span>
+                                  </div>
+                                </td>
+                                <td className="px-2 py-1.5">
+                                  <div className="bg-surface-container-low/50 rounded-xl px-2 py-1 relative min-h-[36px]">
+                                    <select 
+                                      className="absolute opacity-0 w-full h-full cursor-pointer top-0 left-0 text-[10px]"
+                                      value={entry.cpf_profissional || ''}
+                                      onChange={(e) => {
+                                        const newEntries = [...formEntries];
+                                        const cpf = e.target.value;
+                                        newEntries[index].cpf_profissional = cpf;
+                                        const prof = allProfessionals.find(p => p.cpf === cpf);
+                                        if (prof) {
+                                          newEntries[index].nome_profissional = prof.nome;
+                                        }
+                                        setFormEntries(newEntries);
+                                      }}
+                                    >
+                                      <option value="">SELECIONE PROFISSIONAL</option>
+                                      {allProfessionals.map((p) => {
+                                        const cat = categories.find(c => p.cbo.startsWith(c.cbo));
+                                        return (
+                                          <option key={p.cpf} value={p.cpf}>{p.nome} - {cat?.categoria || 'OUTROS'}</option>
+                                        );
+                                      })}
+                                    </select>
+                                    <div className="text-[9px] font-bold uppercase text-on-surface break-words whitespace-normal pointer-events-none">
+                                      {entry.nome_profissional ? (
+                                        <>
+                                          <p className="font-black text-primary">{entry.nome_profissional}</p>
+                                          <p className="text-[8px]">{getCboCategory(allProfessionals.find(p => p.cpf === entry.cpf_profissional)?.cbo)}</p>
+                                        </>
+                                      ) : (
+                                        <p>SELECIONE PROFISSIONAL</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="px-2 py-1.5">
+                                  <div className="bg-surface-container-low/50 rounded-xl px-2 py-1">
+                                    <input 
+                                      type="date" 
+                                      className="bg-transparent border-none p-0 text-[10px] font-bold outline-none focus:ring-0 w-full text-on-surface"
+                                      value={entry.data_proxima_consulta || ''}
+                                      onChange={(e) => {
+                                        const newEntries = [...formEntries];
+                                        newEntries[index].data_proxima_consulta = e.target.value;
+                                        setFormEntries(newEntries);
+                                      }}
+                                    />
+                                  </div>
+                                </td>
+                                <td className="px-2 py-1.5">
+                                  <div className="bg-surface-container-low/50 rounded-xl px-2 py-1">
+                                    <input 
+                                      type="text"
+                                      className="bg-transparent border-none p-0 text-[10px] font-bold outline-none focus:ring-0 w-full text-on-surface"
+                                      value={entry.observacoes_clinicas || ''}
+                                      onChange={(e) => {
+                                        const newEntries = [...formEntries];
+                                        newEntries[index].observacoes_clinicas = e.target.value;
+                                        setFormEntries(newEntries);
+                                      }}
+                                      placeholder="Observações clínicas"
+                                    />
+                                  </div>
+                                </td>
+                                {!editingId && (
+                                  <td className="px-2 py-1.5 text-center">
+                                    <button 
+                                      type="button" 
+                                      onClick={() => {
+                                        if (formEntries.length > 1) {
+                                          setFormEntries(formEntries.filter((_, i) => i !== index));
+                                        }
+                                      }}
+                                      className="text-error hover:scale-110 transition-transform disabled:opacity-20"
+                                      disabled={formEntries.length === 1}
+                                    >
+                                      <span className="material-symbols-outlined text-sm">delete</span>
+                                    </button>
+                                  </td>
+                                )}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end gap-2 mt-4">
+                      <button type="button" onClick={() => setIsFormOpen(false)} className="flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold transition-all duration-300 bg-white text-primary border border-primary hover:bg-primary/5 shadow-lg shadow-primary/5">
+                        <span className="material-symbols-outlined text-sm">close</span>
+                        Cancelar
+                      </button>
+                      <button type="submit" className="flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold transition-all duration-300 bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20">
+                        <span className="material-symbols-outlined text-sm">save</span>
+                        Salvar Atendimento
+                      </button>
+                    </div>
+
+                    {/* Movimento de Atendimentos da Gestante Selecionada */}
+                    {formData.sispn && selectedPatientHistory.length > 0 && (
+                      <div id="history-table" className="space-y-2 pt-2 border-t border-outline-variant/10">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-primary text-lg">history</span>
+                            <h4 className="text-sm font-black text-primary uppercase tracking-widest">Movimento de Atendimentos Realizados</h4>
+                          </div>
+                        </div>
+                        <div className="bg-surface-container-low rounded-2xl overflow-x-auto border border-outline-variant/10">
+                          <table className="w-full text-left border-separate border-spacing-0" style={{ tableLayout: 'fixed' }}>
+                            <colgroup>
+                              <col style={{ width: '12%' }} />
+                              <col style={{ width: '10%' }} />
+                              <col style={{ width: '20%' }} />
+                              <col style={{ width: '12%' }} />
+                              <col style={{ width: '20%' }} />
+                              <col style={{ width: '8%' }} />
+                            </colgroup>
+                            <thead className="bg-surface-container-high">
+                              <tr>
+                                <th className="px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Data Consulta</th>
+                                <th className="px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Trimestre</th>
+                                <th className="px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Profissional</th>
+                                <th className="px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Próxima Consulta</th>
+                                <th className="px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Observações</th>
+                                <th className="px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60 text-center">Ações</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-outline-variant/5">
+                              {selectedPatientHistory.map((h) => (
+                                <tr key={h.id_atendimento} className="hover:bg-white/50 transition-colors group">
+                                  <td className="px-2 py-1.5">
+                                    <div className="text-[10px] font-bold text-on-surface">{new Date(h.data_consulta).toLocaleDateString('pt-BR')}</div>
+                                  </td>
+                                  <td className="px-2 py-1.5">
+                                    <div className="text-[10px] font-bold text-on-surface uppercase">{h.trimestre_consulta}</div>
+                                  </td>
+                                  <td className="px-2 py-1.5">
+                                    <div className="text-[9px]">
+                                      <p className="font-black text-on-surface uppercase">{allProfessionals.find(p => p.cpf === h.cpf)?.nome || '---'}</p>
+                                      <p className="font-bold text-on-surface-variant/60 uppercase">{getCboCategory(h.cbo)}</p>
+                                    </div>
+                                  </td>
+                                  <td className="px-2 py-1.5">
+                                    <div className="text-[10px] font-bold text-on-surface">
+                                      {h.data_proxima_consulta ? new Date(h.data_proxima_consulta).toLocaleDateString('pt-BR') : '---'}
+                                    </div>
+                                  </td>
+                                  <td className="px-2 py-1.5">
+                                    <div className="text-[10px] font-bold text-on-surface-variant truncate">
+                                      {h.observacoes_clinicas || '---'}
+                                    </div>
+                                  </td>
+                                  <td className="px-2 py-1.5">
+                                    <div className="flex items-center justify-center gap-1">
+                                      <button 
+                                        type="button"
+                                        onClick={() => handleEdit(h)} 
+                                        className="p-1 rounded-xl bg-white/50 text-on-surface-variant hover:bg-primary hover:text-white transition-all"
+                                        title="Editar"
+                                      >
+                                        <span className="material-symbols-outlined text-sm">edit</span>
+                                      </button>
+                                      <button 
+                                        type="button"
+                                        onClick={() => setDeleteConfirmId(h.id_atendimento)} 
+                                        className="p-1 rounded-xl bg-white/50 text-on-surface-variant hover:bg-error hover:text-white transition-all"
+                                        title="Excluir"
+                                      >
+                                        <span className="material-symbols-outlined text-sm">delete</span>
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+                  </form>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-primary text-lg">history</span>
+                      <h4 className="text-sm font-black text-primary uppercase tracking-widest">Movimento de Atendimentos Realizados</h4>
+                    </div>
+                    {formData.sispn && selectedPatientHistory.length > 0 ? (
+                      <div id="history-table" className="bg-surface-container-low rounded-2xl overflow-x-auto border border-outline-variant/10">
+                        <table className="w-full text-left border-separate border-spacing-0" style={{ tableLayout: 'fixed' }}>
+                          <colgroup>
+                            <col style={{ width: '12%' }} />
+                            <col style={{ width: '10%' }} />
+                            <col style={{ width: '20%' }} />
+                            <col style={{ width: '12%' }} />
+                            <col style={{ width: '20%' }} />
+                            <col style={{ width: '8%' }} />
+                          </colgroup>
+                          <thead className="bg-surface-container-high">
+                            <tr>
+                              <th className="px-3 py-2 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Data Consulta</th>
+                              <th className="px-3 py-2 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Trimestre</th>
+                              <th className="px-3 py-2 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Profissional</th>
+                              <th className="px-3 py-2 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Próxima Consulta</th>
+                              <th className="px-3 py-2 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Observações</th>
+                              <th className="px-3 py-2 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60 text-center">Ações</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-outline-variant/5">
+                            {selectedPatientHistory.map((h) => (
+                              <tr key={h.id_atendimento} className="hover:bg-white/50 transition-colors group">
+                                <td className="px-3 py-2">
+                                  <div className="text-[10px] font-bold text-on-surface">{new Date(h.data_consulta).toLocaleDateString('pt-BR')}</div>
+                                </td>
+                                <td className="px-3 py-2">
+                                  <div className="text-[10px] font-bold text-on-surface uppercase">{h.trimestre_consulta}</div>
+                                </td>
+                                <td className="px-3 py-2">
+                                  <div className="text-[9px]">
+                                    <p className="font-black text-on-surface uppercase">{allProfessionals.find(p => p.cpf === h.cpf)?.nome || '---'}</p>
+                                    <p className="font-bold text-on-surface-variant/60 uppercase">{getCboCategory(h.cbo)}</p>
+                                  </div>
+                                </td>
+                                <td className="px-3 py-2">
+                                  <div className="text-[10px] font-bold text-on-surface">
+                                    {h.data_proxima_consulta ? new Date(h.data_proxima_consulta).toLocaleDateString('pt-BR') : '---'}
+                                  </div>
+                                </td>
+                                <td className="px-3 py-2">
+                                  <div className="text-[10px] font-bold text-on-surface-variant truncate">
+                                    {h.observacoes_clinicas || '---'}
+                                  </div>
+                                </td>
+                                <td className="px-3 py-2">
+                                  <div className="flex items-center justify-center gap-1">
+                                    <button 
+                                      type="button"
+                                      onClick={() => handleEdit(h)} 
+                                      className="p-1 rounded-xl bg-white/50 text-on-surface-variant hover:bg-primary hover:text-white transition-all"
+                                      title="Editar"
+                                    >
+                                      <span className="material-symbols-outlined text-sm">edit</span>
+                                    </button>
+                                    <button 
+                                      type="button"
+                                      onClick={() => setDeleteConfirmId(h.id_atendimento)} 
+                                      className="p-1 rounded-xl bg-white/50 text-on-surface-variant hover:bg-error hover:text-white transition-all"
+                                      title="Excluir"
+                                    >
+                                      <span className="material-symbols-outlined text-sm">delete</span>
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <div className="rounded-2xl border border-outline-variant/10 bg-surface-container-low p-6 text-sm text-on-surface-variant font-bold uppercase tracking-wide">
+                        Nenhum registro encontrado para essa gestante.
+                      </div>
+                    )}
+                  </div>
+                )}
+                {error && <div className="p-4 bg-error/10 rounded-2xl text-error text-xs font-bold">{error}</div>}
+                {success && <div className="p-4 bg-green-500/10 rounded-2xl text-green-600 text-xs font-bold">{success}</div>}
+              </div>
+            </motion.section>
+          )}
+        </AnimatePresence>
 
         {/* Filters and Table Section */}
         <section className="space-y-4">
@@ -925,77 +1303,81 @@ export default function AtendimentosPage() {
             </div>
           </div>
 
-          <div className="bg-surface-container-lowest rounded-[40px] shadow-2xl border border-outline-variant/10 overflow-hidden">
-            <div className="overflow-x-auto max-h-[600px] scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent">
+          <div className="bg-surface-container-lowest rounded-2xl shadow-2xl border border-outline-variant/10 overflow-hidden">
+            <div className="overflow-x-auto">
               <table className="w-full text-left border-separate border-spacing-0">
                 <thead className="sticky top-0 z-30 bg-surface-container-low">
                   <tr>
-                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Gestante</th>
-                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Status</th>
-                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">SISPN</th>
-                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Atendimentos</th>
-                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Última Consulta</th>
-                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Próxima Consulta</th>
-                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-center">Ações</th>
+                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Gestante</th>
+                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Status</th>
+                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Trimestre</th>
+                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Registros</th>
+                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Última Atividade</th>
+                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Alertas</th>
+                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-center">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-outline-variant/5">
                   {loading ? (
-                    <tr><td colSpan={6} className="p-32 text-center"><div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full mx-auto"></div></td></tr>
+                    <tr><td colSpan={7} className="p-24 text-center"><div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full mx-auto"></div></td></tr>
                   ) : filteredPatients.length === 0 ? (
-                    <tr><td colSpan={6} className="p-32 text-center opacity-20 text-xl font-black uppercase tracking-widest">Nenhum paciente encontrado</td></tr>
+                    <tr><td colSpan={7} className="p-24 text-center opacity-20 text-xl font-black uppercase tracking-widest">Nenhum paciente encontrado</td></tr>
                   ) : (
                     filteredPatients.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((p) => (
                       <tr key={p.sispn} className="hover:bg-primary/[0.02] transition-colors group">
-                        <td className="px-8 py-6">
+                        <td className="px-6 py-4">
                           <p className="font-black text-sm text-on-surface uppercase tracking-tight group-hover:text-primary transition-colors">
                             {p.paciente_nome}
                           </p>
-                          <span className="text-[10px] font-bold text-primary/40 uppercase tracking-widest">{p.equipe}</span>
+                          <span className="text-[9px] font-bold text-on-surface-variant/40 font-mono">SISPN: {p.sispn}</span>
                         </td>
-                        <td className="px-8 py-6">
+                        <td className="px-6 py-4">
                           <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${p.status === 'ATIVA' ? 'bg-blue-100 text-blue-600' : 'bg-surface-container-high text-on-surface-variant/40'}`}>
                             {p.status}
                           </span>
                         </td>
-                        <td className="px-8 py-6 text-[10px] font-bold text-on-surface-variant/60 font-mono">{p.sispn}</td>
-                        <td className="px-8 py-6">
+                        <td className="px-6 py-4">
+                          <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                            p.currentTrimester === '1º TRIMESTRE' ? 'bg-purple-100 text-purple-600' :
+                            p.currentTrimester === '2º TRIMESTRE' ? 'bg-amber-100 text-amber-600' :
+                            p.currentTrimester === '3º TRIMESTRE' ? 'bg-orange-100 text-orange-600' :
+                            'bg-surface-container-high text-on-surface-variant/40'
+                          }`}>
+                            {p.currentTrimester}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
                           <div className="flex items-center gap-2">
                             <span className="material-symbols-outlined text-sm text-primary/40">medical_services</span>
-                            <span className="text-xs font-bold text-on-surface">{p.atendimentosCount} consultas</span>
+                            <span className="text-xs font-bold text-on-surface">{p.atendimentosCount} registros</span>
                           </div>
                         </td>
-                        <td className="px-8 py-6 text-xs font-bold text-on-surface">
+                        <td className="px-6 py-4 text-xs font-bold text-on-surface">
                           {p.lastAtendimentoDate ? new Date(p.lastAtendimentoDate).toLocaleDateString('pt-BR') : '---'}
                         </td>
-                        <td className="px-8 py-6">
-                          {p.nextAtendimentoDate ? (
-                            <div className="flex items-center gap-2 text-xs font-bold text-primary">
-                              <span className="material-symbols-outlined text-sm">event_repeat</span>
-                              {new Date(p.nextAtendimentoDate).toLocaleDateString('pt-BR')}
-                            </div>
+                        <td className="px-6 py-4">
+                          {p.hasAlert ? (
+                            <span className="px-3 py-1 rounded-full bg-red-100 text-red-600 text-[9px] font-black uppercase tracking-widest flex items-center gap-1 w-fit">
+                              <span className="material-symbols-outlined text-[10px]">warning</span>
+                              {p.alertMessage}
+                            </span>
                           ) : (
-                            <span className="text-[10px] font-bold text-on-surface-variant/20 uppercase tracking-widest">Não agendada</span>
+                            <span className="px-3 py-1 rounded-full bg-green-100 text-green-600 text-[9px] font-black uppercase tracking-widest flex items-center gap-1 w-fit">
+                              <span className="material-symbols-outlined text-[10px]">check_circle</span>
+                              Em dia
+                            </span>
                           )}
                         </td>
-                        <td className="px-8 py-6">
+                        <td className="px-6 py-4">
                           <div className="flex items-center justify-center gap-3">
                             <button onClick={() => handleViewPatient(p.sispn)} className="p-3 rounded-2xl bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white transition-all" title="Visualizar Detalhes"><span className="material-symbols-outlined text-lg">visibility</span></button>
                             <button onClick={() => { 
-                              setSelectedPatientSispn(p.sispn); 
-                              setFormData({
-                                sispn: p.sispn,
-                                data_consulta: new Date().toISOString().split('T')[0],
-                                cbo: '',
-                                cpf: 'NÃO INFORMADO',
-                                data_proxima_consulta: '',
-                                observacoes_clinicas: ''
-                              }); 
+                              setFormData({ sispn: p.sispn }); 
                               setPatientSearch(p.paciente_nome); 
                               setIsViewingHistory(false);
                               setIsFormOpen(true); 
                               window.scrollTo({ top: 0, behavior: 'smooth' });
-                            }} className="p-3 rounded-2xl bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white transition-all" title="Adicionar Atendimento"><span className="material-symbols-outlined text-lg">add</span></button>
+                            }} className="p-3 rounded-2xl bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white transition-all" title="Adicionar Registro"><span className="material-symbols-outlined text-lg">add</span></button>
                           </div>
                         </td>
                       </tr>
@@ -1004,7 +1386,6 @@ export default function AtendimentosPage() {
                 </tbody>
               </table>
             </div>
-            
             <Pagination currentPage={currentPage} totalPages={Math.ceil(filteredPatients.length / itemsPerPage)} onPageChange={setCurrentPage} totalItems={filteredPatients.length} itemsPerPage={itemsPerPage} itemName="pacientes" />
           </div>
         </section>
@@ -1012,32 +1393,15 @@ export default function AtendimentosPage() {
         <AnimatePresence>
           {deleteConfirmId && (
             <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-              <motion.div 
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                className="bg-surface-container-lowest rounded-[2.5rem] p-10 max-w-md w-full shadow-2xl border border-outline-variant/10 text-center space-y-8"
-              >
-                <div className="w-20 h-20 bg-red-50 rounded-[2rem] flex items-center justify-center mx-auto">
-                  <span className="material-symbols-outlined text-red-600 text-4xl">delete_forever</span>
-                </div>
+              <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-surface-container-lowest rounded-[2.5rem] p-10 max-w-md w-full shadow-2xl border border-outline-variant/10 text-center space-y-8">
+                <div className="w-20 h-20 bg-red-50 rounded-[2rem] flex items-center justify-center mx-auto"><span className="material-symbols-outlined text-red-600 text-4xl">delete_forever</span></div>
                 <div className="space-y-2">
                   <h4 className="text-xl font-black font-headline text-on-surface uppercase tracking-tight">Confirmar Exclusão</h4>
-                  <p className="text-sm text-on-surface-variant font-body">Esta ação é permanente e não poderá ser desfeita. Deseja continuar?</p>
+                  <p className="text-sm text-on-surface-variant font-body">Esta ação é permanente. Deseja continuar?</p>
                 </div>
                 <div className="flex gap-3">
-                  <button 
-                    onClick={() => setDeleteConfirmId(null)}
-                    className="flex-1 bg-surface-container-high text-on-surface font-black py-4 rounded-2xl hover:bg-surface-container-highest transition-all uppercase tracking-widest text-[10px]"
-                  >
-                    Cancelar
-                  </button>
-                  <button 
-                    onClick={() => handleDelete(deleteConfirmId)}
-                    className="flex-1 bg-red-600 text-white font-black py-4 rounded-2xl shadow-xl shadow-red-600/20 hover:scale-[1.02] active:scale-[0.98] transition-all uppercase tracking-widest text-[10px]"
-                  >
-                    Excluir
-                  </button>
+                  <button onClick={() => setDeleteConfirmId(null)} className="flex-1 bg-surface-container-high text-on-surface font-black py-4 rounded-2xl uppercase tracking-widest text-[10px]">Cancelar</button>
+                  <button onClick={() => handleDelete(deleteConfirmId)} className="flex-1 bg-red-600 text-white font-black py-4 rounded-2xl uppercase tracking-widest text-[10px]">Excluir</button>
                 </div>
               </motion.div>
             </div>

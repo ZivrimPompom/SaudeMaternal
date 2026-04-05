@@ -679,7 +679,7 @@ export default function ExamesPage() {
         <AnimatePresence>
           {isFormOpen && (
             <motion.section initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-              <div id="launch-section" className="bg-surface-container-lowest p-4 md:p-6 rounded-[40px] shadow-2xl border border-outline-variant/10 space-y-3">
+              <div id="launch-section" className="bg-surface-container-lowest p-4 md:p-6 rounded-2xl shadow-2xl border border-outline-variant/10 space-y-3">
                 {selectedGestante && (
                   <PatientBanner 
                     patient={{
@@ -727,7 +727,7 @@ export default function ExamesPage() {
                         )}
                       </div>
 
-                      <div className="bg-surface-container-low rounded-[32px] overflow-x-auto border border-outline-variant/10">
+                      <div className="bg-surface-container-low rounded-2xl overflow-x-auto border border-outline-variant/10">
                         <table className="w-full text-left border-separate border-spacing-0" style={{ tableLayout: 'fixed' }}>
                           <colgroup>
                             <col style={{ width: '12%' }} />
@@ -916,7 +916,7 @@ export default function ExamesPage() {
                             <h4 className="text-sm font-black text-primary uppercase tracking-widest">Movimento de Rotinas Realizadas</h4>
                           </div>
                         </div>
-                        <div className="bg-surface-container-low rounded-[32px] overflow-x-auto border border-outline-variant/10">
+                        <div className="bg-surface-container-low rounded-2xl overflow-x-auto border border-outline-variant/10">
                           <table className="w-full text-left border-separate border-spacing-0" style={{ tableLayout: 'fixed' }}>
                             <colgroup>
                               <col style={{ width: '12%' }} />
@@ -977,7 +977,7 @@ export default function ExamesPage() {
                                       <button 
                                         type="button"
                                         onClick={() => handleEdit(h)} 
-                                        className="p-1 rounded-lg bg-white/50 text-on-surface-variant hover:bg-primary hover:text-white transition-all"
+                                        className="p-1 rounded-xl bg-white/50 text-on-surface-variant hover:bg-primary hover:text-white transition-all"
                                         title="Editar"
                                       >
                                         <span className="material-symbols-outlined text-sm">edit</span>
@@ -985,7 +985,7 @@ export default function ExamesPage() {
                                       <button 
                                         type="button"
                                         onClick={() => setDeleteConfirmId(h.id_registro)} 
-                                        className="p-1 rounded-lg bg-white/50 text-on-surface-variant hover:bg-error hover:text-white transition-all"
+                                        className="p-1 rounded-xl bg-white/50 text-on-surface-variant hover:bg-error hover:text-white transition-all"
                                         title="Excluir"
                                       >
                                         <span className="material-symbols-outlined text-sm">delete</span>
@@ -1007,7 +1007,7 @@ export default function ExamesPage() {
                       <h4 className="text-sm font-black text-primary uppercase tracking-widest">Movimento de Rotinas Realizadas</h4>
                     </div>
                     {formData.sispn && selectedPatientHistory.length > 0 ? (
-                      <div id="history-table" className="bg-surface-container-low rounded-[32px] overflow-x-auto border border-outline-variant/10">
+                      <div id="history-table" className="bg-surface-container-low rounded-2xl overflow-x-auto border border-outline-variant/10">
                         <table className="w-full text-left border-separate border-spacing-0" style={{ tableLayout: 'fixed' }}>
                           <colgroup>
                             <col style={{ width: '12%' }} />
@@ -1068,7 +1068,7 @@ export default function ExamesPage() {
                                     <button 
                                       type="button"
                                       onClick={() => handleEdit(h)} 
-                                      className="p-1 rounded-lg bg-white/50 text-on-surface-variant hover:bg-primary hover:text-white transition-all"
+                                      className="p-1 rounded-xl bg-white/50 text-on-surface-variant hover:bg-primary hover:text-white transition-all"
                                       title="Editar"
                                     >
                                       <span className="material-symbols-outlined text-sm">edit</span>
@@ -1076,7 +1076,7 @@ export default function ExamesPage() {
                                     <button 
                                       type="button"
                                       onClick={() => setDeleteConfirmId(h.id_registro)} 
-                                      className="p-1 rounded-lg bg-white/50 text-on-surface-variant hover:bg-error hover:text-white transition-all"
+                                      className="p-1 rounded-xl bg-white/50 text-on-surface-variant hover:bg-error hover:text-white transition-all"
                                       title="Excluir"
                                     >
                                       <span className="material-symbols-outlined text-sm">delete</span>
@@ -1089,7 +1089,7 @@ export default function ExamesPage() {
                         </table>
                       </div>
                     ) : (
-                      <div className="rounded-[32px] border border-outline-variant/10 bg-surface-container-low p-6 text-sm text-on-surface-variant font-bold uppercase tracking-wide">
+                      <div className="rounded-2xl border border-outline-variant/10 bg-surface-container-low p-6 text-sm text-on-surface-variant font-bold uppercase tracking-wide">
                         Nenhum registro encontrado para essa gestante.
                       </div>
                     )}
@@ -1173,7 +1173,7 @@ export default function ExamesPage() {
             </div>
           </div>
 
-          <div className="bg-surface-container-lowest rounded-[40px] shadow-2xl border border-outline-variant/10 overflow-hidden">
+          <div className="bg-surface-container-lowest rounded-2xl shadow-2xl border border-outline-variant/10 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-separate border-spacing-0">
                 <thead className="sticky top-0 z-30 bg-surface-container-low">
