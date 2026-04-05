@@ -765,19 +765,29 @@ export default function GestacoesPage() {
   }, [acsList, acsSearchQuery]);
 
   const handleExportCSV = useCallback(() => {
-    const headers = ['SISPN', 'GESTANTE', 'CPF', 'DUM', 'DPP', 'EQUIPE', 'RT', 'ACS', 'STATUS'];
+    const headers = ['SISPN', 'GESTANTE', 'CPF', 'DUM', 'DPP', 'DATA ABERTURA', 'DATA CADASTRO', 'EQUIPE', 'RT', 'ACS', 'GEST. ANT.', 'ABORTO', 'PARTO', 'SÍFILIS', 'SÍFILIS TRATADA', 'HIV', 'HEPATITE B', 'HEPATITE C', 'CLASSIFICAÇÃO', 'ALTO RISCO'];
     const rows = filteredGestacoes.map(g => {
-      const status = getGestacaoWeeks(g.dum) > 42 ? 'ENCERRADA' : 'ATIVA';
       return [
         g.sispn,
         g.pacientes?.gestante || 'N/A',
         g.cpf_paciente,
         g.dum,
         g.dpp,
+        g.data_abertura,
+        g.data_cadastro,
         g.equipe,
         g.referencia_tecnica_nome,
         g.acs_nome,
-        status
+        g.gestacao_anterior,
+        g.aborto,
+        g.parto,
+        g.sifilis,
+        g.sifilis_tratada,
+        g.hiv,
+        g.hepatite_b,
+        g.hepatite_c,
+        g.classificacao_pn,
+        g.alto_risco_compartilhado
       ];
     });
     const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");

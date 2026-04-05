@@ -624,24 +624,21 @@ export default function ExamesPage() {
   }, [selectedCategory, categories, allProfessionals]);
 
   const handleExportCSV = useCallback(() => {
-    const headers = ['SISPN', 'GESTANTE', 'DATA REALIZAÇÃO', 'TRIMESTRE', 'ROTINA', 'TIPO', 'PROFISSIONAL', 'RESULTADO', 'EQUIPE'];
+    const headers = ['SISPN', 'GESTANTE', 'ROTINA', 'TIPO', 'DATA REALIZAÇÃO', 'RESULTADO', 'TRIMESTRE', 'PROFISSIONAL', 'EQUIPE'];
     const rows = filteredExames.map(r => {
       const gest = Array.isArray(r.gestacoes) ? r.gestacoes[0] : r.gestacoes;
       const pac = gest?.pacientes;
       const pacObj = Array.isArray(pac) ? pac[0] : pac;
       
-      const prof = allProfessionals.find(p => p.cpf === r.cpf_profissional);
-      const profissionalNome = prof?.nome || 'N/A';
-
       return [
         r.sispn,
         (pacObj as any)?.gestante || '',
-        r.data_realizacao,
-        r.trimestre_realizacao,
         r.rotinas?.descricao || '',
         r.tipo || r.rotinas?.tipo || 'EXAME',
-        profissionalNome,
+        r.data_realizacao,
         r.resultado,
+        r.trimestre_realizacao,
+        allProfessionals.find(p => p.cpf === r.cpf_profissional)?.nome || '',
         (gest as any)?.equipe || ''
       ];
     });

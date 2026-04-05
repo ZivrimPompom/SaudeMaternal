@@ -84,16 +84,18 @@ export default function ProfissionaisPage() {
   }, [professionals, searchQuery]);
 
   const handleExportCSV = useCallback(() => {
-    const headers = ['NOME', 'CPF', 'CNS', 'CATEGORIA', 'EQUIPE', 'VÍNCULO', 'CHS', 'SITUAÇÃO'];
+    const headers = ['NOME', 'CPF', 'CNS', 'CBO', 'UNIDADE', 'EQUIPE', 'SITUAÇÃO', 'VÍNCULO', 'TIPO VÍNCULO', 'CHS'];
     const rows = filteredProfessionals.map(p => [
       p.nome,
       p.cpf,
       p.cns,
-      p.categorias_profissionais?.categoria || p.cbo,
+      p.cbo,
+      p.unidade_cnes || '',
       p.equipe,
+      p.situacao,
       p.vinculo,
-      p.chs,
-      p.situacao
+      p.tipo_vinculo,
+      p.chs
     ]);
     const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });

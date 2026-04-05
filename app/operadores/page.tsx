@@ -464,13 +464,13 @@ export default function OperadoresPage() {
   };
 
   const handleExportCSV = useCallback(() => {
-    const headers = ['NOME', 'CPF', 'STATUS', 'NÍVEL ACESSO', 'UNIDADE CNES'];
+    const headers = ['NOME', 'CPF', 'UNIDADE CNES', 'STATUS', 'NÍVEL ACESSO'];
     const rows = filteredOperators.map(o => [
       o.name,
       o.cpf,
+      o.unidade_cnes || '',
       o.status,
-      o.nivel_acesso,
-      o.unidade_cnes || ''
+      o.nivel_acesso
     ]);
     const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });

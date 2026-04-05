@@ -190,12 +190,12 @@ export default function RotinasPage() {
   };
 
   const handleExportCSV = useCallback(() => {
-    const headers = ['TIPO', 'DESCRIÇÃO', 'TRIMESTRE', 'CATEGORIA'];
+    const headers = ['TIPO', 'TRIMESTRE', 'CATEGORIA', 'DESCRIÇÃO'];
     const rows = filteredRoutines.map(r => [
       r.tipo,
-      r.descricao,
       r.trimestre,
-      r.categoria
+      r.categoria,
+      r.descricao
     ]);
     const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });

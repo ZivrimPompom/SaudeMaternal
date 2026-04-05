@@ -327,17 +327,22 @@ export default function PacientesPage() {
   };
 
   const handleExportCSV = useCallback(() => {
-    const headers = ['GESTANTE', 'CPF', 'NOME MÃE', 'PRONTUÁRIO', 'CNS', 'DATA NASCIMENTO', 'BAIRRO', 'CONTATO', 'CIDADE'];
+    const headers = ['GESTANTE', 'CPF', 'CNS', 'PRONTUÁRIO', 'DATA NASCIMENTO', 'NOME MÃE', 'CONTATO', 'EMAIL', 'LOGRADOURO', 'NÚMERO', 'COMPLEMENTO', 'BAIRRO', 'CIDADE', 'UF'];
     const rows = filteredPacientes.map(p => [
       p.gestante,
       p.cpf,
-      p.nome_mae,
-      p.prontuario,
       p.cns,
+      p.prontuario,
       p.data_nascimento,
-      p.bairro,
+      p.nome_mae,
       p.contato,
-      p.cidade
+      p.email,
+      p.logradouro,
+      p.numero,
+      p.complemento,
+      p.bairro,
+      p.cidade,
+      p.uf
     ]);
     const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });

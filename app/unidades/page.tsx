@@ -284,17 +284,18 @@ export default function UnidadesSaudePage() {
   }, [searchQuery]);
 
   const handleExportCSV = useCallback(() => {
-    const headers = ['CNES', 'NOME FANTASIA', 'LOGRADOURO', 'NÚMERO', 'BAIRRO', 'MUNICÍPIO', 'UF', 'CEP', 'TELEFONE'];
+    const headers = ['NOME FANTASIA', 'CNES', 'TELEFONE', 'LOGRADOURO', 'NÚMERO', 'COMPLEMENTO', 'BAIRRO', 'MUNICÍPIO', 'UF', 'CEP'];
     const rows = filteredUnits.map(u => [
-      u.cnes,
       u.nome_fantasia,
+      u.cnes,
+      u.telefone,
       u.logradouro,
       u.numero,
+      u.complemento,
       u.bairro,
       u.municipio,
       u.uf,
-      u.cep,
-      u.telefone
+      u.cep
     ]);
     const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
