@@ -656,11 +656,11 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
   const userInitials = user?.sigla || userName.substring(0, 2).toUpperCase();
 
   return (
-    <header className={`fixed top-0 right-0 h-16 z-40 bg-surface/80 backdrop-blur-xl border-b border-outline-variant/10 flex justify-between items-center px-4 md:px-8 transition-all duration-300 ${isSidebarOpen ? 'w-full lg:w-[calc(100%-16rem)]' : 'w-full'}`}>
+    <header className={`fixed top-0 right-0 h-16 z-40 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center px-4 md:px-8 transition-all duration-300 ${isSidebarOpen ? 'w-full lg:w-[calc(100%-16rem)]' : 'w-full'}`}>
       <div className="flex items-center gap-1 md:gap-4 flex-1">
         <button 
           onClick={onToggleSidebar}
-          className="p-2 rounded-lg hover:bg-surface-container-high text-on-surface-variant transition-colors"
+          className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-colors"
           title={isSidebarOpen ? 'Recolher Menu' : 'Expandir Menu'}
         >
           <span className="material-symbols-outlined">{isSidebarOpen ? 'menu_open' : 'menu'}</span>
@@ -668,7 +668,7 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
 
         <Link 
           href="/"
-          className="p-2 rounded-lg hover:bg-surface-container-high text-on-surface-variant transition-colors flex items-center gap-2"
+          className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-colors flex items-center gap-2"
           title="Ir para Home"
         >
           <span className="material-symbols-outlined">home</span>
@@ -730,41 +730,41 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
         <div className="flex items-center gap-1 md:gap-4">
           <button 
             onClick={toggleTheme}
-            className="p-2 rounded-lg hover:bg-surface-container-high text-on-surface-variant transition-colors flex items-center justify-center"
+            className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-colors flex items-center justify-center"
             title={getThemeTitle()}
           >
             <span className="material-symbols-outlined text-lg">
               {getThemeIcon()}
             </span>
           </button>
-          <button className="hidden sm:block material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">notifications</button>
-          <button className="hidden sm:block material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">apps</button>
+          <button className="hidden sm:block material-symbols-outlined text-slate-600 dark:text-slate-400 hover:text-primary transition-colors">notifications</button>
+          <button className="hidden sm:block material-symbols-outlined text-slate-600 dark:text-slate-400 hover:text-primary transition-colors">apps</button>
         </div>
         
         <div className="relative">
           <button 
             onClick={() => setIsProfileOpen(!isProfileOpen)}
-            className="flex items-center gap-2 md:gap-3 hover:bg-surface-container-low p-1 rounded-xl transition-colors"
+            className="flex items-center gap-2 md:gap-3 hover:bg-slate-50 dark:hover:bg-slate-800 p-1 rounded-xl transition-colors"
           >
-            <span className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs shrink-0">
+            <span className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs shrink-0">
               {userInitials}
             </span>
             <span className="hidden lg:block text-left">
-              <span className="block text-xs font-bold leading-none mb-1 capitalize text-on-surface">{userName}</span>
-              <span className="block text-[10px] text-on-surface-variant/60 leading-none truncate max-w-[120px]">{userRole}</span>
+              <span className="block text-xs font-bold leading-none mb-1 capitalize text-slate-900 dark:text-slate-100">{userName}</span>
+              <span className="block text-[10px] text-slate-500 dark:text-slate-400 leading-none truncate max-w-[120px]">{userRole}</span>
             </span>
-            <span className={`material-symbols-outlined text-on-surface-variant/40 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`}>expand_more</span>
+            <span className={`material-symbols-outlined text-slate-400 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`}>expand_more</span>
           </button>
 
           {isProfileOpen && (
-            <div className="absolute top-full right-0 mt-2 w-48 bg-surface-container-lowest rounded-xl shadow-xl border border-outline-variant/10 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-              <div className="px-4 py-2 border-b border-outline-variant/5 mb-1">
-                <p className="text-xs font-bold text-on-surface truncate">{userName}</p>
-                <p className="text-[10px] text-on-surface-variant/60 truncate">{user?.cpf}</p>
+            <div className="absolute top-full right-0 mt-2 w-48 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-800 mb-1">
+                <p className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">{userName}</p>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">{user?.cpf}</p>
               </div>
               <button 
                 onClick={() => signOut()}
-                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-error hover:bg-error/5 transition-colors"
+                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
               >
                 <span className="material-symbols-outlined text-lg">logout</span>
                 <span>Sair do Sistema</span>
