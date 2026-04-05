@@ -93,16 +93,17 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
 
   const handleExportLayout = (table: string) => {
     const layouts: Record<string, string[]> = {
-      pacientes: ['gestante', 'cpf', 'cns', 'prontuario', 'data_nascimento', 'nome_mae', 'contato', 'email', 'logradouro', 'numero', 'complemento', 'cidade', 'bairro', 'uf'],
-      gestacoes: ['sispn', 'cpf_paciente', 'dum', 'dpp', 'data_abertura', 'data_cadastro', 'referencia_tecnica', 'acs', 'equipe', 'idade_cadastro', 'fase_vida_cadastro', 'gestacao_anterior', 'aborto', 'parto', 'sifilis', 'sifilis_tratada', 'hiv', 'hepatite_b', 'hepatite_c', 'classificacao_pn', 'alto_risco_compartilhado'],
-      atendimentos: ['sispn', 'data_consulta', 'trimestre_consulta', 'cbo', 'cpf', 'data_proxima_consulta', 'observacoes_clinicas'],
-      exames: ['sispn', 'id_rotina', 'tipo', 'data_realizacao', 'resultado', 'observacoes', 'trimestre_realizacao', 'cbo', 'cpf_profissional'],
-      desfechos: ['sispn', 'tipo_desfecho', 'data_desfecho'],
-      categorias: ['cbo', 'categoria'],
-      unidades: ['cnes', 'nome_fantasia', 'logradouro', 'numero', 'complemento', 'bairro', 'municipio', 'uf', 'cep', 'telefone'],
-      operadores: ['name', 'cpf', 'unidade_cnes', 'status', 'nivel_acesso', 'password'],
+      pacientes: ['gestante', 'cpf', 'cns', 'prontuario', 'data_nascimento', 'nome_mae', 'contato', 'email', 'logradouro', 'numero', 'complemento', 'bairro', 'cidade', 'uf'],
       profissionais: ['nome', 'cpf', 'cns', 'cbo', 'unidade_cnes', 'equipe', 'situacao', 'vinculo', 'tipo_vinculo', 'chs'],
-      rotinas: ['tipo', 'descricao', 'trimestre', 'categoria']
+      unidades: ['nome_fantasia', 'cnes', 'telefone', 'logradouro', 'numero', 'complemento', 'bairro', 'municipio', 'uf', 'cep'],
+      gestacoes: ['sispn', 'cpf_paciente', 'dum', 'dpp', 'data_abertura', 'data_cadastro', 'referencia_tecnica', 'acs', 'equipe', 'gestacao_anterior', 'aborto', 'parto', 'sifilis', 'sifilis_tratada', 'hiv', 'hepatite_b', 'hepatite_c', 'classificacao_pn', 'alto_risco_compartilhado'],
+      atendimentos: ['sispn', 'data_consulta', 'trimestre_consulta', 'cpf', 'data_proxima_consulta', 'observacoes_clinicas'],
+      desfechos: ['sispn', 'tipo_desfecho', 'data_desfecho'],
+      recem_nascidos: ['id_desfecho', 'nome_rn', 'cpf_rn', 'data_nascimento', 'data_consulta_rn', 'comparecimento'],
+      exames: ['sispn', 'id_rotina', 'data_realizacao', 'resultado', 'cpf_profissional'],
+      operadores: ['nome', 'cpf', 'unidade_cnes', 'status', 'nivel_acesso', 'senha'],
+      rotinas: ['tipo', 'trimestre', 'categoria', 'descricao'],
+      categorias: ['cbo', 'categoria']
     };
 
     const columns = layouts[table];

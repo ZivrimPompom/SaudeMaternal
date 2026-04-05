@@ -111,7 +111,7 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
   const getImporterProps = () => {
     if (isPacientesPage) return {
       tableName: "pacientes",
-      expectedColumns: ['gestante', 'cpf', 'cns', 'prontuario', 'data_nascimento', 'nome_mae', 'contato', 'email', 'logradouro', 'numero', 'complemento', 'cidade', 'bairro', 'uf'],
+      expectedColumns: ['gestante', 'cpf', 'cns', 'prontuario', 'data_nascimento', 'nome_mae', 'contato', 'email', 'logradouro', 'numero', 'complemento', 'bairro', 'cidade', 'uf'],
       requiredColumns: ['gestante', 'cpf'],
       conflictColumn: "cpf",
       transformData: (data: any[]) => {
@@ -136,16 +136,21 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
           valid.push({
             ...item,
             gestante: (item.gestante || '').toUpperCase(),
-            nome_mae: (item.nome_mae || 'NÃO INFORMADO').toUpperCase(),
             cpf,
+            cns: (item.cns || '').replace(/\D/g, ''),
+            prontuario: (item.prontuario || '').toUpperCase(),
             data_nascimento: dataNascimento,
+            nome_mae: (item.nome_mae || 'NÃO INFORMADO').toUpperCase(),
+            contato: (item.contato || '').replace(/\D/g, ''),
+            email: (item.email || '').toLowerCase(),
             logradouro: (item.logradouro || '').toUpperCase(),
+            numero: (item.numero || '').toUpperCase(),
             complemento: (item.complemento || '').toUpperCase(),
             bairro: (item.bairro || '').toUpperCase(),
-            cidade: (item.cidade || 'SÃO PAULO').toUpperCase(),
-            uf: (item.uf || 'SP').toUpperCase(),
+            cidade: 'SÃO PAULO',
+            uf: 'SP',
             operador_responsavel: user?.nome || 'SISTEMA',
-            cpf_operador: user?.cpf || null
+            cpf_operador: item.cpf_operador || user?.cpf || null
           });
         });
         return { valid, rejected };
@@ -168,8 +173,8 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
               ...item,
               nome: (item.nome || '').toUpperCase(),
               cpf,
-              cbo: (item.cbo || '').replace(/\D/g, ''),
               cns: (item.cns || '').replace(/\D/g, ''),
+              cbo: (item.cbo || '').replace(/\D/g, ''),
               unidade_cnes: item.unidade_cnes || null,
               equipe: item.equipe || 'SEM EQUIPE',
               situacao: (item.situacao || 'ATIVO').toUpperCase(),
@@ -184,18 +189,22 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
     };
     if (isUnidadesPage) return {
       tableName: "unidades_saude",
-      expectedColumns: ['cnes', 'nome_fantasia', 'logradouro', 'numero', 'complemento', 'bairro', 'municipio', 'uf', 'cep', 'telefone'],
+      expectedColumns: ['nome_fantasia', 'cnes', 'telefone', 'logradouro', 'numero', 'complemento', 'bairro', 'municipio', 'uf', 'cep'],
       requiredColumns: ['cnes', 'nome_fantasia'],
       conflictColumn: "cnes",
       transformData: (data: any[]) => {
         const valid = data.map(item => ({
           ...item,
           nome_fantasia: (item.nome_fantasia || '').toUpperCase(),
+          cnes: item.cnes,
+          telefone: (item.telefone || '').replace(/\D/g, ''),
           logradouro: (item.logradouro || '').toUpperCase(),
+          numero: (item.numero || '').toUpperCase(),
           complemento: (item.complemento || '').toUpperCase(),
           bairro: (item.bairro || '').toUpperCase(),
           municipio: (item.municipio || 'SAO PAULO').toUpperCase(),
-          uf: (item.uf || 'SP').toUpperCase()
+          uf: (item.uf || 'SP').toUpperCase(),
+          cep: item.cep || ''
         }));
         return { valid, rejected: [] };
       }
@@ -204,7 +213,7 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
       tableName: "gestacoes",
       expectedColumns: [
         'sispn', 'cpf_paciente', 'dum', 'dpp', 'data_abertura', 'data_cadastro',
-        'referencia_tecnica', 'acs', 'equipe', 'idade_cadastro', 'fase_vida_cadastro',
+        'referencia_tecnica', 'acs', 'equipe',
         'gestacao_anterior', 'aborto', 'parto', 'sifilis', 'sifilis_tratada',
         'hiv', 'hepatite_b', 'hepatite_c', 'classificacao_pn', 'alto_risco_compartilhado'
       ],
@@ -326,8 +335,8 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
     };
     if (isAtendimentosPage) return {
       tableName: "atendimentos",
-      expectedColumns: ['sispn', 'data_consulta', 'trimestre_consulta', 'cbo', 'cpf', 'data_proxima_consulta', 'observacoes_clinicas'],
-      requiredColumns: ['sispn', 'data_consulta', 'cbo'],
+      expectedColumns: ['sispn', 'data_consulta', 'trimestre_consulta', 'cpf', 'data_proxima_consulta', 'observacoes_clinicas'],
+      requiredColumns: ['sispn', 'data_consulta', 'cpf'],
       conflictColumn: "id_atendimento",
       transformData: (data: any[]) => {
         const valid: any[] = [];
@@ -381,7 +390,7 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
     };
     if (isExamesPage) return {
       tableName: "registro_rotinas",
-      expectedColumns: ['sispn', 'id_rotina', 'tipo', 'data_realizacao', 'resultado', 'observacoes', 'trimestre_realizacao', 'cbo', 'cpf_profissional'],
+      expectedColumns: ['sispn', 'id_rotina', 'data_realizacao', 'resultado', 'cpf_profissional'],
       requiredColumns: ['sispn', 'id_rotina', 'data_realizacao'],
       conflictColumn: "id_registro",
       transformData: (data: any[]) => {
