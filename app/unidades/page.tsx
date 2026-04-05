@@ -246,7 +246,11 @@ export default function UnidadesSaudePage() {
       .eq('cnes', cnes);
 
     if (deleteError?.message) {
-      setError(`Não foi possível excluir: ${deleteError.message}`);
+      if (deleteError.message.includes('foreign key') || deleteError.message.includes('unidades_saude')) {
+        setError('Não é possível excluir esta unidade pois existem pacientes vinculados a ela. Altere a unidade dos pacientes antes de excluir.');
+      } else {
+        setError(`Não foi possível excluir: ${deleteError.message}`);
+      }
     } else {
       setSuccess('Unidade excluída com sucesso!');
       fetchUnits();
