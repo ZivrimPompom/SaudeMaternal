@@ -236,6 +236,12 @@ export default function GestacoesPage() {
     status: 'ATIVA'
   });
 
+  const enfermeiros = useMemo(() => {
+    return profissionais
+      .filter(p => p.categoria_nome?.toUpperCase().startsWith('ENFERMEIRO'))
+      .sort((a, b) => a.nome.localeCompare(b.nome));
+  }, [profissionais]);
+
   useEffect(() => {
     if (filters.referencia) {
       const match = enfermeiros.find(p => p.nome === filters.referencia);
@@ -262,12 +268,6 @@ export default function GestacoesPage() {
     const equipes = gestacoes.map(g => g.equipe).filter(Boolean);
     return Array.from(new Set(equipes)).sort();
   }, [gestacoes]);
-
-  const enfermeiros = useMemo(() => {
-    return profissionais
-      .filter(p => p.categoria_nome?.toUpperCase().startsWith('ENFERMEIRO'))
-      .sort((a, b) => a.nome.localeCompare(b.nome));
-  }, [profissionais]);
 
   const uniqueReferencias = useMemo(() => {
     const refs = enfermeiros.map(p => p.nome).filter(Boolean);
