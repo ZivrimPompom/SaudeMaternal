@@ -362,7 +362,22 @@ export default function UnidadesSaudePage() {
                       </div>
                     )}
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Nome Fantasia</label>
+                        <div className="relative group">
+                          <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-4 h-4" />
+                          <input 
+                            name="nome_fantasia"
+                            className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-10 pr-4 py-3 transition-all font-body outline-none text-xs" 
+                            placeholder="UBS JARDIM ROSELI" 
+                            type="text" 
+                            value={formData.nome_fantasia || ''}
+                            onChange={handleInputChange}
+                            required
+                          />
+                        </div>
+                      </div>
                       <div className="space-y-2">
                         <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">CNES</label>
                         <div className="relative group">
@@ -395,24 +410,8 @@ export default function UnidadesSaudePage() {
                       </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Nome Fantasia</label>
-                      <div className="relative group">
-                        <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-4 h-4" />
-                        <input 
-                          name="nome_fantasia"
-                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl pl-10 pr-4 py-3 transition-all font-body outline-none text-xs" 
-                          placeholder="UBS JARDIM ROSELI" 
-                          type="text" 
-                          value={formData.nome_fantasia || ''}
-                          onChange={handleInputChange}
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="md:col-span-2 space-y-2">
+                    <div className="grid grid-cols-4 gap-4">
+                      <div className="col-span-2 space-y-2">
                         <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Logradouro</label>
                         <div className="relative group">
                           <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-4 h-4" />
@@ -437,9 +436,6 @@ export default function UnidadesSaudePage() {
                           onChange={handleInputChange}
                         />
                       </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Complemento</label>
                         <input 
@@ -451,6 +447,9 @@ export default function UnidadesSaudePage() {
                           onChange={handleInputChange}
                         />
                       </div>
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-4">
                       <div className="space-y-2">
                         <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Bairro</label>
                         <input 
@@ -462,10 +461,7 @@ export default function UnidadesSaudePage() {
                           onChange={handleInputChange}
                         />
                       </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="md:col-span-2 space-y-2">
+                      <div className="space-y-2">
                         <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">Município</label>
                         <input 
                           name="municipio"
@@ -488,18 +484,17 @@ export default function UnidadesSaudePage() {
                           maxLength={2}
                         />
                       </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">CEP</label>
-                      <input 
-                        name="cep"
-                        className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl px-4 py-3 transition-all font-body outline-none text-xs" 
-                        placeholder="08380-039" 
-                        type="text" 
-                        value={formData.cep || ''}
-                        onChange={handleInputChange}
-                      />
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant font-label ml-1">CEP</label>
+                        <input 
+                          name="cep"
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary/30 focus:bg-white focus:ring-4 focus:ring-primary/5 rounded-xl px-4 py-3 transition-all font-body outline-none text-xs" 
+                          placeholder="08380-039" 
+                          type="text" 
+                          value={formData.cep || ''}
+                          onChange={handleInputChange}
+                        />
+                      </div>
                     </div>
 
                     <div className="pt-6 space-y-3">
