@@ -115,6 +115,38 @@ const calculateStatus = (dum: string) => {
   return today >= limitDate ? 'VENCIDA' : 'ATIVA';
 };
 
+const calculateAge = (birthDate: string) => {
+  if (!birthDate) return { ageText: '---', lifeStage: '---' };
+  
+  const birth = new Date(birthDate);
+  const today = new Date();
+  
+  let years = today.getFullYear() - birth.getFullYear();
+  let months = today.getMonth() - birth.getMonth();
+  
+  if (months < 0 || (months === 0 && today.getDate() < birth.getDate())) {
+    years--;
+    months += 12;
+  }
+  
+  if (today.getDate() < birth.getDate()) {
+    months--;
+    if (months < 0) {
+      years--;
+      months += 12;
+    }
+  }
+
+  const ageText = `${years} ANOS, ${months} MESES`;
+  
+  let lifeStage = 'ADULTO';
+  if (years < 12) lifeStage = 'CRIANÇA';
+  else if (years < 18) lifeStage = 'ADOLESCENTE';
+  else if (years >= 60) lifeStage = 'IDOSO';
+  
+  return { ageText, lifeStage };
+};
+
 export default function GestacoesPage() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -682,11 +714,16 @@ export default function GestacoesPage() {
 
   const handleEdit = (g: Gestacao) => {
     setEditingId(g.sispn);
+    
+    const cpfClean = g.cpf_paciente?.replace(/\D/g, '') || '';
+    const pacienteData = pacientes.find(p => p.cpf?.replace(/\D/g, '') === cpfClean);
+    
     setFormData({
       ...g,
       sispn: formatSispn(g.sispn),
       cpf_paciente: formatCpf(g.cpf_paciente)
     });
+    setPacienteSearchQuery(pacienteData?.gestante || g.paciente_nome || '');
     setRtSearchQuery(g.referencia_tecnica_nome || '');
     setAcsSearchQuery(g.acs_nome || '');
     setError(null);
@@ -858,17 +895,19 @@ export default function GestacoesPage() {
                       )}
                     </AnimatePresence>
 
-                    {/* Identificação */}
+                    {/* Identificação da Gestante */}
                     <div className="space-y-4">
                       <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/40 border-b border-primary/10 pb-2">Identificação da Gestante</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="space-y-2 relative">
-                          <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Busca por CPF ou Nome <span className="text-error">*</span></label>
+                      
+                      {/* Linha 1: Nome | CPF | SISPN */}
+                      <div className="grid grid-cols-4 gap-4">
+                        <div className="col-span-2 space-y-2 relative">
+                          <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Nome da Paciente <span className="text-error">*</span></label>
                           <div className="relative">
                             <input 
                               type="text"
-                              className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none shadow-inner pr-12"
-                              placeholder="Busca por CPF ou Nome"
+                              className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 text-xs outline-none uppercase transition-all"
+                              placeholder="Buscar por nome..."
                               value={pacienteSearchQuery}
                               onChange={(e) => {
                                 setPacienteSearchQuery(e.target.value);
@@ -885,12 +924,12 @@ export default function GestacoesPage() {
                                   initial={{ opacity: 0, y: 10 }}
                                   animate={{ opacity: 1, y: 0 }}
                                   exit={{ opacity: 0, y: 10 }}
-                                  className="absolute top-full left-0 right-0 z-50 mt-2 bg-white rounded-2xl shadow-2xl border-4 border-primary overflow-hidden"
+                                  className="absolute top-full left-0 right-0 z-50 mt-2 bg-surface-container-lowest rounded-2xl shadow-2xl border-4 border-primary overflow-hidden"
                                 >
                                   <div className="bg-primary px-6 py-3">
-                                    <p className="text-white font-black text-[10px] uppercase tracking-widest">Selecione a gestante...</p>
+                                    <p className="text-white text-[10px] font-black uppercase tracking-widest">Selecione a gestante</p>
                                   </div>
-                                  <div className="max-h-80 overflow-y-auto">
+                                  <div className="max-h-60 overflow-y-auto">
                                     {filteredPacientesLookup.length > 0 ? (
                                       filteredPacientesLookup.map(p => (
                                         <button
@@ -903,15 +942,12 @@ export default function GestacoesPage() {
                                           }}
                                           className="w-full px-6 py-4 text-left hover:bg-primary/5 transition-colors border-b border-outline-variant/5 last:border-0 group"
                                         >
-                                          <p className="font-bold text-xs text-on-surface uppercase group-hover:text-primary transition-colors">
-                                            {p.gestante} ({formatCpf(p.cpf)})
-                                          </p>
+                                          <p className="text-[10px] font-black text-on-surface uppercase truncate">{p.gestante}</p>
+                                          <p className="text-[9px] text-on-surface-variant/60">{formatCpf(p.cpf)}</p>
                                         </button>
                                       ))
                                     ) : (
-                                      <div className="px-6 py-4 text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-widest text-center">
-                                        Nenhuma paciente encontrada
-                                      </div>
+                                      <div className="px-6 py-6 text-center text-on-surface-variant/30 text-[10px] font-black uppercase">Nenhuma paciente encontrada</div>
                                     )}
                                   </div>
                                 </motion.div>
@@ -919,43 +955,72 @@ export default function GestacoesPage() {
                             </AnimatePresence>
                           </div>
                           {isPacienteSearchOpen && (
-                            <div 
-                              className="fixed inset-0 z-40" 
-                              onClick={() => setIsPacienteSearchOpen(false)}
-                            />
+                            <div className="fixed inset-0 z-40" onClick={() => setIsPacienteSearchOpen(false)} />
                           )}
                         </div>
-                        <div className="md:col-span-2 space-y-2">
-                          <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Nome da Gestante (Automático)</label>
-                          <input 
-                            type="text"
-                            className="w-full bg-surface-container-low border-2 border-transparent rounded-2xl px-6 py-4 font-body text-xs outline-none opacity-60 cursor-not-allowed uppercase"
-                            value={selectedPaciente?.gestante || 'PACIENTE NÃO ENCONTRADA'}
-                            readOnly
-                          />
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">SISPN (SisPreNatal)</label>
+                          <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">CPF</label>
+                          <div className="w-full bg-surface-container-low/50 border-2 border-dashed border-outline-variant/20 rounded-2xl px-6 py-4 min-h-[52px] flex items-center">
+                            <span className="text-xs font-black text-on-surface">
+                              {formData.cpf_paciente || '---'}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">SISPN</label>
                           <input 
                             type="text"
-                            className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none"
-                            placeholder="352.428.442.82"
+                            className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 text-xs outline-none uppercase transition-all"
+                            placeholder="000.000.000-0"
                             value={formData.sispn || ''}
                             onChange={(e) => setFormData({ ...formData, sispn: formatSispn(e.target.value) })}
                             required
                             disabled={!!editingId}
                           />
                         </div>
-                        <div className="grid grid-cols-2 gap-4 bg-primary/5 p-4 rounded-2xl border border-primary/10">
-                          <div className="space-y-1">
-                            <p className="text-[8px] font-black uppercase tracking-widest text-primary/60">Idade no Cadastro</p>
-                            <p className="text-xs font-black text-primary">{formData.idade_cadastro || '--'} ANOS</p>
+                      </div>
+
+                      {/* Linha 2: Data Nascimento | Idade | Fase da Vida */}
+                      <div className="grid grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Data de Nascimento</label>
+                          <div className="w-full bg-surface-container-low/50 border-2 border-dashed border-outline-variant/20 rounded-2xl px-6 py-4 min-h-[52px] flex items-center">
+                            <span className="text-xs font-black text-on-surface">
+                              {selectedPaciente?.data_nascimento ? new Date(selectedPaciente.data_nascimento).toLocaleDateString('pt-BR') : '---'}
+                            </span>
                           </div>
-                          <div className="text-right space-y-1">
-                            <p className="text-[8px] font-black uppercase tracking-widest text-primary/60">Fase da Vida</p>
-                            <p className="text-xs font-black text-primary">{formData.fase_vida_cadastro || '---'}</p>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Idade</label>
+                          <div className="w-full bg-surface-container-low/50 border-2 border-dashed border-outline-variant/20 rounded-2xl px-6 py-4 min-h-[52px] flex items-center">
+                            <span className="text-xs font-black text-primary">
+                              {(() => {
+                                const result = calculateAge(selectedPaciente?.data_nascimento || '');
+                                return result.ageText;
+                              })()}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Fase da Vida</label>
+                          <div className={`w-full rounded-2xl px-6 py-4 min-h-[52px] flex items-center ${
+                            (() => {
+                              const result = calculateAge(selectedPaciente?.data_nascimento || '');
+                              if (!selectedPaciente?.data_nascimento) return 'bg-surface-container-low/50 border-2 border-dashed border-outline-variant/20';
+                              if (result.lifeStage === 'CRIANÇA') return 'bg-blue-100 text-blue-700';
+                              if (result.lifeStage === 'ADOLESCENTE') return 'bg-purple-100 text-purple-700';
+                              if (result.lifeStage === 'IDOSO') return 'bg-orange-100 text-orange-700';
+                              return 'bg-green-100 text-green-700';
+                            })()
+                          }`}>
+                            <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest ${
+                              !selectedPaciente?.data_nascimento ? 'text-on-surface-variant/30' : ''
+                            }`}>
+                              {(() => {
+                                const result = calculateAge(selectedPaciente?.data_nascimento || '');
+                                return result.lifeStage;
+                              })()}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -1031,8 +1096,8 @@ export default function GestacoesPage() {
                     {/* Responsáveis */}
                     <div className="space-y-4">
                       <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/40 border-b border-primary/10 pb-2">Responsáveis e Equipe</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2 relative" ref={rtDropdownRef}>
+                      <div className="grid grid-cols-5 gap-4">
+                        <div className="col-span-2 space-y-2 relative" ref={rtDropdownRef}>
                           <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Referência Técnica (Enfermeiro)</label>
                           <div className="relative">
                             <input 
@@ -1054,7 +1119,7 @@ export default function GestacoesPage() {
                                   initial={{ opacity: 0, y: 10 }}
                                   animate={{ opacity: 1, y: 0 }}
                                   exit={{ opacity: 0, y: 10 }}
-                                  className="absolute top-full left-0 right-0 z-50 mt-2 bg-white rounded-2xl shadow-2xl border-4 border-primary overflow-hidden"
+                                  className="absolute top-full left-0 right-0 z-50 mt-2 bg-surface-container-lowest rounded-2xl shadow-2xl border-4 border-primary overflow-hidden"
                                 >
                                   <div className="bg-primary px-6 py-3">
                                     <p className="text-white font-black text-[10px] uppercase tracking-widest">Selecione o enfermeiro...</p>
@@ -1071,7 +1136,7 @@ export default function GestacoesPage() {
                                         }}
                                         className="w-full text-left px-6 py-4 hover:bg-primary/5 transition-colors flex flex-col gap-1 border-b border-outline-variant/5 last:border-0 group"
                                       >
-                                        <span className="text-[10px] font-black text-primary uppercase group-hover:scale-105 transition-transform origin-left">{p.nome}</span>
+                                        <span className="text-[10px] font-black text-on-surface uppercase group-hover:scale-105 transition-transform origin-left">{p.nome}</span>
                                         <span className="text-[9px] font-bold text-on-surface-variant/60">{p.equipe}</span>
                                       </button>
                                     ))}
@@ -1082,7 +1147,7 @@ export default function GestacoesPage() {
                           </div>
                         </div>
 
-                        <div className="space-y-2 relative" ref={acsDropdownRef}>
+                        <div className="col-span-2 space-y-2 relative" ref={acsDropdownRef}>
                           <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">ACS (Agente de Saúde)</label>
                           <div className="relative">
                             <input 
@@ -1104,7 +1169,7 @@ export default function GestacoesPage() {
                                   initial={{ opacity: 0, y: 10 }}
                                   animate={{ opacity: 1, y: 0 }}
                                   exit={{ opacity: 0, y: 10 }}
-                                  className="absolute top-full left-0 right-0 z-50 mt-2 bg-white rounded-2xl shadow-2xl border-4 border-primary overflow-hidden"
+                                  className="absolute top-full left-0 right-0 z-50 mt-2 bg-surface-container-lowest rounded-2xl shadow-2xl border-4 border-primary overflow-hidden"
                                 >
                                   <div className="bg-primary px-6 py-3">
                                     <p className="text-white font-black text-[10px] uppercase tracking-widest">Selecione o ACS...</p>
@@ -1121,7 +1186,7 @@ export default function GestacoesPage() {
                                         }}
                                         className="w-full text-left px-6 py-4 hover:bg-primary/5 transition-colors flex flex-col gap-1 border-b border-outline-variant/5 last:border-0 group"
                                       >
-                                        <span className="text-[10px] font-black text-primary uppercase group-hover:scale-105 transition-transform origin-left">{p.nome}</span>
+                                        <span className="text-[10px] font-black text-on-surface uppercase group-hover:scale-105 transition-transform origin-left">{p.nome}</span>
                                         <span className="text-[9px] font-bold text-on-surface-variant/60">{p.equipe}</span>
                                       </button>
                                     ))}
@@ -1131,15 +1196,15 @@ export default function GestacoesPage() {
                             </AnimatePresence>
                           </div>
                         </div>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Equipe (Derivado da Ref. Técnica)</label>
-                        <input 
-                          type="text"
-                          className="w-full bg-surface-container-low border-2 border-transparent rounded-2xl px-6 py-4 font-body text-xs outline-none opacity-60 cursor-not-allowed uppercase"
-                          value={formData.equipe || 'NÃO DEFINIDA'}
-                          readOnly
-                        />
+
+                        <div className="col-span-1 space-y-2">
+                          <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Equipe</label>
+                          <div className="w-full bg-surface-container-low/50 border-2 border-dashed border-outline-variant/20 rounded-2xl px-4 py-4 min-h-[52px] flex items-center">
+                            <span className="text-[9px] font-black text-on-surface uppercase truncate">
+                              {formData.equipe || 'NÃO DEFINIDA'}
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
@@ -1351,16 +1416,15 @@ export default function GestacoesPage() {
                     <table className="w-full text-left border-separate border-spacing-0 min-w-[1200px]">
                       <thead className="sticky top-0 z-30 bg-surface-container-low">
                         <tr>
-                          <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5">Gestante / SISPN</th>
-                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5">DPP (DUM/DPP)</th>
-                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5">Semanas / Captação</th>
-                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5">Equipe / Ref. Técnica</th>
-                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5">Status</th>
-                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5 w-[150px]">Operador</th>
-                          <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline text-center border-b border-outline-variant/5 sticky right-0 bg-surface-container-low z-40 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] w-[180px]">Ações</th>
+                          <th className="px-6 py-4 text-xs font-black uppercase tracking-wider text-slate-950 dark:text-slate-200 font-headline border-b border-slate-300 dark:border-slate-700">Gestante</th>
+                          <th className="px-4 py-4 text-xs font-black uppercase tracking-wider text-slate-950 dark:text-slate-200 font-headline border-b border-slate-300 dark:border-slate-700">DUM / DPP</th>
+                          <th className="px-4 py-4 text-xs font-black uppercase tracking-wider text-slate-950 dark:text-slate-200 font-headline border-b border-slate-300 dark:border-slate-700">Semanas</th>
+                          <th className="px-4 py-4 text-xs font-black uppercase tracking-wider text-slate-950 dark:text-slate-200 font-headline border-b border-slate-300 dark:border-slate-700">Equipe</th>
+                          <th className="px-4 py-4 text-xs font-black uppercase tracking-wider text-slate-950 dark:text-slate-200 font-headline border-b border-slate-300 dark:border-slate-700">Status</th>
+                          <th className="px-6 py-4 text-xs font-black uppercase tracking-wider text-slate-950 dark:text-slate-200 font-headline text-center border-b border-slate-300 dark:border-slate-700 w-[120px]">Ações</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-outline-variant/5">
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                         {filteredGestacoes
                           .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
                           .map((g) => {
@@ -1369,61 +1433,49 @@ export default function GestacoesPage() {
                             const status = getGestacaoStatus(g.dpp);
                             
                             return (
-                              <motion.tr layout key={g.sispn} className="hover:bg-surface-container-low/50 transition-all group">
-                                <td className="px-6 py-4">
-                                  <div className="flex flex-col gap-0.5">
-                                    <span className="text-[10px] font-black text-primary tracking-widest">{formatSispn(g.sispn)}</span>
-                                    <p className="font-black text-on-surface font-headline text-sm group-hover:text-primary transition-colors uppercase line-clamp-1">{g.paciente_nome}</p>
-                                    <span className="text-[9px] font-bold text-on-surface-variant/40 uppercase tracking-tighter">CPF: {formatCpf(g.cpf_paciente)}</span>
-                                  </div>
-                                </td>
-                                <td className="px-4 py-4">
+                              <motion.tr layout key={g.sispn} className="hover:bg-orange-50 dark:hover:bg-slate-800/50 transition-all group">
+                                <td className="px-6 py-5">
                                   <div className="flex flex-col gap-1">
-                                    <div className="flex items-center gap-2">
-                                      <span className="material-symbols-outlined text-primary/40 text-[14px]">calendar_today</span>
-                                      <span className="text-[10px] font-bold text-on-surface">DUM: {new Date(g.dum).toLocaleDateString('pt-BR')}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <span className="material-symbols-outlined text-secondary/40 text-[14px]">event_repeat</span>
-                                      <span className="text-[10px] font-bold text-secondary">DPP: {new Date(g.dpp).toLocaleDateString('pt-BR')}</span>
-                                    </div>
+                                    <span className="text-xs font-mono font-bold text-orange-600">{formatCpf(g.cpf_paciente)}</span>
+                                    <p className="font-black text-black dark:text-slate-100 font-headline text-base group-hover:text-orange-600 transition-colors uppercase">{g.paciente_nome}</p>
+                                    <span className="text-xs font-bold text-black dark:text-slate-400 uppercase">SISPN: {formatSispn(g.sispn)}</span>
                                   </div>
                                 </td>
-                                <td className="px-4 py-4">
-                                  <div className="flex flex-col gap-1">
-                                    <span className="text-sm font-black text-on-surface">{weeks} SEMANAS</span>
-                                    <span className={`text-[9px] font-black px-2 py-0.5 rounded-full w-fit uppercase tracking-widest ${captacao === 'PRECOCE' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
-                                      {captacao}
-                                    </span>
+                                <td className="px-4 py-5">
+                                  <div className="flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-slate-600 dark:text-slate-400 text-base">calendar_today</span>
+                                    <span className="text-xs font-bold text-black dark:text-slate-200">DUM: {new Date(g.dum).toLocaleDateString('pt-BR')}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <span className="material-symbols-outlined text-slate-600 dark:text-slate-400 text-base">event_repeat</span>
+                                    <span className="text-xs font-bold text-black dark:text-slate-300">DPP: {new Date(g.dpp).toLocaleDateString('pt-BR')}</span>
                                   </div>
                                 </td>
-                                <td className="px-4 py-4">
-                                  <div className="flex flex-col gap-0.5">
-                                    <span className="text-[10px] font-black text-primary uppercase tracking-widest">EQUIPE {g.equipe}</span>
-                                    <p className="text-[10px] font-bold text-on-surface-variant uppercase">{g.referencia_tecnica_nome}</p>
-                                    <span className="text-[9px] font-medium text-on-surface-variant/40 uppercase">ACS: {g.acs_nome}</span>
-                                  </div>
+                                <td className="px-4 py-5">
+                                  <span className="text-sm font-black text-black dark:text-slate-100">{weeks} SEMANAS</span>
+                                  <span className={`text-xs font-bold px-3 py-1.5 rounded-lg block w-fit uppercase tracking-wide border mt-1 ${captacao === 'PRECOCE' ? 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/50 dark:text-emerald-300 dark:border-emerald-800' : 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/50 dark:text-amber-300 dark:border-amber-800'}`}>
+                                    {captacao}
+                                  </span>
                                 </td>
-                                <td className="px-4 py-4">
-                                  <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest ${status === 'ATIVA' ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'}`}>
+                                <td className="px-4 py-5">
+                                  <span className="text-xs font-bold text-orange-600 uppercase tracking-wide">EQUIPE {g.equipe}</span>
+                                  <p className="text-xs font-bold text-black dark:text-slate-300 uppercase">{g.referencia_tecnica_nome}</p>
+                                  <span className="text-xs font-bold text-black dark:text-slate-400 uppercase">ACS: {g.acs_nome}</span>
+                                </td>
+                                <td className="px-4 py-5">
+                                  <span className={`text-xs font-bold px-3 py-1.5 rounded-lg uppercase tracking-wide border ${status === 'ATIVA' ? 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/50 dark:text-blue-300 dark:border-blue-800' : 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-800'}`}>
                                     {status}
                                   </span>
                                 </td>
-                                <td className="px-4 py-4">
-                                  <div className="flex flex-col gap-0.5">
-                                    <span className="text-[10px] font-black text-on-surface uppercase tracking-wider">{g.operador_nome || 'SISTEMA'}</span>
-                                    <span className="text-[9px] font-bold text-on-surface-variant/40">{formatCpf(g.operador || '') || '---'}</span>
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4 sticky right-0 bg-surface-container-lowest group-hover:bg-surface-container-low transition-colors z-30 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">
-                                  <div className="flex items-center justify-center gap-2">
-                                    <button onClick={() => handleEdit(g)} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary/5 text-primary hover:bg-primary hover:text-white transition-all shadow-sm group/btn">
-                                      <span className="material-symbols-outlined text-[14px]">edit</span>
-                                      <span className="text-[9px] font-black uppercase tracking-widest hidden group-hover/btn:inline">Editar</span>
+                                <td className="px-6 py-5 text-center">
+                                  <div className="flex items-center justify-center gap-3">
+                                    <button onClick={() => handleEdit(g)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-100 text-orange-700 hover:bg-orange-600 hover:text-white transition-all shadow-sm group/btn border border-orange-200 hover:border-orange-600">
+                                      <span className="material-symbols-outlined text-base">edit</span>
+                                      <span className="text-xs font-bold uppercase tracking-wider hidden group-hover/btn:inline">Editar</span>
                                     </button>
-                                    <button onClick={() => setDeleteConfirmId(g.sispn)} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all shadow-sm group/btn">
-                                      <span className="material-symbols-outlined text-[14px]">delete</span>
-                                      <span className="text-[9px] font-black uppercase tracking-widest hidden group-hover/btn:inline">Excluir</span>
+                                    <button onClick={() => setDeleteConfirmId(g.sispn)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-100 text-red-700 hover:bg-red-600 hover:text-white transition-all shadow-sm group/btn border border-red-200 hover:border-red-600">
+                                      <span className="material-symbols-outlined text-base">delete</span>
+                                      <span className="text-xs font-bold uppercase tracking-wider hidden group-hover/btn:inline">Excluir</span>
                                     </button>
                                   </div>
                                 </td>

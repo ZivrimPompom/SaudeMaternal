@@ -678,15 +678,13 @@ export default function PacientesPage() {
                     <table className="w-full text-left border-separate border-spacing-0 min-w-[1100px]">
                       <thead className="sticky top-0 z-30 bg-surface-container-low">
                         <tr>
-                          <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5 w-[250px]">Gestante / CPF</th>
-                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5 w-[180px]">Prontuário / CNS</th>
-                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5 w-[120px]">Fase / Idade</th>
-                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5">Endereço / Contato</th>
-                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5 w-[150px]">Operador</th>
-                          <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline text-center border-b border-outline-variant/5 sticky right-0 bg-surface-container-low z-40 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] w-[180px]">Ações</th>
+                          <th className="px-6 py-4 text-xs font-black uppercase tracking-wider text-blue-950 dark:text-blue-200 font-headline border-b border-slate-300 dark:border-slate-700">Gestante</th>
+                          <th className="px-4 py-4 text-xs font-black uppercase tracking-wider text-blue-950 dark:text-blue-200 font-headline border-b border-slate-300 dark:border-slate-700 w-[160px]">Fase</th>
+                          <th className="px-4 py-4 text-xs font-black uppercase tracking-wider text-blue-950 dark:text-blue-200 font-headline border-b border-slate-300 dark:border-slate-700">Endereço</th>
+                          <th className="px-6 py-4 text-xs font-black uppercase tracking-wider text-blue-950 dark:text-blue-200 font-headline text-center border-b border-slate-300 dark:border-slate-700 w-[120px]">Ações</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-outline-variant/5">
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                         {filteredPacientes
                           .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
                           .map((pac) => {
@@ -695,77 +693,63 @@ export default function PacientesPage() {
                               <motion.tr 
                                 layout
                                 key={pac.cpf} 
-                                className="hover:bg-surface-container-low/50 transition-all group"
+                                className="hover:bg-orange-50 dark:hover:bg-slate-800/50 transition-all group"
                               >
-                                <td className="px-6 py-4">
-                                  <div className="flex flex-col gap-0.5">
-                                    <span className="text-[10px] font-black text-primary tracking-widest">{formatCpf(pac.cpf || '')}</span>
-                                    <p className="font-black text-on-surface font-headline text-sm group-hover:text-primary transition-colors uppercase line-clamp-1">{pac.gestante}</p>
-                                    <span className="text-[9px] font-bold text-on-surface-variant/40 uppercase line-clamp-1">Mãe: {pac.nome_mae || 'NÃO INFORMADO'}</span>
-                                  </div>
-                                </td>
-                                <td className="px-4 py-4">
-                                  <div className="flex flex-col gap-0.5">
-                                    <div className="flex items-center gap-1.5">
-                                      <span className="material-symbols-outlined text-primary/40 text-[14px]">fingerprint</span>
-                                      <span className="text-[10px] font-black text-on-surface uppercase tracking-wider">P: {pac.prontuario || '---'}</span>
+                                <td className="px-6 py-5">
+                                  <div className="flex items-start gap-4">
+                                    <div className="min-w-0 flex-1">
+                                      <span className="text-xs font-mono font-bold text-orange-600">{formatCpf(pac.cpf || '')}</span>
+                                      <p className="font-black text-on-surface font-headline text-base group-hover:text-orange-600 transition-colors uppercase truncate">{pac.gestante}</p>
+                                      <span className="text-xs font-bold text-blue-900 dark:text-blue-300 uppercase">CNS: {formatCns(pac.cns || '') || '---'}</span>
                                     </div>
-                                    <div className="flex items-center gap-1.5">
-                                      <span className="material-symbols-outlined text-on-surface-variant/30 text-[14px]">info</span>
-                                      <span className="text-[10px] font-bold text-on-surface-variant/60 whitespace-nowrap">CNS: {formatCns(pac.cns || '') || '---'}</span>
+                                    <div className="min-w-0 flex-1 border-l border-gray-200 dark:border-gray-700 pl-4">
+                                      <span className="text-xs font-bold text-blue-900 dark:text-blue-100 uppercase block">{pac.prontuario || '---'}</span>
+                                      <span className="text-xs font-bold text-blue-800 dark:text-blue-200 uppercase block mt-1">Mãe: {pac.nome_mae || 'NÃO INFORMADO'}</span>
                                     </div>
                                   </div>
                                 </td>
-                                <td className="px-4 py-4">
-                                  <div className="flex flex-col gap-1">
-                                    <span className={`text-[9px] font-black px-2 py-0.5 rounded-full w-fit uppercase tracking-widest ${
-                                      lifeStage === 'CRIANÇA' ? 'bg-blue-100 text-blue-700' :
-                                      lifeStage === 'ADOLESCENTE' ? 'bg-purple-100 text-purple-700' :
-                                      lifeStage === 'IDOSO' ? 'bg-orange-100 text-orange-700' :
-                                      'bg-green-100 text-green-700'
-                                    }`}>
-                                      {lifeStage}
-                                    </span>
-                                    <span className="text-[10px] font-bold text-on-surface-variant/60">{ageText}</span>
+                                <td className="px-4 py-5">
+                                  <span className={`text-xs font-bold px-3 py-1.5 rounded-lg uppercase tracking-wide border block w-fit ${
+                                    lifeStage === 'CRIANÇA' ? 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/50 dark:text-blue-300 dark:border-blue-800' :
+                                    lifeStage === 'ADOLESCENTE' ? 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/50 dark:text-purple-300 dark:border-purple-800' :
+                                    lifeStage === 'IDOSO' ? 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/50 dark:text-orange-300 dark:border-orange-800' :
+                                    'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/50 dark:text-emerald-300 dark:border-emerald-800'
+                                  }`}>
+                                    {lifeStage}
+                                  </span>
+                                  <span className="text-xs font-bold text-blue-800 dark:text-blue-300 mt-2 block">{ageText}</span>
+                                </td>
+                                <td className="px-4 py-5">
+                                  <div className="flex items-start gap-2">
+<span className="material-symbols-outlined text-blue-800 dark:text-blue-400 text-base mt-0.5 shrink-0">location_on</span>
+                                    <div className="text-xs font-bold text-blue-900 dark:text-blue-300 leading-tight uppercase">
+                                    <div>{pac.logradouro}, {pac.numero}</div>
+                                    <div>{pac.complemento}</div>
+                                    <div>{pac.bairro}</div>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2 mt-2">
+                                  <span className="material-symbols-outlined text-blue-800 dark:text-blue-400 text-base">call</span>
+                                  <span className="text-xs font-bold text-blue-900 dark:text-blue-300">{formatPhone(pac.contato || '') || '---'}</span>
                                   </div>
                                 </td>
-                                <td className="px-4 py-4">
-                                  <div className="flex flex-col gap-0.5">
-                                    <div className="flex items-start gap-1.5">
-                                      <span className="material-symbols-outlined text-on-surface-variant/30 text-[14px] mt-0.5 shrink-0">location_on</span>
-                                      <span className="text-[10px] font-bold text-on-surface-variant/60 leading-tight uppercase line-clamp-1">
-                                        {pac.logradouro}, {pac.numero} {pac.bairro}
-                                      </span>
-                                    </div>
-                                    <div className="flex items-center gap-1.5">
-                                      <span className="material-symbols-outlined text-on-surface-variant/30 text-[14px]">call</span>
-                                      <span className="text-[10px] font-bold text-on-surface-variant/60">{formatPhone(pac.contato || '') || '---'}</span>
-                                    </div>
-                                  </div>
-                                </td>
-                                <td className="px-4 py-4">
-                                  <div className="flex flex-col gap-0.5">
-                                    <span className="text-[10px] font-black text-on-surface uppercase tracking-wider">{pac.operador_responsavel || 'SISTEMA'}</span>
-                                    <span className="text-[9px] font-bold text-on-surface-variant/40">{formatCpf(pac.cpf_operador || '') || '---'}</span>
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4 sticky right-0 bg-surface-container-lowest group-hover:bg-surface-container-low transition-colors z-30 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">
-                                  <div className="flex items-center justify-center gap-2">
+                                <td className="px-6 py-5 text-center">
+                                  <div className="flex items-center justify-center gap-3">
                                     <button 
                                       onClick={() => handleEdit(pac)}
-                                      className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary/5 text-primary hover:bg-primary hover:text-white transition-all shadow-sm group/btn"
+                                      className="flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-100 text-orange-700 hover:bg-orange-600 hover:text-white transition-all shadow-sm group/btn border border-orange-200 hover:border-orange-600"
                                       title="Editar Paciente"
                                     >
-                                      <span className="material-symbols-outlined text-[14px]">edit</span>
-                                      <span className="text-[9px] font-black uppercase tracking-widest hidden group-hover/btn:inline">Editar</span>
+                                      <span className="material-symbols-outlined text-base">edit</span>
+                                      <span className="text-xs font-bold uppercase tracking-wider hidden group-hover/btn:inline">Editar</span>
                                     </button>
                                     <button 
                                       onClick={() => setDeleteConfirmId(pac.cpf)}
-                                      className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all shadow-sm group/btn"
+                                      className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-100 text-red-700 hover:bg-red-600 hover:text-white transition-all shadow-sm group/btn border border-red-200 hover:border-red-600"
                                       title="Excluir Paciente"
                                     >
-                                      <span className="material-symbols-outlined text-[14px]">delete</span>
-                                      <span className="text-[9px] font-black uppercase tracking-widest hidden group-hover/btn:inline">Excluir</span>
+                                      <span className="material-symbols-outlined text-base">delete</span>
+                                      <span className="text-xs font-bold uppercase tracking-wider hidden group-hover/btn:inline">Excluir</span>
                                     </button>
                                   </div>
                                 </td>

@@ -711,7 +711,7 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
 
             {(isCategoriesPage || isProfessionalsPage || isOperatorsPage || isRotinasPage || isPacientesPage || isUnidadesPage || isGestacoesPage || isAtendimentosPage || isExamesPage || isDesfechosPage) && (
               <button
-                onClick={() => setIsFormOpen(!isFormOpen)}
+                onClick={() => { if (!isFormOpen) setSearchQuery(''); setIsFormOpen(!isFormOpen); }}
                 className={`flex items-center gap-2 px-3 md:px-4 py-1.5 rounded-full text-xs md:text-sm font-bold transition-all duration-300 ${
                   isFormOpen 
                     ? 'bg-red-600 text-white hover:bg-red-700 shadow-lg shadow-red-200' 

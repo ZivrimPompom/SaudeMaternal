@@ -948,107 +948,107 @@ export default function AtendimentosPage() {
                             <col style={{ width: '20%' }} />
                             <col style={{ width: '8%' }} />
                           </colgroup>
-                          <thead className="bg-surface-container-high">
-                            <tr>
-                              <th className="px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Data Consulta</th>
-                              <th className="px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Trimestre</th>
-                              <th className="px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Profissional</th>
-                              <th className="px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Próxima Consulta</th>
-                              <th className="px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Observações</th>
-                              {!editingId && <th className="px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60 text-center">Ações</th>}
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-outline-variant/5">
-                            {formEntries.map((entry, index) => (
-                              <tr key={entry.id} className="hover:bg-white/50 transition-colors">
-                                <td className="px-2 py-1.5">
-                                  <div className="bg-surface-container-low/50 rounded-xl px-2 py-1">
-                                    <input 
-                                      type="date" 
-                                      className="bg-transparent border-none p-0 text-[10px] font-bold outline-none focus:ring-0 w-full text-on-surface"
-                                      value={entry.data_consulta}
-                                      onChange={(e) => {
-                                        const newEntries = [...formEntries];
-                                        newEntries[index].data_consulta = e.target.value;
-                                        const trimestre = calculateTrimestre(selectedGestante?.dum || '', e.target.value);
-                                        newEntries[index].trimestre_consulta = trimestre || '---';
-                                        setFormEntries(newEntries);
-                                      }}
-                                    />
-                                  </div>
-                                </td>
-                                <td className="px-2 py-1.5">
-                                  <div className="bg-surface-container-low/50 rounded-xl px-2 py-1">
-                                    <span className={`text-[10px] font-bold ${selectedGestante && calculateTrimestre(selectedGestante.dum, entry.data_consulta) === 'FORA DO PERÍODO' ? 'text-error' : 'text-on-surface'}`}>
-                                      {selectedGestante ? calculateTrimestre(selectedGestante.dum, entry.data_consulta) : '---'}
-                                    </span>
-                                  </div>
-                                </td>
-                                <td className="px-2 py-1.5">
-                                  <div className="bg-surface-container-low/50 rounded-xl px-2 py-1 relative min-h-[36px]">
-                                    <select 
-                                      className="absolute opacity-0 w-full h-full cursor-pointer top-0 left-0 text-[10px]"
-                                      value={entry.cpf_profissional || ''}
-                                      onChange={(e) => {
-                                        const newEntries = [...formEntries];
-                                        const cpf = e.target.value;
-                                        newEntries[index].cpf_profissional = cpf;
-                                        const prof = allProfessionals.find(p => p.cpf === cpf);
-                                        if (prof) {
-                                          newEntries[index].nome_profissional = prof.nome;
-                                        }
-                                        setFormEntries(newEntries);
-                                      }}
-                                    >
-                                      <option value="">SELECIONE PROFISSIONAL</option>
-                                      {allProfessionals.map((p) => {
-                                        const cat = categories.find(c => p.cbo.startsWith(c.cbo));
-                                        return (
-                                          <option key={p.cpf} value={p.cpf}>{p.nome} - {cat?.categoria || 'OUTROS'}</option>
-                                        );
-                                      })}
-                                    </select>
-                                    <div className="text-[9px] font-bold uppercase text-on-surface break-words whitespace-normal pointer-events-none">
-                                      {entry.nome_profissional ? (
-                                        <>
-                                          <p className="font-black text-primary">{entry.nome_profissional}</p>
-                                          <p className="text-[8px]">{getCboCategory(allProfessionals.find(p => p.cpf === entry.cpf_profissional)?.cbo)}</p>
-                                        </>
-                                      ) : (
-                                        <p>SELECIONE PROFISSIONAL</p>
-                                      )}
+                            <thead className="bg-slate-100 dark:bg-slate-800">
+                              <tr>
+                                <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-black dark:text-slate-200">Data Consulta</th>
+                                <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-black dark:text-slate-200">Trimestre</th>
+                                <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-black dark:text-slate-200">Profissional</th>
+                                <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-black dark:text-slate-200">Próxima Consulta</th>
+                                <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-black dark:text-slate-200">Observações</th>
+                                {!editingId && <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-black dark:text-slate-200 text-center">Ações</th>}
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+                              {formEntries.map((entry, index) => (
+                                <tr key={entry.id} className="hover:bg-orange-50 dark:hover:bg-slate-800/50 transition-colors">
+                                  <td className="px-4 py-4">
+                                    <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-3 py-2">
+                                      <input 
+                                        type="date" 
+                                        className="bg-transparent border-none p-0 text-xs font-bold outline-none focus:ring-0 w-full text-black dark:text-slate-100"
+                                        value={entry.data_consulta}
+                                        onChange={(e) => {
+                                          const newEntries = [...formEntries];
+                                          newEntries[index].data_consulta = e.target.value;
+                                          const trimestre = calculateTrimestre(selectedGestante?.dum || '', e.target.value);
+                                          newEntries[index].trimestre_consulta = trimestre || '---';
+                                          setFormEntries(newEntries);
+                                        }}
+                                      />
                                     </div>
-                                  </div>
-                                </td>
-                                <td className="px-2 py-1.5">
-                                  <div className="bg-surface-container-low/50 rounded-xl px-2 py-1">
-                                    <input 
-                                      type="date" 
-                                      className="bg-transparent border-none p-0 text-[10px] font-bold outline-none focus:ring-0 w-full text-on-surface"
-                                      value={entry.data_proxima_consulta || ''}
-                                      onChange={(e) => {
-                                        const newEntries = [...formEntries];
-                                        newEntries[index].data_proxima_consulta = e.target.value;
-                                        setFormEntries(newEntries);
-                                      }}
-                                    />
-                                  </div>
-                                </td>
-                                <td className="px-2 py-1.5">
-                                  <div className="bg-surface-container-low/50 rounded-xl px-2 py-1">
-                                    <input 
-                                      type="text"
-                                      className="bg-transparent border-none p-0 text-[10px] font-bold outline-none focus:ring-0 w-full text-on-surface"
-                                      value={entry.observacoes_clinicas || ''}
-                                      onChange={(e) => {
-                                        const newEntries = [...formEntries];
-                                        newEntries[index].observacoes_clinicas = e.target.value;
-                                        setFormEntries(newEntries);
-                                      }}
-                                      placeholder="Observações clínicas"
-                                    />
-                                  </div>
-                                </td>
+                                  </td>
+                                  <td className="px-4 py-4">
+                                    <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-3 py-2">
+                                      <span className={`text-xs font-bold ${selectedGestante && calculateTrimestre(selectedGestante.dum, entry.data_consulta) === 'FORA DO PERÍODO' ? 'text-red-600' : 'text-black dark:text-slate-100'}`}>
+                                        {selectedGestante ? calculateTrimestre(selectedGestante.dum, entry.data_consulta) : '---'}
+                                      </span>
+                                    </div>
+                                  </td>
+                                  <td className="px-4 py-4">
+                                    <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-3 py-2 relative min-h-[40px]">
+                                      <select 
+                                        className="absolute opacity-0 w-full h-full cursor-pointer top-0 left-0 text-xs"
+                                        value={entry.cpf_profissional || ''}
+                                        onChange={(e) => {
+                                          const newEntries = [...formEntries];
+                                          const cpf = e.target.value;
+                                          newEntries[index].cpf_profissional = cpf;
+                                          const prof = allProfessionals.find(p => p.cpf === cpf);
+                                          if (prof) {
+                                            newEntries[index].nome_profissional = prof.nome;
+                                          }
+                                          setFormEntries(newEntries);
+                                        }}
+                                      >
+                                        <option value="">SELECIONE PROFISSIONAL</option>
+                                        {allProfessionals.map((p) => {
+                                          const cat = categories.find(c => p.cbo.startsWith(c.cbo));
+                                          return (
+                                            <option key={p.cpf} value={p.cpf}>{p.nome} - {cat?.categoria || 'OUTROS'}</option>
+                                          );
+                                        })}
+                                      </select>
+                                      <div className="text-xs font-bold uppercase text-black dark:text-slate-100 break-words whitespace-normal pointer-events-none">
+                                        {entry.nome_profissional ? (
+                                          <>
+                                            <p className="font-black text-primary">{entry.nome_profissional}</p>
+                                            <p className="text-[10px] text-slate-500">{getCboCategory(allProfessionals.find(p => p.cpf === entry.cpf_profissional)?.cbo)}</p>
+                                          </>
+                                        ) : (
+                                          <p className="text-slate-400">SELECIONE PROFISSIONAL</p>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td className="px-4 py-4">
+                                    <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-3 py-2">
+                                      <input 
+                                        type="date" 
+                                        className="bg-transparent border-none p-0 text-xs font-bold outline-none focus:ring-0 w-full text-black dark:text-slate-100"
+                                        value={entry.data_proxima_consulta || ''}
+                                        onChange={(e) => {
+                                          const newEntries = [...formEntries];
+                                          newEntries[index].data_proxima_consulta = e.target.value;
+                                          setFormEntries(newEntries);
+                                        }}
+                                      />
+                                    </div>
+                                  </td>
+                                  <td className="px-4 py-4">
+                                    <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-3 py-2">
+                                      <input 
+                                        type="text"
+                                        className="bg-transparent border-none p-0 text-xs font-bold outline-none focus:ring-0 w-full text-black dark:text-slate-100"
+                                        value={entry.observacoes_clinicas || ''}
+                                        onChange={(e) => {
+                                          const newEntries = [...formEntries];
+                                          newEntries[index].observacoes_clinicas = e.target.value;
+                                          setFormEntries(newEntries);
+                                        }}
+                                        placeholder="Observações clínicas"
+                                      />
+                                    </div>
+                                  </td>
                                 {!editingId && (
                                   <td className="px-2 py-1.5 text-center">
                                     <button 
@@ -1182,58 +1182,58 @@ export default function AtendimentosPage() {
                             <col style={{ width: '20%' }} />
                             <col style={{ width: '8%' }} />
                           </colgroup>
-                          <thead className="bg-surface-container-high">
+                          <thead className="bg-slate-100 dark:bg-slate-800">
                             <tr>
-                              <th className="px-3 py-2 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Data Consulta</th>
-                              <th className="px-3 py-2 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Trimestre</th>
-                              <th className="px-3 py-2 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Profissional</th>
-                              <th className="px-3 py-2 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Próxima Consulta</th>
-                              <th className="px-3 py-2 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Observações</th>
-                              <th className="px-3 py-2 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60 text-center">Ações</th>
+                              <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-black dark:text-slate-200">Data Consulta</th>
+                              <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-black dark:text-slate-200">Trimestre</th>
+                              <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-black dark:text-slate-200">Profissional</th>
+                              <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-black dark:text-slate-200">Próxima Consulta</th>
+                              <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-black dark:text-slate-200">Observações</th>
+                              <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-black dark:text-slate-200 text-center">Ações</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-outline-variant/5">
+                          <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
                             {selectedPatientHistory.map((h) => (
-                              <tr key={h.id_atendimento} className="hover:bg-white/50 transition-colors group">
-                                <td className="px-3 py-2">
-                                  <div className="text-[10px] font-bold text-on-surface">{new Date(h.data_consulta).toLocaleDateString('pt-BR')}</div>
+                              <tr key={h.id_atendimento} className="hover:bg-orange-50 dark:hover:bg-slate-800/50 transition-colors group">
+                                <td className="px-4 py-4">
+                                  <div className="text-xs font-bold text-black dark:text-slate-100">{new Date(h.data_consulta).toLocaleDateString('pt-BR')}</div>
                                 </td>
-                                <td className="px-3 py-2">
-                                  <div className="text-[10px] font-bold text-on-surface uppercase">{h.trimestre_consulta}</div>
+                                <td className="px-4 py-4">
+                                  <div className="text-xs font-bold text-black dark:text-slate-100 uppercase">{h.trimestre_consulta}</div>
                                 </td>
-                                <td className="px-3 py-2">
-                                  <div className="text-[9px]">
-                                    <p className="font-black text-on-surface uppercase">{allProfessionals.find(p => p.cpf === h.cpf)?.nome || '---'}</p>
-                                    <p className="font-bold text-on-surface-variant/60 uppercase">{getCboCategory(h.cbo)}</p>
+                                <td className="px-4 py-4">
+                                  <div className="text-xs">
+                                    <p className="font-black text-black dark:text-slate-100 uppercase">{allProfessionals.find(p => p.cpf === h.cpf)?.nome || '---'}</p>
+                                    <p className="font-medium text-slate-600 dark:text-slate-400 uppercase">{getCboCategory(h.cbo)}</p>
                                   </div>
                                 </td>
-                                <td className="px-3 py-2">
-                                  <div className="text-[10px] font-bold text-on-surface">
+                                <td className="px-4 py-4">
+                                  <div className="text-xs font-bold text-black dark:text-slate-100">
                                     {h.data_proxima_consulta ? new Date(h.data_proxima_consulta).toLocaleDateString('pt-BR') : '---'}
                                   </div>
                                 </td>
-                                <td className="px-3 py-2">
-                                  <div className="text-[10px] font-bold text-on-surface-variant truncate">
+                                <td className="px-4 py-4">
+                                  <div className="text-xs font-medium text-slate-700 dark:text-slate-400 truncate">
                                     {h.observacoes_clinicas || '---'}
                                   </div>
                                 </td>
-                                <td className="px-3 py-2">
-                                  <div className="flex items-center justify-center gap-1">
+                                <td className="px-4 py-4">
+                                  <div className="flex items-center justify-center gap-2">
                                     <button 
                                       type="button"
                                       onClick={() => handleEdit(h)} 
-                                      className="p-1 rounded-xl bg-white/50 text-on-surface-variant hover:bg-primary hover:text-white transition-all"
+                                      className="p-2 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-primary hover:text-white transition-all"
                                       title="Editar"
                                     >
-                                      <span className="material-symbols-outlined text-sm">edit</span>
+                                      <span className="material-symbols-outlined text-base">edit</span>
                                     </button>
                                     <button 
                                       type="button"
                                       onClick={() => setDeleteConfirmId(h.id_atendimento)} 
-                                      className="p-1 rounded-xl bg-white/50 text-on-surface-variant hover:bg-error hover:text-white transition-all"
+                                      className="p-2 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-red-600 hover:text-white transition-all"
                                       title="Excluir"
                                     >
-                                      <span className="material-symbols-outlined text-sm">delete</span>
+                                      <span className="material-symbols-outlined text-base">delete</span>
                                     </button>
                                   </div>
                                 </td>
@@ -1357,7 +1357,7 @@ export default function AtendimentosPage() {
                           <p className="font-black text-sm text-on-surface uppercase tracking-tight group-hover:text-primary transition-colors">
                             {p.paciente_nome}
                           </p>
-                          <span className="text-[9px] font-bold text-on-surface-variant/40 font-mono">SISPN: {p.sispn}</span>
+                          <span className="text-xs font-bold text-on-surface-variant/80 font-mono">SISPN: {p.sispn}</span>
                         </td>
                         <td className="px-6 py-4">
                           <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${p.status === 'ATIVA' ? 'bg-blue-100 text-blue-600' : 'bg-surface-container-high text-on-surface-variant/40'}`}>

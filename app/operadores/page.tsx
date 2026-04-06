@@ -768,7 +768,7 @@ export default function OperadoresPage() {
                           <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5 w-[150px]">Operador</th>
                           <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5 w-[120px]">Nível</th>
                           <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5 w-[120px]">Status</th>
-                          <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label text-center border-b border-outline-variant/5 sticky right-0 bg-surface-container-low z-40 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] w-[180px]">Ações</th>
+                          <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label text-center border-b border-outline-variant/5 w-[180px]">Ações</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-surface-container-low/50">
@@ -792,13 +792,13 @@ export default function OperadoresPage() {
                               <td className="px-4 py-4">
                                 <div className="flex flex-col">
                                   <span className="text-xs font-mono text-on-surface-variant font-medium">{op.cpf}</span>
-                                  <span className="text-[8px] text-on-surface-variant/40 font-body uppercase tracking-tighter mt-0.5 whitespace-nowrap">CPF Verificado</span>
+                                  <span className="text-[8px] text-on-surface-variant/60 font-body uppercase tracking-tighter mt-0.5 whitespace-nowrap">CPF Verificado</span>
                                 </div>
                               </td>
                               <td className="px-4 py-4">
                                 <div className="flex flex-col gap-0.5">
                                   <span className="text-[10px] font-black text-on-surface uppercase tracking-wider">OPERADOR</span>
-                                  <span className="text-[9px] font-bold text-on-surface-variant/40">{formatCpf(op.cpf_operador || '') || '---'}</span>
+                                  <span className="text-[9px] font-bold text-on-surface-variant/60">{formatCpf(op.cpf_operador || '') || '---'}</span>
                                 </div>
                               </td>
                               <td className="px-4 py-4">
@@ -806,7 +806,7 @@ export default function OperadoresPage() {
                                   <span className={`text-[10px] font-black uppercase tracking-wider ${op.nivel_acesso === 'Administrador' ? 'text-primary' : 'text-on-surface'}`}>
                                     {op.nivel_acesso || 'Usuário'}
                                   </span>
-                                  <span className="text-[8px] text-on-surface-variant/40 font-body uppercase tracking-tighter">Nível de Acesso</span>
+                                  <span className="text-[8px] text-on-surface-variant/60 font-body uppercase tracking-tighter">Nível de Acesso</span>
                                 </div>
                               </td>
                               <td className="px-4 py-4">
@@ -819,7 +819,7 @@ export default function OperadoresPage() {
                                   {op.status}
                                 </div>
                               </td>
-                              <td className="px-6 py-4 sticky right-0 bg-surface-container-lowest group-hover:bg-surface-container-low transition-colors z-30 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">
+                              <td className="px-6 py-4 bg-surface-container-lowest group-hover:bg-surface-container-low transition-colors">
                                 <div className="flex items-center justify-center gap-2">
                                   <button 
                                     onClick={() => handleEdit(op)}

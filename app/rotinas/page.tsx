@@ -387,7 +387,7 @@ export default function RotinasPage() {
                   </div>
                   <div>
                     <h3 className="text-2xl font-black font-headline text-on-surface">Protocolos</h3>
-                    <p className="text-xs text-on-surface-variant/40 font-body uppercase tracking-widest font-bold">Listagem de Rotinas</p>
+                    <p className="text-xs text-on-surface-variant/60 font-body uppercase tracking-widest font-bold">Listagem de Rotinas</p>
                   </div>
                 </div>
               </div>
@@ -403,18 +403,18 @@ export default function RotinasPage() {
                     <div className="w-20 h-20 bg-surface-container-low rounded-[2rem] flex items-center justify-center mx-auto">
                       <Search className="text-on-surface-variant/20 w-10 h-10" />
                     </div>
-                    <p className="text-sm font-body text-on-surface-variant/40">Nenhuma rotina encontrada.</p>
+                    <p className="text-sm font-body text-on-surface-variant/60">Nenhuma rotina encontrada.</p>
                   </div>
                 ) : (
                   <>
                     <table className="w-full text-left border-separate border-spacing-0 min-w-[1100px]">
                       <thead className="sticky top-0 z-30 bg-surface-container-low">
                         <tr>
-                          <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5">Descrição / Tipo</th>
-                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5">Trimestre</th>
-                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5">Categoria</th>
-                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5 w-[150px]">Operador</th>
-                          <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline text-center border-b border-outline-variant/5 sticky right-0 bg-surface-container-low z-40 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] w-[180px]">Ações</th>
+                          <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/60 font-headline border-b border-outline-variant/5">Descrição / Tipo</th>
+                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/60 font-headline border-b border-outline-variant/5">Trimestre</th>
+                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/60 font-headline border-b border-outline-variant/5">Categoria</th>
+                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/60 font-headline border-b border-outline-variant/5 w-[150px]">Operador</th>
+                          <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/60 font-headline text-center border-b border-outline-variant/5 w-[180px]">Ações</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-outline-variant/5">
@@ -455,10 +455,10 @@ export default function RotinasPage() {
                             <td className="px-4 py-4">
                               <div className="flex flex-col gap-0.5">
                                 <span className="text-[10px] font-black text-on-surface uppercase tracking-wider">OPERADOR</span>
-                                <span className="text-[9px] font-bold text-on-surface-variant/40">{formatCpf(rot.cpf_operador || '') || '---'}</span>
+                                <span className="text-[9px] font-bold text-on-surface-variant/60">{formatCpf(rot.cpf_operador || '') || '---'}</span>
                               </div>
                             </td>
-                            <td className="px-6 py-4 sticky right-0 bg-surface-container-lowest group-hover:bg-surface-container-low transition-colors z-30 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">
+                            <td className="px-6 py-4 bg-surface-container-lowest group-hover:bg-surface-container-low transition-colors">
                               <div className="flex items-center justify-center gap-2">
                                 <button 
                                   onClick={() => handleEdit(rot)}

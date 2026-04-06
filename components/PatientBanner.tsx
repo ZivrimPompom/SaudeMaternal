@@ -46,17 +46,22 @@ export default function PatientBanner({ patient, className = '' }: PatientBanner
     return new Date(date).toLocaleDateString('pt-BR');
   };
 
+  const formatCpf = (value: string) => {
+    const v = value?.replace(/\D/g, '') || '';
+    if (v.length <= 3) return v;
+    if (v.length <= 6) return `${v.slice(0, 3)}.${v.slice(3)}`;
+    if (v.length <= 9) return `${v.slice(0, 3)}.${v.slice(3, 6)}.${v.slice(6)}`;
+    return `${v.slice(0, 3)}.${v.slice(3, 6)}.${v.slice(6, 9)}-${v.slice(9, 11)}`;
+  };
+
   return (
     <div className={`bg-surface-container-low border border-outline-variant/10 rounded-2xl p-6 shadow-sm mb-6 ${className}`}>
       <div className="flex flex-col md:flex-row items-center gap-6">
-        {/* Profile Icon */}
         <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 shadow-inner">
           <span className="material-symbols-outlined text-primary text-3xl font-black">person</span>
         </div>
 
-        {/* Data Grid */}
         <div className="flex-1 w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-y-4 gap-x-8">
-          {/* Main Info */}
           <div className="lg:col-span-2 xl:col-span-1">
             <p className="text-[10px] font-black text-on-surface-variant/40 uppercase tracking-widest mb-1">NOME COMPLETO</p>
             <p className="text-sm font-black text-on-surface leading-tight uppercase tracking-tight">{patient.nome || '---'}</p>
@@ -65,7 +70,7 @@ export default function PatientBanner({ patient, className = '' }: PatientBanner
           <div>
             <p className="text-[10px] font-black text-on-surface-variant/40 uppercase tracking-widest mb-1">CNS / CPF</p>
             <p className="text-sm font-black text-on-surface leading-tight uppercase tracking-tight">
-              {patient.cns || '---'} <span className="text-on-surface-variant/20 mx-1">|</span> {patient.cpf || '---'}
+              {patient.cns || '---'} <span className="text-on-surface-variant/20 mx-1">|</span> {formatCpf(patient.cpf)}
             </p>
           </div>
 

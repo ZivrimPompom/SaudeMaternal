@@ -590,7 +590,7 @@ export default function ProfissionaisPage() {
                   </div>
                   <div>
                     <h3 className="text-2xl font-black font-headline text-on-surface uppercase tracking-tight">Profissionais</h3>
-                    <p className="text-xs text-on-surface-variant/40 font-body uppercase tracking-widest font-bold">Listagem Geral</p>
+                    <p className="text-xs text-on-surface-variant/60 font-body uppercase tracking-widest font-bold">Listagem Geral</p>
                   </div>
                 </div>
               </div>
@@ -606,20 +606,20 @@ export default function ProfissionaisPage() {
                     <div className="w-20 h-20 bg-surface-container-low rounded-[2rem] flex items-center justify-center mx-auto">
                       <span className="material-symbols-outlined text-on-surface-variant/20 text-5xl">search</span>
                     </div>
-                    <p className="text-sm font-body text-on-surface-variant/40">Nenhum profissional encontrado.</p>
+                    <p className="text-sm font-body text-on-surface-variant/60">Nenhum profissional encontrado.</p>
                   </div>
                 ) : (
                   <>
                     <table className="w-full text-left border-separate border-spacing-0 min-w-[1000px]">
                       <thead className="sticky top-0 z-30 bg-surface-container-low">
                         <tr>
-                          <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5 w-[250px]">Profissional / CPF</th>
-                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5 w-[200px]">CNS / CBO</th>
-                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5 w-[120px]">Equipe</th>
-                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5">Vínculo</th>
-                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5">Situação</th>
-                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline border-b border-outline-variant/5 w-[150px]">Operador</th>
-                          <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/40 font-headline text-center border-b border-outline-variant/5 sticky right-0 bg-surface-container-low z-40 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] w-[180px]">Ações</th>
+                          <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/60 font-headline border-b border-outline-variant/5 w-[250px]">Profissional / CPF</th>
+                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/60 font-headline border-b border-outline-variant/5 w-[200px]">CNS / CBO</th>
+                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/60 font-headline border-b border-outline-variant/5 w-[120px]">Equipe</th>
+                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/60 font-headline border-b border-outline-variant/5">Vínculo</th>
+                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/60 font-headline border-b border-outline-variant/5">Situação</th>
+                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/60 font-headline border-b border-outline-variant/5 w-[150px]">Operador</th>
+                          <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/60 font-headline text-center border-b border-outline-variant/5 w-[180px]">Ações</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-outline-variant/5">
@@ -635,7 +635,7 @@ export default function ProfissionaisPage() {
                                 <div className="flex flex-col gap-0.5">
                                   <span className="text-[10px] font-black text-primary tracking-widest">{formatCpf(pro.cpf)}</span>
                                   <p className="font-black text-on-surface font-headline text-sm group-hover:text-primary transition-colors uppercase line-clamp-1">{pro.nome}</p>
-                                  <span className="text-[9px] font-bold text-on-surface-variant/40 uppercase tracking-widest line-clamp-1">
+                                  <span className="text-[9px] font-bold text-on-surface-variant/60 uppercase tracking-widest line-clamp-1">
                                     {pro.unidades_saude?.nome_fantasia || 'Sem Unidade'}
                                   </span>
                                 </div>
@@ -664,7 +664,7 @@ export default function ProfissionaisPage() {
                                     {pro.vinculo}
                                   </span>
                                   <div className="flex items-center gap-1">
-                                    <span className="text-[9px] font-bold text-on-surface-variant/40 uppercase tracking-tighter">
+                                    <span className="text-[9px] font-bold text-on-surface-variant/60 uppercase tracking-tighter">
                                       {pro.tipo_vinculo}
                                     </span>
                                     <span className="w-1 h-1 rounded-full bg-on-surface-variant/20"></span>
@@ -684,10 +684,10 @@ export default function ProfissionaisPage() {
                               <td className="px-4 py-4">
                                 <div className="flex flex-col gap-0.5">
                                   <span className="text-[10px] font-black text-on-surface uppercase tracking-wider">OPERADOR</span>
-                                  <span className="text-[9px] font-bold text-on-surface-variant/40">{formatCpf(pro.cpf_operador || '') || '---'}</span>
+                                  <span className="text-[9px] font-bold text-on-surface-variant/60">{formatCpf(pro.cpf_operador || '') || '---'}</span>
                                 </div>
                               </td>
-                              <td className="px-6 py-4 sticky right-0 bg-surface-container-lowest group-hover:bg-surface-container-low transition-colors z-30 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">
+                              <td className="px-6 py-4 bg-surface-container-lowest group-hover:bg-surface-container-low transition-colors">
                                 <div className="flex items-center justify-center gap-2">
                                   <button 
                                     onClick={() => handleEdit(pro)}

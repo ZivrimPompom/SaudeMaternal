@@ -756,45 +756,45 @@ export default function DesfechosPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-surface-container-low/50">
-                  <th className="px-6 py-4 text-[10px] font-black text-on-surface-variant/60 uppercase tracking-[0.2em]">SISPN</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-on-surface-variant/60 uppercase tracking-[0.2em]">Gestante</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-on-surface-variant/60 uppercase tracking-[0.2em]">Data Desfecho</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-on-surface-variant/60 uppercase tracking-[0.2em]">Desfecho</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-on-surface-variant/60 uppercase tracking-[0.2em] text-right">Ações</th>
+                <tr className="bg-slate-100 dark:bg-slate-800">
+                  <th className="px-6 py-4 text-xs font-black text-black dark:text-slate-200 uppercase tracking-wider">SISPN</th>
+                  <th className="px-6 py-4 text-xs font-black text-black dark:text-slate-200 uppercase tracking-wider">Gestante</th>
+                  <th className="px-6 py-4 text-xs font-black text-black dark:text-slate-200 uppercase tracking-wider">Data Desfecho</th>
+                  <th className="px-6 py-4 text-xs font-black text-black dark:text-slate-200 uppercase tracking-wider">Desfecho</th>
+                  <th className="px-6 py-4 text-xs font-black text-black dark:text-slate-200 uppercase tracking-wider text-right">Ações</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-outline-variant/5">
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
                 {loading && desfechos.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="px-6 py-12 text-center">
                       <div className="flex flex-col items-center gap-3">
                         <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-                        <p className="text-xs font-bold text-on-surface-variant/40 uppercase tracking-widest">Carregando registros...</p>
+                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Carregando registros...</p>
                       </div>
                     </td>
                   </tr>
                 ) : paginatedDesfechos.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="px-6 py-12 text-center">
-                      <p className="text-xs font-bold text-on-surface-variant/40 uppercase tracking-widest">Nenhum desfecho encontrado</p>
+                      <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Nenhum desfecho encontrado</p>
                     </td>
                   </tr>
                 ) : (
                   paginatedDesfechos.map((d) => (
-                    <tr key={d.id} className="hover:bg-primary/[0.02] transition-colors group">
-                      <td className="px-6 py-4">
-                        <span className="text-xs font-black text-on-surface tracking-tighter">{d.sispn}</span>
+                    <tr key={d.id} className="hover:bg-orange-50 dark:hover:bg-slate-800/50 transition-colors group">
+                      <td className="px-6 py-5">
+                        <span className="text-xs font-mono font-bold text-primary">{d.sispn}</span>
                       </td>
-                      <td className="px-6 py-4">
-                        <span className="text-xs font-bold text-on-surface uppercase">{d.gestacoes?.pacientes?.gestante || 'N/A'}</span>
+                      <td className="px-6 py-5">
+                        <span className="text-xs font-bold text-black dark:text-slate-100 uppercase">{d.gestacoes?.pacientes?.gestante || 'N/A'}</span>
                       </td>
-                      <td className="px-6 py-4">
-                        <span className="text-xs font-bold text-on-surface-variant/70">{new Date(d.data_desfecho).toLocaleDateString('pt-BR')}</span>
+                      <td className="px-6 py-5">
+                        <span className="text-xs font-medium text-slate-700 dark:text-slate-400">{new Date(d.data_desfecho).toLocaleDateString('pt-BR')}</span>
                       </td>
-                      <td className="px-6 py-4">
-                        <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
-                          d.tipo_desfecho === 'PARTO' ? 'bg-success/10 text-success' : 'bg-error/10 text-error'
+                      <td className="px-6 py-5">
+                        <span className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide border ${
+                          d.tipo_desfecho === 'PARTO' ? 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/50 dark:text-emerald-300 dark:border-emerald-800' : 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-800'
                         }`}>
                           {d.tipo_desfecho}
                         </span>

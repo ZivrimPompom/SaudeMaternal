@@ -5,42 +5,67 @@
   --font-headline: var(--font-outfit), sans-serif;
   --font-body: var(--font-inter), sans-serif;
 
-  --color-primary: #ec5b13;
+  --color-primary: #ea580c;
   --color-on-primary: #FFFFFF;
   --color-primary-container: #FFF7ED;
   --color-on-primary-container: #7C2D12;
 
-  --color-secondary: #64748B;
+  --color-secondary: #0f172a;
   --color-on-secondary: #FFFFFF;
-  --color-secondary-container: #F1F5F9;
-  --color-on-secondary-container: #334155;
+  --color-secondary-container: #E2E8F0;
+  --color-on-secondary-container: #0f172a;
 
-  --color-tertiary: #DC7633;
+  --color-tertiary: #C2410C;
   --color-on-tertiary: #FFFFFF;
-  --color-tertiary-container: #FEF3E2;
-  --color-on-tertiary-container: #92400E;
+  --color-tertiary-container: #FFEDD5;
+  --color-on-tertiary-container: #7C2D12;
 
   --color-error: #DC2626;
   --color-on-error: #FFFFFF;
   --color-error-container: #FEE2E2;
   --color-on-error-container: #7F1D1D;
 
-  --color-success: #16A34A;
+  --color-success: #15803D;
   --color-warning: #D97706;
-  --color-info: #2563EB;
+  --color-info: #1D4ED8;
 
-  --color-surface: #F8F6F6;
-  --color-on-surface: #0F172A;
-  --color-surface-variant: #E2E8F0;
-  --color-on-surface-variant: #475569;
-  --color-outline: #94A3B8;
-  --color-outline-variant: #CBD5E1;
+  --color-surface: #FFFFFF;
+  --color-on-surface: #000000;
+  --color-surface-variant: #F1F5F9;
+  --color-on-surface-variant: #0F172A;
+  --color-outline: #1E293B;
+  --color-outline-variant: #475569;
 
-  --color-surface-container-lowest: #FFFFFF;
-  --color-surface-container-low: #F8F6F6;
+  --color-surface-container-lowest: #FAFAFA;
+  --color-surface-container-low: #F8FAFC;
   --color-surface-container: #F1F5F9;
   --color-surface-container-high: #E2E8F0;
   --color-surface-container-highest: #CBD5E1;
+}
+
+html.light {
+  --color-surface: #F1F5F9;
+  --color-on-surface: #0F172A;
+  --color-surface-variant: #E2E8F0;
+  --color-on-surface-variant: #1E293B;
+  --color-outline: #334155;
+  --color-outline-variant: #94A3B8;
+
+  --color-surface-container-lowest: #F8FAFC;
+  --color-surface-container-low: #F1F5F9;
+  --color-surface-container: #E2E8F0;
+  --color-surface-container-high: #CBD5E1;
+  --color-surface-container-highest: #94A3B8;
+
+  --color-primary: #EA580C;
+  --color-on-primary: #FFFFFF;
+  --color-primary-container: #FFF7ED;
+  --color-on-primary-container: #7C2D12;
+
+  --color-secondary: #1E293B;
+  --color-on-secondary: #FFFFFF;
+  --color-secondary-container: #E2E8F0;
+  --color-on-secondary-container: #1E293B;
 }
 
 html.dark {

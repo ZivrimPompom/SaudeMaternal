@@ -580,7 +580,7 @@ export default function UnidadesSaudePage() {
                           <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5 w-[150px]">CNES</th>
                           <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5">Localização</th>
                           <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5 w-[150px]">Operador</th>
-                          <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label text-center border-b border-outline-variant/5 sticky right-0 bg-surface-container-low z-40 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] w-[180px]">Ações</th>
+                          <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label text-center border-b border-outline-variant/5 w-[180px]">Ações</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-surface-container-low/50">
@@ -611,10 +611,10 @@ export default function UnidadesSaudePage() {
                               <td className="px-4 py-4">
                                 <div className="flex flex-col gap-0.5">
                                   <span className="text-[10px] font-black text-on-surface uppercase tracking-wider">OPERADOR</span>
-                                  <span className="text-[9px] font-bold text-on-surface-variant/40">{formatCpf(unit.cpf_operador || '') || '---'}</span>
+                                  <span className="text-[9px] font-bold text-on-surface-variant/60">{formatCpf(unit.cpf_operador || '') || '---'}</span>
                                 </div>
                               </td>
-                              <td className="px-6 py-4 sticky right-0 bg-surface-container-lowest group-hover:bg-surface-container-low transition-colors z-30 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">
+                              <td className="px-6 py-4 bg-surface-container-lowest group-hover:bg-surface-container-low transition-colors">
                                 <div className="flex items-center justify-center gap-2">
                                   <button 
                                     onClick={() => handleEdit(unit)}
