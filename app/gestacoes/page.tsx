@@ -1437,8 +1437,8 @@ export default function GestacoesPage() {
                                 <td className="px-6 py-5">
                                   <div className="flex flex-col gap-1">
                                     <span className="text-xs font-mono font-bold text-orange-600">{formatCpf(g.cpf_paciente)}</span>
-                                    <p className="font-black text-black dark:text-slate-100 font-headline text-base group-hover:text-orange-600 transition-colors uppercase">{g.paciente_nome}</p>
-                                    <span className="text-xs font-bold text-black dark:text-slate-400 uppercase">SISPN: {formatSispn(g.sispn)}</span>
+                                    <p className="font-black text-black font-headline text-base group-hover:text-orange-600 transition-colors uppercase">{g.paciente_nome}</p>
+                                    <span className="text-xs font-bold text-black font-mono">SISPN: {formatSispn(g.sispn)}</span>
                                   </div>
                                 </td>
                                 <td className="px-4 py-5">
