@@ -286,7 +286,7 @@ export default function RotinasPage() {
                       <div className="space-y-2">
                         <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Tipo</label>
                         <select 
-                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none appearance-none"
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none appearance-none"
                           value={formData.tipo || 'EXAME'}
                           onChange={(e) => setFormData({ ...formData, tipo: e.target.value as any })}
                         >
@@ -299,7 +299,7 @@ export default function RotinasPage() {
                       <div className="space-y-2">
                         <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Trimestre</label>
                         <select 
-                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none appearance-none"
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none appearance-none"
                           value={formData.trimestre || 'PRIMEIRO'}
                           onChange={(e) => setFormData({ ...formData, trimestre: e.target.value as any })}
                         >
@@ -312,7 +312,7 @@ export default function RotinasPage() {
                       <div className="space-y-2">
                         <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Categoria</label>
                         <select 
-                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none appearance-none"
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none appearance-none"
                           value={formData.categoria || 'OBRIGATORIO'}
                           onChange={(e) => setFormData({ ...formData, categoria: e.target.value as any })}
                         >
@@ -326,7 +326,7 @@ export default function RotinasPage() {
                     <div className="space-y-2">
                       <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Descrição</label>
                       <textarea 
-                        className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none uppercase min-h-[80px]"
+                        className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none uppercase min-h-[80px]"
                         placeholder="DESCREVA O EXAME, VACINA OU MEDICAÇÃO"
                         value={formData.descricao || ''}
                         onChange={(e) => setFormData({ ...formData, descricao: e.target.value.toUpperCase() })}
@@ -413,7 +413,6 @@ export default function RotinasPage() {
                           <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/60 font-headline border-b border-outline-variant/5">Descrição / Tipo</th>
                           <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/60 font-headline border-b border-outline-variant/5">Trimestre</th>
                           <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/60 font-headline border-b border-outline-variant/5">Categoria</th>
-                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/60 font-headline border-b border-outline-variant/5 w-[150px]">Operador</th>
                           <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/60 font-headline text-center border-b border-outline-variant/5 w-[180px]">Ações</th>
                         </tr>
                       </thead>
@@ -451,12 +450,6 @@ export default function RotinasPage() {
                               }`}>
                                 {rot.categoria}
                               </span>
-                            </td>
-                            <td className="px-4 py-4">
-                              <div className="flex flex-col gap-0.5">
-                                <span className="text-[10px] font-black text-on-surface uppercase tracking-wider">OPERADOR</span>
-                                <span className="text-[9px] font-bold text-on-surface-variant/60">{formatCpf(rot.cpf_operador || '') || '---'}</span>
-                              </div>
                             </td>
                             <td className="px-6 py-4 bg-surface-container-lowest group-hover:bg-surface-container-low transition-colors">
                               <div className="flex items-center justify-center gap-2">

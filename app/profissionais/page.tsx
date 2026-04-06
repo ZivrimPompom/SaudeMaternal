@@ -402,25 +402,25 @@ export default function ProfissionaisPage() {
                       )}
                     </AnimatePresence>
 
-                    <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-                      <div className="space-y-4 xl:col-span-2">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <div className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Nome Completo</label>
+                            <label className="text-label ml-2">Nome Completo</label>
                             <input 
                               type="text"
-                              className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none uppercase"
+                              className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none uppercase"
                               placeholder="Nome do profissional"
                               value={formData.nome || ''}
                               onChange={(e) => setFormData({ ...formData, nome: e.target.value.toUpperCase() })}
                             />
                           </div>
                           <div className="space-y-2">
-                            <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">CPF</label>
+                            <label className="text-label ml-2">CPF</label>
                             <input 
                               type="text"
                               disabled={!!editingCpf}
-                              className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none disabled:opacity-50"
+                              className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none uppercase disabled:opacity-50"
                               placeholder="000.000.000-00"
                               value={formData.cpf || ''}
                               onChange={(e) => setFormData({ ...formData, cpf: formatCpf(e.target.value) })}
@@ -430,19 +430,19 @@ export default function ProfissionaisPage() {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">CNS</label>
+                            <label className="text-label ml-2">CNS</label>
                             <input 
                               type="text"
-                              className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none"
+                              className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none uppercase"
                               placeholder="0000.0000.0000.000"
                               value={formData.cns || ''}
                               onChange={(e) => setFormData({ ...formData, cns: formatCns(e.target.value) })}
                             />
                           </div>
                           <div className="space-y-2">
-                            <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Categoria (CBO)</label>
+                            <label className="text-label ml-2">Categoria (CBO)</label>
                             <select 
-                              className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none appearance-none"
+                              className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none appearance-none"
                               value={formData.cbo || ''}
                               onChange={(e) => setFormData({ ...formData, cbo: e.target.value })}
                             >
@@ -453,96 +453,101 @@ export default function ProfissionaisPage() {
                             </select>
                           </div>
                         </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <label className="text-label ml-2">Unidade de Saúde</label>
+                            <select 
+                              className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none appearance-none"
+                              value={formData.unidade_cnes || ''}
+                              onChange={(e) => setFormData({ ...formData, unidade_cnes: e.target.value })}
+                            >
+                              <option value="">Selecione a unidade...</option>
+                              {units.map(unit => (
+                                <option key={unit.cnes} value={unit.cnes}>{unit.nome_fantasia}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-label ml-2">Equipe</label>
+                            <select 
+                              className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none appearance-none"
+                              value={formData.equipe || ''}
+                              onChange={(e) => setFormData({ ...formData, equipe: e.target.value })}
+                            >
+                              <option value="SEM EQUIPE">SEM EQUIPE</option>
+                              <option value="FORA DE AREA">FORA DE AREA</option>
+                              {Array.from({ length: 99 }, (_, i) => {
+                                const num = (i + 1).toString().padStart(3, '0');
+                                return (
+                                  <option key={num} value={`Equipe ${num}`}>Equipe {num}</option>
+                                );
+                              })}
+                            </select>
+                          </div>
+                        </div>
                       </div>
 
                       <div className="space-y-4">
-                        <div className="space-y-2">
-                          <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Unidade de Saúde</label>
-                          <select 
-                            className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none appearance-none"
-                            value={formData.unidade_cnes || ''}
-                            onChange={(e) => setFormData({ ...formData, unidade_cnes: e.target.value })}
-                          >
-                            <option value="">Selecione a unidade...</option>
-                            {units.map(unit => (
-                              <option key={unit.cnes} value={unit.cnes}>{unit.nome_fantasia}</option>
-                            ))}
-                          </select>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <label className="text-label ml-2">Situação</label>
+                            <select 
+                              className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none appearance-none"
+                              value={formData.situacao || 'ATIVO'}
+                              onChange={(e) => setFormData({ ...formData, situacao: e.target.value as any })}
+                            >
+                              <option value="ATIVO">ATIVO</option>
+                              <option value="INATIVO">INATIVO</option>
+                            </select>
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-label ml-2">Vínculo</label>
+                            <select 
+                              className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none appearance-none"
+                              value={formData.vinculo || 'INTERMEDIADO'}
+                              onChange={(e) => setFormData({ ...formData, vinculo: e.target.value as any })}
+                            >
+                              <option value="DIRETO">DIRETO</option>
+                              <option value="INTERMEDIADO">INTERMEDIADO</option>
+                            </select>
+                          </div>
                         </div>
-                        <div className="space-y-2">
-                          <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Equipe</label>
-                          <select 
-                            className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none appearance-none"
-                            value={formData.equipe || ''}
-                            onChange={(e) => setFormData({ ...formData, equipe: e.target.value })}
-                          >
-                            <option value="SEM EQUIPE">SEM EQUIPE</option>
-                            <option value="FORA DE AREA">FORA DE AREA</option>
-                            {Array.from({ length: 99 }, (_, i) => {
-                              const num = (i + 1).toString().padStart(3, '0');
-                              return (
-                                <option key={num} value={`Equipe ${num}`}>Equipe {num}</option>
-                              );
-                            })}
-                          </select>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <label className="text-label ml-2">Tipo de Vínculo</label>
+                            <select 
+                              className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none appearance-none"
+                              value={formData.tipo_vinculo || 'CLT'}
+                              onChange={(e) => setFormData({ ...formData, tipo_vinculo: e.target.value as any })}
+                            >
+                              <option value="CLT">CLT</option>
+                              <option value="ESTATUTARIO">ESTATUTÁRIO</option>
+                              <option value="AUTÔNOMO">AUTÔNOMO</option>
+                            </select>
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-label ml-2">CHS</label>
+                            <select 
+                              className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none appearance-none"
+                              value={formData.chs || 20}
+                              onChange={(e) => setFormData({ ...formData, chs: parseInt(e.target.value) as any })}
+                            >
+                              <option value={20}>20 HORAS</option>
+                              <option value={30}>30 HORAS</option>
+                              <option value={40}>40 HORAS</option>
+                            </select>
+                          </div>
                         </div>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Situação</label>
-                        <select 
-                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none appearance-none"
-                          value={formData.situacao || 'ATIVO'}
-                          onChange={(e) => setFormData({ ...formData, situacao: e.target.value as any })}
-                        >
-                          <option value="ATIVO">ATIVO</option>
-                          <option value="INATIVO">INATIVO</option>
-                        </select>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Vínculo</label>
-                        <select 
-                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none appearance-none"
-                          value={formData.vinculo || 'INTERMEDIADO'}
-                          onChange={(e) => setFormData({ ...formData, vinculo: e.target.value as any })}
-                        >
-                          <option value="DIRETO">DIRETO</option>
-                          <option value="INTERMEDIADO">INTERMEDIADO</option>
-                        </select>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Tipo de Vínculo</label>
-                        <select 
-                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none appearance-none"
-                          value={formData.tipo_vinculo || 'CLT'}
-                          onChange={(e) => setFormData({ ...formData, tipo_vinculo: e.target.value as any })}
-                        >
-                          <option value="CLT">CLT</option>
-                          <option value="ESTATUTARIO">ESTATUTÁRIO</option>
-                          <option value="AUTÔNOMO">AUTÔNOMO</option>
-                        </select>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">CHS</label>
-                        <select 
-                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none appearance-none"
-                          value={formData.chs || 20}
-                          onChange={(e) => setFormData({ ...formData, chs: parseInt(e.target.value) as any })}
-                        >
-                          <option value={20}>20 HORAS</option>
-                          <option value={30}>30 HORAS</option>
-                          <option value={40}>40 HORAS</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="pt-4 flex flex-col gap-3">
-                      <button 
-                        type="submit"
-                        className="w-full bg-primary text-white font-black py-3 rounded-full shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 font-headline uppercase tracking-widest text-[10px]"
-                      >
+                      <div className="pt-4 flex flex-col gap-3">
+                        <button 
+                          type="submit"
+                      className="w-full bg-primary text-white font-black py-3 rounded-full shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 font-headline uppercase tracking-widest text-xs"
+                    >
                         <span className="material-symbols-outlined text-lg">{editingCpf ? 'save' : 'person_add'}</span>
                         {editingCpf ? 'Atualizar Profissional' : 'Cadastrar Profissional'}
                       </button>
@@ -613,13 +618,12 @@ export default function ProfissionaisPage() {
                     <table className="w-full text-left border-separate border-spacing-0 min-w-[1000px]">
                       <thead className="sticky top-0 z-30 bg-surface-container-low">
                         <tr>
-                          <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/60 font-headline border-b border-outline-variant/5 w-[250px]">Profissional / CPF</th>
-                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/60 font-headline border-b border-outline-variant/5 w-[200px]">CNS / CBO</th>
-                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/60 font-headline border-b border-outline-variant/5 w-[120px]">Equipe</th>
-                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/60 font-headline border-b border-outline-variant/5">Vínculo</th>
-                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/60 font-headline border-b border-outline-variant/5">Situação</th>
-                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/60 font-headline border-b border-outline-variant/5 w-[150px]">Operador</th>
-                          <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/60 font-headline text-center border-b border-outline-variant/5 w-[180px]">Ações</th>
+                          <th className="px-6 py-4 text-table-header w-[250px]">Profissional / CPF</th>
+                          <th className="px-4 py-4 text-table-header w-[200px]">CNS / CBO</th>
+                          <th className="px-4 py-4 text-table-header w-[120px]">Equipe</th>
+                          <th className="px-4 py-4 text-table-header">Vínculo</th>
+                          <th className="px-4 py-4 text-table-header">Situação</th>
+                          <th className="px-6 py-4 text-table-header text-center w-[180px]">Ações</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-outline-variant/5">
@@ -680,12 +684,6 @@ export default function ProfissionaisPage() {
                                 }`}>
                                   {pro.situacao || 'ATIVO'}
                                 </span>
-                              </td>
-                              <td className="px-4 py-4">
-                                <div className="flex flex-col gap-0.5">
-                                  <span className="text-[10px] font-black text-on-surface uppercase tracking-wider">OPERADOR</span>
-                                  <span className="text-[9px] font-bold text-on-surface-variant/60">{formatCpf(pro.cpf_operador || '') || '---'}</span>
-                                </div>
                               </td>
                               <td className="px-6 py-4 bg-surface-container-lowest group-hover:bg-surface-container-low transition-colors">
                                 <div className="flex items-center justify-center gap-2">

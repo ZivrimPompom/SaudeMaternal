@@ -408,7 +408,7 @@ export default function PacientesPage() {
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: 'auto' }}
                           exit={{ opacity: 0, height: 0 }}
-                          className="p-4 rounded-2xl bg-red-50 border border-red-100 text-red-600 text-xs font-bold flex items-center gap-3"
+                          className="p-4 rounded-2xl bg-red-50 border border-red-100 text-red-600 text-table-cell flex items-center gap-3"
                         >
                           <span className="material-symbols-outlined text-lg shrink-0">error</span>
                           {error}
@@ -419,7 +419,7 @@ export default function PacientesPage() {
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: 'auto' }}
                           exit={{ opacity: 0, height: 0 }}
-                          className="p-4 rounded-2xl bg-green-50 border border-green-100 text-green-600 text-xs font-bold flex items-center gap-3"
+                          className="p-4 rounded-2xl bg-green-50 border border-green-100 text-green-600 text-table-cell flex items-center gap-3"
                         >
                           <span className="material-symbols-outlined text-lg shrink-0">check_circle</span>
                           {success}
@@ -432,7 +432,7 @@ export default function PacientesPage() {
                         <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Nome da Gestante</label>
                         <input 
                           type="text"
-                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none uppercase"
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none uppercase"
                           placeholder="NOME DA GESTANTE"
                           value={formData.gestante || ''}
                           onChange={(e) => setFormData({ ...formData, gestante: e.target.value.toUpperCase() })}
@@ -443,7 +443,7 @@ export default function PacientesPage() {
                         <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">CPF</label>
                         <input 
                           type="text"
-                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none"
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none"
                           placeholder="000.000.000-00"
                           value={formData.cpf || ''}
                           onChange={(e) => setFormData({ ...formData, cpf: formatCpf(e.target.value) })}
@@ -455,7 +455,7 @@ export default function PacientesPage() {
                         <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">CNS</label>
                         <input 
                           type="text"
-                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none"
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none"
                           placeholder="0000.0000.0000.000"
                           value={formData.cns || ''}
                           onChange={(e) => setFormData({ ...formData, cns: formatCns(e.target.value) })}
@@ -468,7 +468,7 @@ export default function PacientesPage() {
                         <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Prontuário</label>
                         <input 
                           type="text"
-                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none"
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none"
                           placeholder="00-000"
                           value={formData.prontuario || ''}
                           onChange={(e) => setFormData({ ...formData, prontuario: formatProntuario(e.target.value) })}
@@ -478,7 +478,7 @@ export default function PacientesPage() {
                         <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Data de Nascimento</label>
                         <input 
                           type="date"
-                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none"
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none"
                           value={formData.data_nascimento || ''}
                           onChange={(e) => setFormData({ ...formData, data_nascimento: e.target.value })}
                         />
@@ -512,7 +512,7 @@ export default function PacientesPage() {
                         <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Nome da Mãe</label>
                         <input 
                           type="text"
-                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none uppercase"
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none uppercase"
                           placeholder="NOME DA MÃE"
                           value={formData.nome_mae || ''}
                           onChange={(e) => setFormData({ ...formData, nome_mae: e.target.value.toUpperCase() })}
@@ -522,7 +522,7 @@ export default function PacientesPage() {
                         <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Contato</label>
                         <input 
                           type="text"
-                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none"
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none"
                           placeholder="(00) 00000-0000"
                           value={formData.contato || ''}
                           onChange={(e) => setFormData({ ...formData, contato: formatPhone(e.target.value) })}
@@ -532,7 +532,7 @@ export default function PacientesPage() {
                         <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">E-mail</label>
                         <input 
                           type="email"
-                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none"
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none"
                           placeholder="email@exemplo.com"
                           value={formData.email || ''}
                           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -545,7 +545,7 @@ export default function PacientesPage() {
                         <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Logradouro</label>
                         <input 
                           type="text"
-                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none uppercase"
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none uppercase"
                           placeholder="RUA / AVENIDA / PRAÇA"
                           value={formData.logradouro || ''}
                           onChange={(e) => setFormData({ ...formData, logradouro: e.target.value.toUpperCase() })}
@@ -555,7 +555,7 @@ export default function PacientesPage() {
                         <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Nº</label>
                         <input 
                           type="text"
-                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none uppercase"
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none uppercase"
                           placeholder="99A"
                           value={formData.numero || ''}
                           onChange={(e) => setFormData({ ...formData, numero: e.target.value.toUpperCase() })}
@@ -565,7 +565,7 @@ export default function PacientesPage() {
                         <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Complemento</label>
                         <input 
                           type="text"
-                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none uppercase"
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none uppercase"
                           placeholder="PRÓXIMO / TRAVESSA / VIELA"
                           value={formData.complemento || ''}
                           onChange={(e) => setFormData({ ...formData, complemento: e.target.value.toUpperCase() })}
@@ -578,7 +578,7 @@ export default function PacientesPage() {
                         <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Cidade</label>
                         <input 
                           type="text"
-                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none uppercase opacity-60 cursor-not-allowed"
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none uppercase opacity-60 cursor-not-allowed"
                           value="SÃO PAULO"
                           readOnly
                         />
@@ -587,7 +587,7 @@ export default function PacientesPage() {
                         <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Bairro</label>
                         <input 
                           type="text"
-                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none uppercase"
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none uppercase"
                           placeholder="BAIRRO"
                           value={formData.bairro || ''}
                           onChange={(e) => setFormData({ ...formData, bairro: e.target.value.toUpperCase() })}
@@ -597,7 +597,7 @@ export default function PacientesPage() {
                         <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">UF</label>
                         <input 
                           type="text"
-                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none uppercase opacity-60 cursor-not-allowed"
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none uppercase opacity-60 cursor-not-allowed"
                           value="SP"
                           readOnly
                         />
@@ -678,10 +678,10 @@ export default function PacientesPage() {
                     <table className="w-full text-left border-separate border-spacing-0 min-w-[1100px]">
                       <thead className="sticky top-0 z-30 bg-surface-container-low">
                         <tr>
-                          <th className="px-6 py-4 text-xs font-black uppercase tracking-wider text-blue-950 dark:text-blue-200 font-headline border-b border-slate-300 dark:border-slate-700">Gestante</th>
-                          <th className="px-4 py-4 text-xs font-black uppercase tracking-wider text-blue-950 dark:text-blue-200 font-headline border-b border-slate-300 dark:border-slate-700 w-[160px]">Fase</th>
-                          <th className="px-4 py-4 text-xs font-black uppercase tracking-wider text-blue-950 dark:text-blue-200 font-headline border-b border-slate-300 dark:border-slate-700">Endereço</th>
-                          <th className="px-6 py-4 text-xs font-black uppercase tracking-wider text-blue-950 dark:text-blue-200 font-headline text-center border-b border-slate-300 dark:border-slate-700 w-[120px]">Ações</th>
+                          <th className="px-6 py-4 text-table-header border-b border-slate-300 dark:border-slate-700">Gestante</th>
+                          <th className="px-4 py-4 text-table-header border-b border-slate-300 dark:border-slate-700 w-[160px]">Fase</th>
+                          <th className="px-4 py-4 text-table-header border-b border-slate-300 dark:border-slate-700">Endereço</th>
+                          <th className="px-6 py-4 text-table-header text-center border-b border-slate-300 dark:border-slate-700 w-[120px]">Ações</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -700,16 +700,16 @@ export default function PacientesPage() {
                                     <div className="min-w-0 flex-1">
                                       <span className="text-xs font-mono font-bold text-orange-600">{formatCpf(pac.cpf || '')}</span>
                                       <p className="font-black text-on-surface font-headline text-base group-hover:text-orange-600 transition-colors uppercase truncate">{pac.gestante}</p>
-                                      <span className="text-xs font-bold text-blue-900 dark:text-blue-300 uppercase">CNS: {formatCns(pac.cns || '') || '---'}</span>
+                                      <span className="text-table-cell text-black dark:text-slate-300 uppercase">CNS: {formatCns(pac.cns || '') || '---'}</span>
                                     </div>
                                     <div className="min-w-0 flex-1 border-l border-gray-200 dark:border-gray-700 pl-4">
-                                      <span className="text-xs font-bold text-blue-900 dark:text-blue-100 uppercase block">{pac.prontuario || '---'}</span>
-                                      <span className="text-xs font-bold text-blue-800 dark:text-blue-200 uppercase block mt-1">Mãe: {pac.nome_mae || 'NÃO INFORMADO'}</span>
+                                      <span className="text-table-cell text-black dark:text-slate-200 uppercase block">{pac.prontuario || '---'}</span>
+                                      <span className="text-table-cell text-black dark:text-slate-200 uppercase block mt-1">Mãe: {pac.nome_mae || 'NÃO INFORMADO'}</span>
                                     </div>
                                   </div>
                                 </td>
                                 <td className="px-4 py-5">
-                                  <span className={`text-xs font-bold px-3 py-1.5 rounded-lg uppercase tracking-wide border block w-fit ${
+                                  <span className={`text-table-cell px-3 py-1.5 rounded-lg uppercase tracking-wide border block w-fit ${
                                     lifeStage === 'CRIANÇA' ? 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/50 dark:text-blue-300 dark:border-blue-800' :
                                     lifeStage === 'ADOLESCENTE' ? 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/50 dark:text-purple-300 dark:border-purple-800' :
                                     lifeStage === 'IDOSO' ? 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/50 dark:text-orange-300 dark:border-orange-800' :
@@ -717,20 +717,20 @@ export default function PacientesPage() {
                                   }`}>
                                     {lifeStage}
                                   </span>
-                                  <span className="text-xs font-bold text-blue-800 dark:text-blue-300 mt-2 block">{ageText}</span>
+                                  <span className="text-table-cell text-black dark:text-slate-300 mt-2 block">{ageText}</span>
                                 </td>
                                 <td className="px-4 py-5">
                                   <div className="flex items-start gap-2">
-<span className="material-symbols-outlined text-blue-800 dark:text-blue-400 text-base mt-0.5 shrink-0">location_on</span>
-                                    <div className="text-xs font-bold text-blue-900 dark:text-blue-300 leading-tight uppercase">
+<span className="material-symbols-outlined text-black dark:text-slate-400 text-base mt-0.5 shrink-0">location_on</span>
+                                    <div className="text-table-cell text-black dark:text-slate-300 leading-tight uppercase">
                                     <div>{pac.logradouro}, {pac.numero}</div>
                                     <div>{pac.complemento}</div>
                                     <div>{pac.bairro}</div>
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-2 mt-2">
-                                  <span className="material-symbols-outlined text-blue-800 dark:text-blue-400 text-base">call</span>
-                                  <span className="text-xs font-bold text-blue-900 dark:text-blue-300">{formatPhone(pac.contato || '') || '---'}</span>
+                                  <span className="material-symbols-outlined text-black dark:text-slate-400 text-base">call</span>
+                                  <span className="text-table-cell text-black dark:text-slate-300">{formatPhone(pac.contato || '') || '---'}</span>
                                   </div>
                                 </td>
                                 <td className="px-6 py-5 text-center">
@@ -741,7 +741,7 @@ export default function PacientesPage() {
                                       title="Editar Paciente"
                                     >
                                       <span className="material-symbols-outlined text-base">edit</span>
-                                      <span className="text-xs font-bold uppercase tracking-wider hidden group-hover/btn:inline">Editar</span>
+                                      <span className="text-table-cell uppercase tracking-wider hidden group-hover/btn:inline">Editar</span>
                                     </button>
                                     <button 
                                       onClick={() => setDeleteConfirmId(pac.cpf)}
@@ -749,7 +749,7 @@ export default function PacientesPage() {
                                       title="Excluir Paciente"
                                     >
                                       <span className="material-symbols-outlined text-base">delete</span>
-                                      <span className="text-xs font-bold uppercase tracking-wider hidden group-hover/btn:inline">Excluir</span>
+                                      <span className="text-table-cell uppercase tracking-wider hidden group-hover/btn:inline">Excluir</span>
                                     </button>
                                   </div>
                                 </td>

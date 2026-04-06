@@ -304,7 +304,7 @@ export default function CategoriasPage() {
                         <input 
                           type="text"
                           disabled={!!editingCbo}
-                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-secondary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none disabled:opacity-50"
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-secondary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none disabled:opacity-50"
                           placeholder="Ex: 225125"
                           value={formData.cbo || ''}
                           onChange={(e) => setFormData({ ...formData, cbo: e.target.value.replace(/\D/g, '') })}
@@ -315,7 +315,7 @@ export default function CategoriasPage() {
                         <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Nome da Categoria</label>
                         <input 
                           type="text"
-                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-secondary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none uppercase"
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-secondary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none uppercase"
                           placeholder="Ex: MÉDICO CLÍNICO"
                           value={formData.categoria || ''}
                           onChange={(e) => setFormData({ ...formData, categoria: e.target.value.toUpperCase() })}
@@ -395,7 +395,6 @@ export default function CategoriasPage() {
                       <thead className="sticky top-0 z-30 bg-surface-container-low">
                         <tr>
                           <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/60 font-headline border-b border-outline-variant/5">CBO / Categoria</th>
-                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/60 font-headline border-b border-outline-variant/5 w-[150px]">Operador</th>
                           <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/60 font-headline text-center border-b border-outline-variant/5 w-[180px]">Ações</th>
                         </tr>
                       </thead>
@@ -412,12 +411,6 @@ export default function CategoriasPage() {
                               <div className="flex flex-col gap-1">
                                 <span className="text-[10px] font-black text-secondary tracking-widest">{cat.cbo}</span>
                                 <p className="font-black text-on-surface font-headline text-sm group-hover:text-secondary transition-colors uppercase">{cat.categoria}</p>
-                              </div>
-                            </td>
-                            <td className="px-4 py-4">
-                              <div className="flex flex-col gap-0.5">
-                                <span className="text-[10px] font-black text-on-surface uppercase tracking-wider">OPERADOR</span>
-                                <span className="text-[9px] font-bold text-on-surface-variant/60">{(cat as any).cpf_operador ? formatCpf((cat as any).cpf_operador) : '---'}</span>
                               </div>
                             </td>
                             <td className="px-6 py-4 bg-surface-container-lowest group-hover:bg-surface-container-low transition-colors">

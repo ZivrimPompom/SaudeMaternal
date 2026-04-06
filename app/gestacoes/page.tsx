@@ -265,7 +265,8 @@ export default function GestacoesPage() {
     equipe: '',
     referencia: '',
     acs: '',
-    status: 'ATIVA'
+    status: 'ATIVA',
+    unidade: authUser?.unidade_cnes || ''
   });
 
   const enfermeiros = useMemo(() => {
@@ -566,6 +567,11 @@ export default function GestacoesPage() {
 
     if (filters.status) {
       if (getGestacaoStatus(g.dpp) !== filters.status) return false;
+    }
+
+    // Filter by unidade (only for non-admin users)
+    if (authUser?.nivel_acesso !== 'Administrador' && authUser?.unidade_cnes) {
+      if (g.unidade_cnes !== authUser.unidade_cnes) return false;
     }
 
     return true;
@@ -884,12 +890,12 @@ export default function GestacoesPage() {
                   <form onSubmit={handleSubmit} className="space-y-8">
                     <AnimatePresence mode="wait">
                       {error && (
-                        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="p-4 rounded-2xl bg-red-50 text-red-600 text-xs font-bold flex items-center gap-3">
+                        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="p-4 rounded-2xl bg-red-50 text-red-600 text-table-cell flex items-center gap-3">
                           <span className="material-symbols-outlined text-lg">error</span> {error}
                         </motion.div>
                       )}
                       {success && (
-                        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="p-4 rounded-2xl bg-green-50 text-green-600 text-xs font-bold flex items-center gap-3">
+                        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="p-4 rounded-2xl bg-green-50 text-green-600 text-table-cell flex items-center gap-3">
                           <span className="material-symbols-outlined text-lg">check_circle</span> {success}
                         </motion.div>
                       )}
@@ -1034,7 +1040,7 @@ export default function GestacoesPage() {
                           <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">DUM (Última Menstruação)</label>
                           <input 
                             type="date"
-                            className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none"
+                            className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none"
                             value={formData.dum || ''}
                             onChange={(e) => setFormData({ ...formData, dum: e.target.value })}
                             max={new Date().toISOString().split('T')[0]}
@@ -1045,7 +1051,7 @@ export default function GestacoesPage() {
                           <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">DPP (Provável Parto)</label>
                           <input 
                             type="date"
-                            className="w-full bg-surface-container-low border-2 border-transparent rounded-2xl px-6 py-4 font-body text-xs outline-none opacity-60 cursor-not-allowed"
+                            className="w-full bg-surface-container-low border-2 border-transparent rounded-2xl px-6 py-4 text-input outline-none opacity-60 cursor-not-allowed"
                             value={formData.dpp || ''}
                             readOnly
                           />
@@ -1054,7 +1060,7 @@ export default function GestacoesPage() {
                           <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Data Abertura</label>
                           <input 
                             type="date"
-                            className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none"
+                            className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none"
                             value={formData.data_abertura || ''}
                             onChange={(e) => setFormData({ ...formData, data_abertura: e.target.value })}
                             max={new Date().toISOString().split('T')[0]}
@@ -1065,7 +1071,7 @@ export default function GestacoesPage() {
                           <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Data Cadastro</label>
                           <input 
                             type="date"
-                            className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none"
+                            className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none"
                             value={formData.data_cadastro || ''}
                             onChange={(e) => setFormData({ ...formData, data_cadastro: e.target.value })}
                             max={new Date().toISOString().split('T')[0]}
@@ -1102,7 +1108,7 @@ export default function GestacoesPage() {
                           <div className="relative">
                             <input 
                               type="text"
-                              className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none shadow-inner pr-12"
+                              className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none shadow-inner pr-12"
                               placeholder="Buscar enfermeiro..."
                               value={rtSearchQuery}
                               onChange={(e) => {
@@ -1152,7 +1158,7 @@ export default function GestacoesPage() {
                           <div className="relative">
                             <input 
                               type="text"
-                              className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none shadow-inner pr-12"
+                              className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none shadow-inner pr-12"
                               placeholder="Buscar ACS..."
                               value={acsSearchQuery}
                               onChange={(e) => {
@@ -1214,27 +1220,27 @@ export default function GestacoesPage() {
                       <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
                         <div className="space-y-2">
                           <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Gest. Ant.</label>
-                          <input type="number" min="0" className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none" value={formData.gestacao_anterior || 0} onChange={(e) => setFormData({ ...formData, gestacao_anterior: Math.max(0, parseInt(e.target.value) || 0) })} />
+                          <input type="number" min="0" className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none" value={formData.gestacao_anterior || 0} onChange={(e) => setFormData({ ...formData, gestacao_anterior: Math.max(0, parseInt(e.target.value) || 0) })} />
                         </div>
                         <div className="space-y-2">
                           <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Aborto</label>
-                          <input type="number" min="0" className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none" value={formData.aborto || 0} onChange={(e) => setFormData({ ...formData, aborto: Math.max(0, parseInt(e.target.value) || 0) })} />
+                          <input type="number" min="0" className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none" value={formData.aborto || 0} onChange={(e) => setFormData({ ...formData, aborto: Math.max(0, parseInt(e.target.value) || 0) })} />
                         </div>
                         <div className="space-y-2">
                           <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Parto</label>
-                          <input type="number" min="0" className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none" value={formData.parto || 0} onChange={(e) => setFormData({ ...formData, parto: Math.max(0, parseInt(e.target.value) || 0) })} />
+                          <input type="number" min="0" className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none" value={formData.parto || 0} onChange={(e) => setFormData({ ...formData, parto: Math.max(0, parseInt(e.target.value) || 0) })} />
                         </div>
                         <div className="col-span-3 grid grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Classificação PN</label>
-                            <select className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none appearance-none" value={formData.classificacao_pn || 'HABITUAL'} onChange={(e) => setFormData({ ...formData, classificacao_pn: e.target.value })}>
+                            <select className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none appearance-none" value={formData.classificacao_pn || 'HABITUAL'} onChange={(e) => setFormData({ ...formData, classificacao_pn: e.target.value })}>
                               <option value="HABITUAL">HABITUAL</option>
                               <option value="RISCO">RISCO</option>
                             </select>
                           </div>
                           <div className="space-y-2">
                             <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Alto Risco Comp.</label>
-                            <select className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none appearance-none" value={formData.alto_risco_compartilhado || 'NÃO'} onChange={(e) => setFormData({ ...formData, alto_risco_compartilhado: e.target.value })}>
+                            <select className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none appearance-none" value={formData.alto_risco_compartilhado || 'NÃO'} onChange={(e) => setFormData({ ...formData, alto_risco_compartilhado: e.target.value })}>
                               <option value="SIM">SIM</option>
                               <option value="NÃO">NÃO</option>
                             </select>
@@ -1245,7 +1251,7 @@ export default function GestacoesPage() {
                       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                         <div className="space-y-2">
                           <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Sífilis</label>
-                          <select className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none appearance-none" value={formData.sifilis || 'NÃO'} onChange={(e) => setFormData({ ...formData, sifilis: e.target.value })}>
+                          <select className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none appearance-none" value={formData.sifilis || 'NÃO'} onChange={(e) => setFormData({ ...formData, sifilis: e.target.value })}>
                             <option value="SIM">SIM</option>
                             <option value="NÃO">NÃO</option>
                             <option value="NÃO SABE">NÃO SABE</option>
@@ -1253,7 +1259,7 @@ export default function GestacoesPage() {
                         </div>
                         <div className="space-y-2">
                           <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Sífilis Tratada</label>
-                          <select className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none appearance-none" value={formData.sifilis_tratada || 'NÃO SABE'} onChange={(e) => setFormData({ ...formData, sifilis_tratada: e.target.value })}>
+                          <select className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none appearance-none" value={formData.sifilis_tratada || 'NÃO SABE'} onChange={(e) => setFormData({ ...formData, sifilis_tratada: e.target.value })}>
                             <option value="SIM">SIM</option>
                             <option value="NÃO">NÃO</option>
                             <option value="NÃO SABE">NÃO SABE</option>
@@ -1261,21 +1267,21 @@ export default function GestacoesPage() {
                         </div>
                         <div className="space-y-2">
                           <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">HIV</label>
-                          <select className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none appearance-none" value={formData.hiv || 'NEGATIVO'} onChange={(e) => setFormData({ ...formData, hiv: e.target.value })}>
+                          <select className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none appearance-none" value={formData.hiv || 'NEGATIVO'} onChange={(e) => setFormData({ ...formData, hiv: e.target.value })}>
                             <option value="POSITIVO">POSITIVO</option>
                             <option value="NEGATIVO">NEGATIVO</option>
                           </select>
                         </div>
                         <div className="space-y-2">
                           <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Hepatite B</label>
-                          <select className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none appearance-none" value={formData.hepatite_b || 'NÃO REAGENTE'} onChange={(e) => setFormData({ ...formData, hepatite_b: e.target.value })}>
+                          <select className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none appearance-none" value={formData.hepatite_b || 'NÃO REAGENTE'} onChange={(e) => setFormData({ ...formData, hepatite_b: e.target.value })}>
                             <option value="REAGENTE">REAGENTE</option>
                             <option value="NÃO REAGENTE">NÃO REAGENTE</option>
                           </select>
                         </div>
                         <div className="space-y-2">
                           <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Hepatite C</label>
-                          <select className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all font-body text-xs outline-none appearance-none" value={formData.hepatite_c || 'NÃO REAGENTE'} onChange={(e) => setFormData({ ...formData, hepatite_c: e.target.value })}>
+                          <select className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none appearance-none" value={formData.hepatite_c || 'NÃO REAGENTE'} onChange={(e) => setFormData({ ...formData, hepatite_c: e.target.value })}>
                             <option value="REAGENTE">REAGENTE</option>
                             <option value="NÃO REAGENTE">NÃO REAGENTE</option>
                           </select>
@@ -1388,7 +1394,7 @@ export default function GestacoesPage() {
 
                   {(filters.dpp || filters.captacao || filters.equipe || filters.referencia || filters.acs || filters.status !== 'ATIVA') && (
                     <button 
-                      onClick={() => setFilters({ dpp: '', captacao: '', equipe: '', referencia: '', acs: '', status: 'ATIVA' })}
+                      onClick={() => setFilters({ dpp: '', captacao: '', equipe: '', referencia: '', acs: '', status: 'ATIVA', unidade: authUser?.unidade_cnes || '' })}
                       className="w-full lg:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-error/10 text-error text-[9px] font-black uppercase tracking-widest hover:bg-error hover:text-white transition-all border border-error/20"
                     >
                       <span className="material-symbols-outlined text-sm">filter_alt_off</span>
@@ -1416,12 +1422,12 @@ export default function GestacoesPage() {
                     <table className="w-full text-left border-separate border-spacing-0 min-w-[1200px]">
                       <thead className="sticky top-0 z-30 bg-surface-container-low">
                         <tr>
-                          <th className="px-6 py-4 text-xs font-black uppercase tracking-wider text-slate-950 dark:text-slate-200 font-headline border-b border-slate-300 dark:border-slate-700">Gestante</th>
-                          <th className="px-4 py-4 text-xs font-black uppercase tracking-wider text-slate-950 dark:text-slate-200 font-headline border-b border-slate-300 dark:border-slate-700">DUM / DPP</th>
-                          <th className="px-4 py-4 text-xs font-black uppercase tracking-wider text-slate-950 dark:text-slate-200 font-headline border-b border-slate-300 dark:border-slate-700">Semanas</th>
-                          <th className="px-4 py-4 text-xs font-black uppercase tracking-wider text-slate-950 dark:text-slate-200 font-headline border-b border-slate-300 dark:border-slate-700">Equipe</th>
-                          <th className="px-4 py-4 text-xs font-black uppercase tracking-wider text-slate-950 dark:text-slate-200 font-headline border-b border-slate-300 dark:border-slate-700">Status</th>
-                          <th className="px-6 py-4 text-xs font-black uppercase tracking-wider text-slate-950 dark:text-slate-200 font-headline text-center border-b border-slate-300 dark:border-slate-700 w-[120px]">Ações</th>
+                          <th className="px-6 py-4 text-table-header border-b border-slate-300 dark:border-slate-700">Gestante</th>
+                          <th className="px-4 py-4 text-table-header border-b border-slate-300 dark:border-slate-700">DUM / DPP</th>
+                          <th className="px-4 py-4 text-table-header border-b border-slate-300 dark:border-slate-700">Semanas</th>
+                          <th className="px-4 py-4 text-table-header border-b border-slate-300 dark:border-slate-700">Equipe</th>
+                          <th className="px-4 py-4 text-table-header border-b border-slate-300 dark:border-slate-700">Status</th>
+                          <th className="px-6 py-4 text-table-header text-center border-b border-slate-300 dark:border-slate-700 w-[120px]">Ações</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -1438,32 +1444,32 @@ export default function GestacoesPage() {
                                   <div className="flex flex-col gap-1">
                                     <span className="text-xs font-mono font-bold text-orange-600">{formatCpf(g.cpf_paciente)}</span>
                                     <p className="font-black text-black font-headline text-base group-hover:text-orange-600 transition-colors uppercase">{g.paciente_nome}</p>
-                                    <span className="text-xs font-bold text-black font-mono">SISPN: {formatSispn(g.sispn)}</span>
+                                    <span className="text-table-cell text-black font-mono">SISPN: {formatSispn(g.sispn)}</span>
                                   </div>
                                 </td>
                                 <td className="px-4 py-5">
                                   <div className="flex items-center gap-2">
                                     <span className="material-symbols-outlined text-slate-600 dark:text-slate-400 text-base">calendar_today</span>
-                                    <span className="text-xs font-bold text-black dark:text-slate-200">DUM: {new Date(g.dum).toLocaleDateString('pt-BR')}</span>
+                                    <span className="text-table-cell text-black dark:text-slate-200">DUM: {new Date(g.dum).toLocaleDateString('pt-BR')}</span>
                                   </div>
                                   <div className="flex items-center gap-2 mt-1">
                                     <span className="material-symbols-outlined text-slate-600 dark:text-slate-400 text-base">event_repeat</span>
-                                    <span className="text-xs font-bold text-black dark:text-slate-300">DPP: {new Date(g.dpp).toLocaleDateString('pt-BR')}</span>
+                                    <span className="text-table-cell text-black dark:text-slate-300">DPP: {new Date(g.dpp).toLocaleDateString('pt-BR')}</span>
                                   </div>
                                 </td>
                                 <td className="px-4 py-5">
                                   <span className="text-sm font-black text-black dark:text-slate-100">{weeks} SEMANAS</span>
-                                  <span className={`text-xs font-bold px-3 py-1.5 rounded-lg block w-fit uppercase tracking-wide border mt-1 ${captacao === 'PRECOCE' ? 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/50 dark:text-emerald-300 dark:border-emerald-800' : 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/50 dark:text-amber-300 dark:border-amber-800'}`}>
+                                  <span className={`text-table-cell px-3 py-1.5 rounded-lg block w-fit uppercase tracking-wide border mt-1 ${captacao === 'PRECOCE' ? 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/50 dark:text-emerald-300 dark:border-emerald-800' : 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/50 dark:text-amber-300 dark:border-amber-800'}`}>
                                     {captacao}
                                   </span>
                                 </td>
                                 <td className="px-4 py-5">
-                                  <span className="text-xs font-bold text-orange-600 uppercase tracking-wide">EQUIPE {g.equipe}</span>
-                                  <p className="text-xs font-bold text-black dark:text-slate-300 uppercase">{g.referencia_tecnica_nome}</p>
-                                  <span className="text-xs font-bold text-black dark:text-slate-400 uppercase">ACS: {g.acs_nome}</span>
+                                  <span className="text-table-cell text-orange-600 uppercase tracking-wide">EQUIPE {g.equipe}</span>
+                                  <p className="text-table-cell text-black dark:text-slate-300 uppercase">{g.referencia_tecnica_nome}</p>
+                                  <span className="text-table-cell text-black dark:text-slate-400 uppercase">ACS: {g.acs_nome}</span>
                                 </td>
                                 <td className="px-4 py-5">
-                                  <span className={`text-xs font-bold px-3 py-1.5 rounded-lg uppercase tracking-wide border ${status === 'ATIVA' ? 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/50 dark:text-blue-300 dark:border-blue-800' : 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-800'}`}>
+                                  <span className={`text-table-cell px-3 py-1.5 rounded-lg uppercase tracking-wide border ${status === 'ATIVA' ? 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/50 dark:text-blue-300 dark:border-blue-800' : 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-800'}`}>
                                     {status}
                                   </span>
                                 </td>
@@ -1471,11 +1477,11 @@ export default function GestacoesPage() {
                                   <div className="flex items-center justify-center gap-3">
                                     <button onClick={() => handleEdit(g)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-100 text-orange-700 hover:bg-orange-600 hover:text-white transition-all shadow-sm group/btn border border-orange-200 hover:border-orange-600">
                                       <span className="material-symbols-outlined text-base">edit</span>
-                                      <span className="text-xs font-bold uppercase tracking-wider hidden group-hover/btn:inline">Editar</span>
+                                      <span className="text-table-cell uppercase tracking-wider hidden group-hover/btn:inline">Editar</span>
                                     </button>
                                     <button onClick={() => setDeleteConfirmId(g.sispn)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-100 text-red-700 hover:bg-red-600 hover:text-white transition-all shadow-sm group/btn border border-red-200 hover:border-red-600">
                                       <span className="material-symbols-outlined text-base">delete</span>
-                                      <span className="text-xs font-bold uppercase tracking-wider hidden group-hover/btn:inline">Excluir</span>
+                                      <span className="text-table-cell uppercase tracking-wider hidden group-hover/btn:inline">Excluir</span>
                                     </button>
                                   </div>
                                 </td>

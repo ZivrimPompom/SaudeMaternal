@@ -215,7 +215,8 @@ export default function AtendimentosPage() {
     trimestre: '',
     categoria: '',
     equipe: '',
-    status: 'ATIVA'
+    status: 'ATIVA',
+    unidade: authUser?.unidade_cnes || ''
   });
 
   const uniqueDppMonths = useMemo(() => {
@@ -358,6 +359,11 @@ export default function AtendimentosPage() {
 
       if (filters.dpp && !p.dpp?.startsWith(filters.dpp)) return false;
       if (filters.equipe && p.equipe !== filters.equipe) return false;
+
+      // Filter by unidade (only for non-admin users)
+      if (authUser?.nivel_acesso !== 'Administrador' && authUser?.unidade_cnes) {
+        if (p.unidade_cnes !== authUser.unidade_cnes) return false;
+      }
 
       return true;
     });
@@ -950,12 +956,12 @@ export default function AtendimentosPage() {
                           </colgroup>
                             <thead className="bg-slate-100 dark:bg-slate-800">
                               <tr>
-                                <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-black dark:text-slate-200">Data Consulta</th>
-                                <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-black dark:text-slate-200">Trimestre</th>
-                                <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-black dark:text-slate-200">Profissional</th>
-                                <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-black dark:text-slate-200">Próxima Consulta</th>
-                                <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-black dark:text-slate-200">Observações</th>
-                                {!editingId && <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-black dark:text-slate-200 text-center">Ações</th>}
+                                <th className="px-4 py-3 text-table-header">Data Consulta</th>
+                                <th className="px-4 py-3 text-table-header">Trimestre</th>
+                                <th className="px-4 py-3 text-table-header">Profissional</th>
+                                <th className="px-4 py-3 text-table-header">Próxima Consulta</th>
+                                <th className="px-4 py-3 text-table-header">Observações</th>
+                                {!editingId && <th className="px-4 py-3 text-table-header text-center">Ações</th>}
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
@@ -965,7 +971,7 @@ export default function AtendimentosPage() {
                                     <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-3 py-2">
                                       <input 
                                         type="date" 
-                                        className="bg-transparent border-none p-0 text-xs font-bold outline-none focus:ring-0 w-full text-black dark:text-slate-100"
+                                        className="bg-transparent border-none p-0 text-table-header outline-none focus:ring-0 w-full text-black dark:text-slate-100"
                                         value={entry.data_consulta}
                                         onChange={(e) => {
                                           const newEntries = [...formEntries];
@@ -979,7 +985,7 @@ export default function AtendimentosPage() {
                                   </td>
                                   <td className="px-4 py-4">
                                     <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-3 py-2">
-                                      <span className={`text-xs font-bold ${selectedGestante && calculateTrimestre(selectedGestante.dum, entry.data_consulta) === 'FORA DO PERÍODO' ? 'text-red-600' : 'text-black dark:text-slate-100'}`}>
+                                      <span className={`text-table-header ${selectedGestante && calculateTrimestre(selectedGestante.dum, entry.data_consulta) === 'FORA DO PERÍODO' ? 'text-red-600' : 'text-black dark:text-slate-100'}`}>
                                         {selectedGestante ? calculateTrimestre(selectedGestante.dum, entry.data_consulta) : '---'}
                                       </span>
                                     </div>
@@ -1008,7 +1014,7 @@ export default function AtendimentosPage() {
                                           );
                                         })}
                                       </select>
-                                      <div className="text-xs font-bold uppercase text-black dark:text-slate-100 break-words whitespace-normal pointer-events-none">
+                                      <div className="text-table-header uppercase text-black dark:text-slate-100 break-words whitespace-normal pointer-events-none">
                                         {entry.nome_profissional ? (
                                           <>
                                             <p className="font-black text-primary">{entry.nome_profissional}</p>
@@ -1024,7 +1030,7 @@ export default function AtendimentosPage() {
                                     <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-3 py-2">
                                       <input 
                                         type="date" 
-                                        className="bg-transparent border-none p-0 text-xs font-bold outline-none focus:ring-0 w-full text-black dark:text-slate-100"
+                                        className="bg-transparent border-none p-0 text-table-header outline-none focus:ring-0 w-full text-black dark:text-slate-100"
                                         value={entry.data_proxima_consulta || ''}
                                         onChange={(e) => {
                                           const newEntries = [...formEntries];
@@ -1038,7 +1044,7 @@ export default function AtendimentosPage() {
                                     <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-3 py-2">
                                       <input 
                                         type="text"
-                                        className="bg-transparent border-none p-0 text-xs font-bold outline-none focus:ring-0 w-full text-black dark:text-slate-100"
+                                        className="bg-transparent border-none p-0 text-table-header outline-none focus:ring-0 w-full text-black dark:text-slate-100"
                                         value={entry.observacoes_clinicas || ''}
                                         onChange={(e) => {
                                           const newEntries = [...formEntries];
@@ -1073,11 +1079,11 @@ export default function AtendimentosPage() {
                     </div>
 
                     <div className="flex justify-end gap-2 mt-4">
-                      <button type="button" onClick={() => setIsFormOpen(false)} className="flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold transition-all duration-300 bg-white text-primary border border-primary hover:bg-primary/5 shadow-lg shadow-primary/5">
+                      <button type="button" onClick={() => setIsFormOpen(false)} className="flex items-center gap-2 px-4 py-1.5 rounded-full text-table-header transition-all duration-300 bg-white text-primary border border-primary hover:bg-primary/5 shadow-lg shadow-primary/5">
                         <span className="material-symbols-outlined text-sm">close</span>
                         Cancelar
                       </button>
-                      <button type="submit" className="flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold transition-all duration-300 bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20">
+                      <button type="submit" className="flex items-center gap-2 px-4 py-1.5 rounded-full text-table-header transition-all duration-300 bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20">
                         <span className="material-symbols-outlined text-sm">save</span>
                         Salvar Atendimento
                       </button>
@@ -1104,22 +1110,22 @@ export default function AtendimentosPage() {
                             </colgroup>
                             <thead className="bg-surface-container-high">
                               <tr>
-                                <th className="px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Data Consulta</th>
-                                <th className="px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Trimestre</th>
-                                <th className="px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Profissional</th>
-                                <th className="px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Próxima Consulta</th>
-                                <th className="px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">Observações</th>
-                                <th className="px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60 text-center">Ações</th>
+                                <th className="px-2 py-1.5 text-table-header">Data Consulta</th>
+                                <th className="px-2 py-1.5 text-table-header">Trimestre</th>
+                                <th className="px-2 py-1.5 text-table-header">Profissional</th>
+                                <th className="px-2 py-1.5 text-table-header">Próxima Consulta</th>
+                                <th className="px-2 py-1.5 text-table-header">Observações</th>
+                                <th className="px-2 py-1.5 text-table-header text-center">Ações</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-outline-variant/5">
                               {selectedPatientHistory.map((h) => (
                                 <tr key={h.id_atendimento} className="hover:bg-white/50 transition-colors group">
                                   <td className="px-2 py-1.5">
-                                    <div className="text-[10px] font-bold text-on-surface">{new Date(h.data_consulta).toLocaleDateString('pt-BR')}</div>
+                                    <div className="text-table-cell text-on-surface">{new Date(h.data_consulta).toLocaleDateString('pt-BR')}</div>
                                   </td>
                                   <td className="px-2 py-1.5">
-                                    <div className="text-[10px] font-bold text-on-surface uppercase">{h.trimestre_consulta}</div>
+                                    <div className="text-table-cell text-on-surface uppercase">{h.trimestre_consulta}</div>
                                   </td>
                                   <td className="px-2 py-1.5">
                                     <div className="text-[9px]">
@@ -1128,12 +1134,12 @@ export default function AtendimentosPage() {
                                     </div>
                                   </td>
                                   <td className="px-2 py-1.5">
-                                    <div className="text-[10px] font-bold text-on-surface">
+                                    <div className="text-table-cell text-on-surface">
                                       {h.data_proxima_consulta ? new Date(h.data_proxima_consulta).toLocaleDateString('pt-BR') : '---'}
                                     </div>
                                   </td>
                                   <td className="px-2 py-1.5">
-                                    <div className="text-[10px] font-bold text-on-surface-variant truncate">
+                                    <div className="text-table-cell text-on-surface-variant truncate">
                                       {h.observacoes_clinicas || '---'}
                                     </div>
                                   </td>
@@ -1184,22 +1190,22 @@ export default function AtendimentosPage() {
                           </colgroup>
                           <thead className="bg-slate-100 dark:bg-slate-800">
                             <tr>
-                              <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-black dark:text-slate-200">Data Consulta</th>
-                              <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-black dark:text-slate-200">Trimestre</th>
-                              <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-black dark:text-slate-200">Profissional</th>
-                              <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-black dark:text-slate-200">Próxima Consulta</th>
-                              <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-black dark:text-slate-200">Observações</th>
-                              <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-black dark:text-slate-200 text-center">Ações</th>
+                              <th className="px-4 py-3 text-table-header">Data Consulta</th>
+                              <th className="px-4 py-3 text-table-header">Trimestre</th>
+                              <th className="px-4 py-3 text-table-header">Profissional</th>
+                              <th className="px-4 py-3 text-table-header">Próxima Consulta</th>
+                              <th className="px-4 py-3 text-table-header">Observações</th>
+                              <th className="px-4 py-3 text-table-header text-center">Ações</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
                             {selectedPatientHistory.map((h) => (
                               <tr key={h.id_atendimento} className="hover:bg-orange-50 dark:hover:bg-slate-800/50 transition-colors group">
                                 <td className="px-4 py-4">
-                                  <div className="text-xs font-bold text-black dark:text-slate-100">{new Date(h.data_consulta).toLocaleDateString('pt-BR')}</div>
+                                  <div className="text-table-header text-black dark:text-slate-100">{new Date(h.data_consulta).toLocaleDateString('pt-BR')}</div>
                                 </td>
                                 <td className="px-4 py-4">
-                                  <div className="text-xs font-bold text-black dark:text-slate-100 uppercase">{h.trimestre_consulta}</div>
+                                  <div className="text-table-header text-black dark:text-slate-100 uppercase">{h.trimestre_consulta}</div>
                                 </td>
                                 <td className="px-4 py-4">
                                   <div className="text-xs">
@@ -1208,7 +1214,7 @@ export default function AtendimentosPage() {
                                   </div>
                                 </td>
                                 <td className="px-4 py-4">
-                                  <div className="text-xs font-bold text-black dark:text-slate-100">
+                                  <div className="text-table-header text-black dark:text-slate-100">
                                     {h.data_proxima_consulta ? new Date(h.data_proxima_consulta).toLocaleDateString('pt-BR') : '---'}
                                   </div>
                                 </td>
@@ -1249,8 +1255,8 @@ export default function AtendimentosPage() {
                     )}
                   </div>
                 )}
-                {error && <div className="p-4 bg-error/10 rounded-2xl text-error text-xs font-bold">{error}</div>}
-                {success && <div className="p-4 bg-green-500/10 rounded-2xl text-green-600 text-xs font-bold">{success}</div>}
+                {error && <div className="p-4 bg-error/10 rounded-2xl text-error text-table-header">{error}</div>}
+                {success && <div className="p-4 bg-green-500/10 rounded-2xl text-green-600 text-table-header">{success}</div>}
               </div>
             </motion.section>
           )}
@@ -1321,7 +1327,7 @@ export default function AtendimentosPage() {
 
               {(filters.dpp || filters.trimestre || filters.categoria || filters.equipe || filters.status !== 'ATIVA') && (
                 <button 
-                  onClick={() => setFilters({ dpp: '', trimestre: '', categoria: '', equipe: '', status: 'ATIVA' })}
+                  onClick={() => setFilters({ dpp: '', trimestre: '', categoria: '', equipe: '', status: 'ATIVA', unidade: authUser?.unidade_cnes || '' })}
                   className="w-full lg:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-error/10 text-error text-[9px] font-black uppercase tracking-widest hover:bg-error hover:text-white transition-all border border-error/20"
                 >
                   <span className="material-symbols-outlined text-sm">filter_alt_off</span>
@@ -1354,10 +1360,11 @@ export default function AtendimentosPage() {
                     filteredPatients.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((p) => (
                       <tr key={p.sispn} className="hover:bg-primary/[0.02] transition-colors group">
                         <td className="px-6 py-4">
+                          <p className="text-[10px] font-bold text-primary/50 uppercase tracking-widest">{p.paciente_cpf !== 'NÃO INFORMADO' ? p.paciente_cpf : '---'}</p>
                           <p className="font-black text-sm text-on-surface uppercase tracking-tight group-hover:text-primary transition-colors">
                             {p.paciente_nome}
                           </p>
-                          <span className="text-xs font-bold text-on-surface-variant/80 font-mono">SISPN: {p.sispn}</span>
+                          <span className="text-[10px] font-bold text-on-surface-variant/40 font-mono">{p.sispn}</span>
                         </td>
                         <td className="px-6 py-4">
                           <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${p.status === 'ATIVA' ? 'bg-blue-100 text-blue-600' : 'bg-surface-container-high text-on-surface-variant/40'}`}>

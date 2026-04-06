@@ -765,7 +765,6 @@ export default function OperadoresPage() {
                         <tr>
                           <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5 w-[250px]">Profissional</th>
                           <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5 w-[180px]">Identificação</th>
-                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5 w-[150px]">Operador</th>
                           <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5 w-[120px]">Nível</th>
                           <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5 w-[120px]">Status</th>
                           <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label text-center border-b border-outline-variant/5 w-[180px]">Ações</th>
@@ -793,12 +792,6 @@ export default function OperadoresPage() {
                                 <div className="flex flex-col">
                                   <span className="text-xs font-mono text-on-surface-variant font-medium">{op.cpf}</span>
                                   <span className="text-[8px] text-on-surface-variant/60 font-body uppercase tracking-tighter mt-0.5 whitespace-nowrap">CPF Verificado</span>
-                                </div>
-                              </td>
-                              <td className="px-4 py-4">
-                                <div className="flex flex-col gap-0.5">
-                                  <span className="text-[10px] font-black text-on-surface uppercase tracking-wider">OPERADOR</span>
-                                  <span className="text-[9px] font-bold text-on-surface-variant/60">{formatCpf(op.cpf_operador || '') || '---'}</span>
                                 </div>
                               </td>
                               <td className="px-4 py-4">

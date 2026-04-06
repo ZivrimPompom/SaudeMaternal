@@ -579,7 +579,6 @@ export default function UnidadesSaudePage() {
                           <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5 w-[300px]">Unidade</th>
                           <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5 w-[150px]">CNES</th>
                           <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5">Localização</th>
-                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5 w-[150px]">Operador</th>
                           <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label text-center border-b border-outline-variant/5 w-[180px]">Ações</th>
                         </tr>
                       </thead>
@@ -606,12 +605,6 @@ export default function UnidadesSaudePage() {
                                 <div className="flex flex-col">
                                   <span className="text-[11px] text-on-surface font-medium line-clamp-1">{unit.bairro}</span>
                                   <span className="text-[9px] text-on-surface-variant/60 font-body line-clamp-1">{unit.municipio} - {unit.uf}</span>
-                                </div>
-                              </td>
-                              <td className="px-4 py-4">
-                                <div className="flex flex-col gap-0.5">
-                                  <span className="text-[10px] font-black text-on-surface uppercase tracking-wider">OPERADOR</span>
-                                  <span className="text-[9px] font-bold text-on-surface-variant/60">{formatCpf(unit.cpf_operador || '') || '---'}</span>
                                 </div>
                               </td>
                               <td className="px-6 py-4 bg-surface-container-lowest group-hover:bg-surface-container-low transition-colors">

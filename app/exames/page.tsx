@@ -198,7 +198,8 @@ export default function ExamesPage() {
     trimestre: '',
     rotina: '',
     equipe: '',
-    status: 'ATIVA'
+    status: 'ATIVA',
+    unidade: authUser?.unidade_cnes || ''
   });
 
   const [formData, setFormData] = useState<Partial<ExamResult>>({
@@ -600,6 +601,11 @@ export default function ExamesPage() {
       if (filters.trimestre && r.trimestre_realizacao !== filters.trimestre) return false;
       if (filters.rotina && r.rotinas?.descricao !== filters.rotina) return false;
       if (filters.equipe && (gest as any)?.equipe !== filters.equipe) return false;
+      
+      // Filter by unidade (only for non-admin users)
+      if (authUser?.nivel_acesso !== 'Administrador' && authUser?.unidade_cnes) {
+        if ((gest as any)?.unidade_cnes !== authUser.unidade_cnes) return false;
+      }
 
       return true;
     });
@@ -931,13 +937,13 @@ export default function ExamesPage() {
                             </colgroup>
                             <thead className="bg-slate-100 dark:bg-slate-800">
                               <tr>
-                                <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-black dark:text-slate-200">Data Realização</th>
-                                <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-black dark:text-slate-200">Trimestre</th>
-                                <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-black dark:text-slate-200">Rotina</th>
-                                <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-black dark:text-slate-200">Tipo</th>
-                                <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-black dark:text-slate-200">Profissional</th>
-                                <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-black dark:text-slate-200">Resultado</th>
-                                <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-black dark:text-slate-200 text-center">Ações</th>
+                                <th className="px-4 py-3 text-table-header">Data Realização</th>
+                                <th className="px-4 py-3 text-table-header">Trimestre</th>
+                                <th className="px-4 py-3 text-table-header">Rotina</th>
+                                <th className="px-4 py-3 text-table-header">Tipo</th>
+                                <th className="px-4 py-3 text-table-header">Profissional</th>
+                                <th className="px-4 py-3 text-table-header">Resultado</th>
+                                <th className="px-4 py-3 text-table-header text-center">Ações</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
@@ -1022,13 +1028,13 @@ export default function ExamesPage() {
                           </colgroup>
                           <thead className="bg-slate-100 dark:bg-slate-800">
                             <tr>
-                              <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-black dark:text-slate-200">Data Realização</th>
-                              <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-black dark:text-slate-200">Trimestre</th>
-                              <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-black dark:text-slate-200">Rotina</th>
-                              <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-black dark:text-slate-200">Tipo</th>
-                              <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-black dark:text-slate-200">Profissional</th>
-                              <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-black dark:text-slate-200">Resultado</th>
-                              <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-black dark:text-slate-200 text-center">Ações</th>
+                              <th className="px-4 py-3 text-table-header">Data Realização</th>
+                              <th className="px-4 py-3 text-table-header">Trimestre</th>
+                              <th className="px-4 py-3 text-table-header">Rotina</th>
+                              <th className="px-4 py-3 text-table-header">Tipo</th>
+                              <th className="px-4 py-3 text-table-header">Profissional</th>
+                              <th className="px-4 py-3 text-table-header">Resultado</th>
+                              <th className="px-4 py-3 text-table-header text-center">Ações</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
@@ -1165,7 +1171,7 @@ export default function ExamesPage() {
 
               {(filters.status !== 'ATIVA' || filters.trimestre || filters.tipo || filters.rotina || filters.equipe) && (
                 <button 
-                  onClick={() => setFilters({ status: 'ATIVA', trimestre: '', tipo: '', rotina: '', equipe: '', dpp: '' })}
+                  onClick={() => setFilters({ status: 'ATIVA', trimestre: '', tipo: '', rotina: '', equipe: '', dpp: '', unidade: authUser?.unidade_cnes || '' })}
                   className="w-full lg:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-error/10 text-error text-[9px] font-black uppercase tracking-widest hover:bg-error hover:text-white transition-all border border-error/20"
                 >
                   <span className="material-symbols-outlined text-sm">filter_alt_off</span>
@@ -1180,9 +1186,8 @@ export default function ExamesPage() {
               <table className="w-full text-left border-separate border-spacing-0">
                 <thead className="sticky top-0 z-30 bg-surface-container-low">
                   <tr>
-                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Gestante</th>
+                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-table-header">Gestante</th>
                     <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Status</th>
-                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">SISPN</th>
                     <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Registros</th>
                     <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Última Atividade</th>
                     <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Alertas</th>
@@ -1191,24 +1196,24 @@ export default function ExamesPage() {
                 </thead>
                 <tbody className="divide-y divide-outline-variant/5">
                   {loading ? (
-                    <tr><td colSpan={6} className="p-24 text-center"><div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full mx-auto"></div></td></tr>
+                    <tr><td colSpan={5} className="p-24 text-center"><div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full mx-auto"></div></td></tr>
                   ) : filteredPatients.length === 0 ? (
-                    <tr><td colSpan={6} className="p-24 text-center opacity-20 text-xl font-black uppercase tracking-widest">Nenhum paciente encontrado</td></tr>
+                    <tr><td colSpan={5} className="p-24 text-center opacity-20 text-xl font-black uppercase tracking-widest">Nenhum paciente encontrado</td></tr>
                   ) : (
                     filteredPatients.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((p) => (
                       <tr key={p.sispn} className="hover:bg-primary/[0.02] transition-colors group">
                         <td className="px-6 py-4">
+                          <p className="text-[10px] font-bold text-primary/50 uppercase tracking-widest">{p.paciente_cpf}</p>
                           <p className="font-black text-sm text-on-surface uppercase tracking-tight group-hover:text-primary transition-colors">
                             {p.paciente_nome}
                           </p>
-                          <span className="text-[10px] font-bold text-primary/40 uppercase tracking-widest">{p.equipe}</span>
+                          <span className="text-[10px] font-bold text-on-surface-variant/40 font-mono">{p.sispn}</span>
                         </td>
                         <td className="px-6 py-4">
                           <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${p.status === 'ATIVA' ? 'bg-blue-100 text-blue-600' : 'bg-surface-container-high text-on-surface-variant/40'}`}>
                             {p.status}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-[10px] font-bold text-on-surface-variant/60 font-mono">{p.sispn}</td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2">
                             <span className="material-symbols-outlined text-sm text-primary/40">lab_research</span>

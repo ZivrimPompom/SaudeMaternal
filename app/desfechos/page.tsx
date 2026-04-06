@@ -89,6 +89,7 @@ export default function DesfechosPage() {
   const [filters, setFilters] = useState({
     tipo_desfecho: '',
     status_gestacao: '',
+    unidade: authUser?.unidade_cnes || ''
   });
 
   const [formData, setFormData] = useState({
@@ -343,6 +344,11 @@ export default function DesfechosPage() {
         const status = now >= end ? 'VENCIDA' : 'ATIVA';
         
         if (status !== filters.status_gestacao) return false;
+      }
+
+      // Filter by unidade (only for non-admin users)
+      if (authUser?.nivel_acesso !== 'Administrador' && authUser?.unidade_cnes) {
+        if ((d.gestacoes as any)?.unidade_cnes !== authUser.unidade_cnes) return false;
       }
 
       return true;
@@ -645,7 +651,7 @@ export default function DesfechosPage() {
                                     onChange={() => handleRNChange(idx, 'comparecimento', true)}
                                     className="w-4 h-4 text-primary focus:ring-primary border-outline-variant/30"
                                   />
-                                  <span className="text-xs font-bold text-on-surface-variant group-hover:text-on-surface transition-colors">Sim</span>
+                                  <span className="text-table-cell group-hover:text-on-surface transition-colors">Sim</span>
                                 </label>
                                 <label className="flex items-center gap-2 cursor-pointer group">
                                   <input
@@ -654,7 +660,7 @@ export default function DesfechosPage() {
                                     onChange={() => handleRNChange(idx, 'comparecimento', false)}
                                     className="w-4 h-4 text-primary focus:ring-primary border-outline-variant/30"
                                   />
-                                  <span className="text-xs font-bold text-on-surface-variant group-hover:text-on-surface transition-colors">Não</span>
+                                  <span className="text-table-cell group-hover:text-on-surface transition-colors">Não</span>
                                 </label>
                               </div>
                             </div>
@@ -731,7 +737,7 @@ export default function DesfechosPage() {
 
               {(filters.tipo_desfecho || filters.status_gestacao) && (
                 <button 
-                  onClick={() => setFilters({ tipo_desfecho: '', status_gestacao: '' })}
+                  onClick={() => setFilters({ tipo_desfecho: '', status_gestacao: '', unidade: authUser?.unidade_cnes || '' })}
                   className="w-full lg:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-error/10 text-error text-[9px] font-black uppercase tracking-widest hover:bg-error hover:text-white transition-all border border-error/20"
                 >
                   <span className="material-symbols-outlined text-sm">filter_alt_off</span>
@@ -757,11 +763,11 @@ export default function DesfechosPage() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-100 dark:bg-slate-800">
-                  <th className="px-6 py-4 text-xs font-black text-black dark:text-slate-200 uppercase tracking-wider">SISPN</th>
-                  <th className="px-6 py-4 text-xs font-black text-black dark:text-slate-200 uppercase tracking-wider">Gestante</th>
-                  <th className="px-6 py-4 text-xs font-black text-black dark:text-slate-200 uppercase tracking-wider">Data Desfecho</th>
-                  <th className="px-6 py-4 text-xs font-black text-black dark:text-slate-200 uppercase tracking-wider">Desfecho</th>
-                  <th className="px-6 py-4 text-xs font-black text-black dark:text-slate-200 uppercase tracking-wider text-right">Ações</th>
+                  <th className="px-6 py-4 text-table-header text-black dark:text-slate-200 uppercase tracking-wider">SISPN</th>
+                  <th className="px-6 py-4 text-table-header text-black dark:text-slate-200 uppercase tracking-wider">Gestante</th>
+                  <th className="px-6 py-4 text-table-header text-black dark:text-slate-200 uppercase tracking-wider">Data Desfecho</th>
+                  <th className="px-6 py-4 text-table-header text-black dark:text-slate-200 uppercase tracking-wider">Desfecho</th>
+                  <th className="px-6 py-4 text-table-header text-black dark:text-slate-200 uppercase tracking-wider text-right">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 dark:divide-slate-700">

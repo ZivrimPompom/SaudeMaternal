@@ -5,6 +5,15 @@
   --font-headline: var(--font-outfit), sans-serif;
   --font-body: var(--font-inter), sans-serif;
 
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
+
   --color-primary: #ea580c;
   --color-on-primary: #FFFFFF;
   --color-primary-container: #FFF7ED;
@@ -159,6 +168,18 @@ html.high-contrast {
 }
 
 @layer utilities {
+  .text-label {
+    @apply text-[8px] font-bold uppercase tracking-[0.2em] text-on-surface-variant/60;
+  }
+  .text-input {
+    @apply font-body text-sm;
+  }
+  .text-table-header {
+    @apply text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/60 font-headline;
+  }
+  .text-table-cell {
+    @apply text-xs font-medium text-on-surface;
+  }
   .scrollbar-none::-webkit-scrollbar {
     display: none;
   }
