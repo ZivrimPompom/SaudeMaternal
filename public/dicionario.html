@@ -1,0 +1,1378 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Dicionário de Dados - Sistema Saúde Maternal</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f9; color: #1f2937; line-height: 1.6; }
+    .container { display: flex; min-height: 100vh; }
+    
+    aside {
+      width: 280px;
+      background: #0f172a;
+      color: #fff;
+      position: fixed;
+      height: 100vh;
+      overflow-y: auto;
+      padding: 20px;
+    }
+    
+    aside h1 { font-size: 20px; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #2563eb; }
+    aside a { display: block; color: #cbd5e1; text-decoration: none; padding: 8px 12px; margin: 4px 0; border-radius: 6px; transition: all 0.2s; }
+    aside a:hover { background: #1e293b; color: #fff; }
+    
+    main { margin-left: 280px; padding: 30px 40px; max-width: 1400px; }
+    
+    h1.page-title { font-size: 32px; color: #0f172a; border-bottom: 4px solid #2563eb; padding-bottom: 15px; margin-bottom: 30px; }
+    h2 { font-size: 24px; color: #0f172a; margin: 40px 0 20px; padding-bottom: 10px; border-bottom: 2px solid #e5e7eb; }
+    h3 { font-size: 18px; color: #1e293b; margin: 25px 0 15px; }
+    
+    .table-card { background: #fff; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); padding: 25px; margin-bottom: 30px; }
+    .table-header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+    .table-icon { background: #2563eb; color: #fff; width: 50px; height: 50px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+    .table-name { font-size: 22px; font-weight: 600; color: #0f172a; }
+    
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th, td { padding: 12px 15px; text-align: left; border: 1px solid #e5e7eb; }
+    th { background: #f8fafc; color: #475569; font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
+    tr:nth-child(even) { background: #fafbfc; }
+    
+    .pk { background: #fef3c7; color: #92400e; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+    .fk { background: #dbeafe; color: #1e40af; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+    .nn { color: #dc2626; font-size: 11px; font-weight: 600; }
+    .unique { background: #fce7f3; color: #9d174d; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+    
+    .field-type { font-family: 'Consolas', monospace; color: #6b7280; font-size: 13px; }
+    .field-desc { font-size: 13px; color: #4b5563; }
+    
+    .badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; margin: 2px; }
+    .badge-table { background: #dbeafe; color: #1e40af; }
+    .badge-pk { background: #fef3c7; color: #92400e; }
+    .badge-fk { background: #d1fae5; color: #065f46; }
+    .badge-default { background: #f3f4f6; color: #6b7280; }
+    
+    .relationships { background: #f0f9ff; padding: 20px; border-radius: 8px; margin-top: 20px; }
+    .relationships h4 { color: #0369a1; margin-bottom: 10px; }
+    .relationships ul { margin-left: 20px; color: #075985; }
+    
+    footer { margin-top: 50px; padding: 20px; text-align: center; color: #6b7280; border-top: 1px solid #e5e7eb; }
+    
+    @media print {
+      aside { display: none; }
+      main { margin: 0; padding: 20px; }
+      .table-card { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+<aside>
+  <h1>📚 Dicionário de Dados</h1>
+  <a href="#unidades_saude">1. Unidades de Saúde</a>
+  <a href="#operadores">2. Operadores</a>
+  <a href="#pacientes">3. Pacientes</a>
+  <a href="#categorias_profissionais">4. Categorias Profissionais</a>
+  <a href="#profissionais">5. Profissionais</a>
+  <a href="#rotinas">6. Rotinas</a>
+  <a href="#gestacoes">7. Gestações</a>
+  <a href="#atendimentos">8. Atendimentos</a>
+  <a href="#desfechos">9. Desfechos</a>
+  <a href="#recem_nascidos">10. Recém-nascidos</a>
+  <a href="#registro_rotinas">11. Registro de Rotinas</a>
+  <a href="#relacionamentos">12. Relacionamentos</a>
+</aside>
+
+<main>
+  <h1 class="page-title">Dicionário de Dados do Sistema Saúde Maternal</h1>
+  <p style="margin-bottom: 30px; color: #6b7280;">Este documento apresenta a descrição detalhada de todas as tabelas, campos, tipos de dados e relacionamentos do banco de dados do sistema.</p>
+
+  <!-- 1. UNIDADES DE SAÚDE -->
+  <section id="unidades_saude">
+    <div class="table-card">
+      <div class="table-header">
+        <div class="table-icon">🏥</div>
+        <div class="table-name">unidades_saude</div>
+      </div>
+      <p style="color: #6b7280; margin-bottom: 15px;">Tabela responsável pelo cadastro das unidades de saúde (UBS, USF, etc.) do sistema.</p>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>Campo</th>
+            <th>Tipo</th>
+            <th>Obrigatório</th>
+            <th>Descrição</th>
+            <th>Restrições</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>cnes</strong></td>
+            <td class="field-type">TEXT</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">Código Nacional de Estabelecimento de Saúde - identificador único da unidade</td>
+            <td><span class="pk">PK</span></td>
+          </tr>
+          <tr>
+            <td><strong>nome_fantasia</strong></td>
+            <td class="field-type">TEXT</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">Nome fantasia da unidade de saúde</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>logradouro</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">Endereço (rua, avenue, etc.) da unidade</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>numero</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">Número do endereço</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>complemento</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">Complemento do endereço (bloco, sala, etc.)</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>bairro</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">Bairro onde a unidade está localizada</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>municipio</strong></td>
+            <td class="field-type">TEXT</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">Município da unidade</td>
+            <td><span class="badge-default">Padrão: SÃO PAULO</span></td>
+          </tr>
+          <tr>
+            <td><strong>uf</strong></td>
+            <td class="field-type">TEXT</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">Unidade da federação (estado)</td>
+            <td><span class="badge-default">Padrão: SP</span></td>
+          </tr>
+          <tr>
+            <td><strong>cep</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">CEP do endereço da unidade</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>telefone</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">Telefone de contato da unidade</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>created_at</strong></td>
+            <td class="field-type">TIMESTAMPTZ</td>
+            <td>NÃO</td>
+            <td class="field-desc">Data e hora de criação do registro</td>
+            <td><span class="badge-default">Padrão: now()</span></td>
+          </tr>
+          <tr>
+            <td><strong>updated_at</strong></td>
+            <td class="field-type">TIMESTAMPTZ</td>
+            <td>NÃO</td>
+            <td class="field-desc">Data e hora da última atualização</td>
+            <td><span class="badge-default">Automático</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 2. OPERADORES -->
+  <section id="operadores">
+    <div class="table-card">
+      <div class="table-header">
+        <div class="table-icon">👤</div>
+        <div class="table-name">operadores</div>
+      </div>
+      <p style="color: #6b7280; margin-bottom: 15px;">Tabela que armazena os usuários (operadores) que têm acesso ao sistema.</p>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>Campo</th>
+            <th>Tipo</th>
+            <th>Obrigatório</th>
+            <th>Descrição</th>
+            <th>Restrições</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>id</strong></td>
+            <td class="field-type">UUID</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">Identificador único do operador (gerado automaticamente)</td>
+            <td><span class="pk">PK</span></td>
+          </tr>
+          <tr>
+            <td><strong>nome</strong></td>
+            <td class="field-type">TEXT</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">Nome completo do operador</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>cpf</strong></td>
+            <td class="field-type">TEXT</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">CPF do operador (usado para login)</td>
+            <td><span class="unique">UNIQUE</span></td>
+          </tr>
+          <tr>
+            <td><strong>senha</strong></td>
+            <td class="field-type">TEXT</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">Senha de acesso ao sistema (armazenada em hash)</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>status</strong></td>
+            <td class="field-type">TEXT</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">Status do operador no sistema</td>
+            <td><span class="badge-default">CHECK: 'Ativo' ou 'Bloqueado'</span></td>
+          </tr>
+          <tr>
+            <td><strong>nivel_acesso</strong></td>
+            <td class="field-type">TEXT</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">Nível de permissão do operador</td>
+            <td><span class="badge-default">CHECK: 'Usuário' ou 'Administrador' | Padrão: 'Usuário'</span></td>
+          </tr>
+          <tr>
+            <td><strong>sigla</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">Sigla de identificação do operador</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>unidade_cnes</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">Código CNES da unidade de saúde vinculada ao operador</td>
+            <td><span class="fk">FK → unidades_saude.cnes</span></td>
+          </tr>
+          <tr>
+            <td><strong>created_at</strong></td>
+            <td class="field-type">TIMESTAMPTZ</td>
+            <td>NÃO</td>
+            <td class="field-desc">Data e hora de criação do registro</td>
+            <td><span class="badge-default">Padrão: now()</span></td>
+          </tr>
+          <tr>
+            <td><strong>updated_at</strong></td>
+            <td class="field-type">TIMESTAMPTZ</td>
+            <td>NÃO</td>
+            <td class="field-desc">Data e hora da última atualização</td>
+            <td><span class="badge-default">Automático</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 3. PACIENTES -->
+  <section id="pacientes">
+    <div class="table-card">
+      <div class="table-header">
+        <div class="table-icon">👩</div>
+        <div class="table-name">pacientes</div>
+      </div>
+      <p style="color: #6b7280; margin-bottom: 15px;">Tabela central que armazena os dados das pacientes (gestantes) cadastradas no sistema.</p>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>Campo</th>
+            <th>Tipo</th>
+            <th>Obrigatório</th>
+            <th>Descrição</th>
+            <th>Restrições</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>id</strong></td>
+            <td class="field-type">UUID</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">Identificador único da paciente (gerado automaticamente)</td>
+            <td><span class="pk">PK</span></td>
+          </tr>
+          <tr>
+            <td><strong>gestante</strong></td>
+            <td class="field-type">TEXT</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">Nome completo da gestante</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>cpf</strong></td>
+            <td class="field-type">TEXT</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">CPF da gestante (usado como identificador principal)</td>
+            <td><span class="unique">UNIQUE</span></td>
+          </tr>
+          <tr>
+            <td><strong>nome_mae</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">Nome da mãe da gestante (dado importante para identificação)</td>
+            <td><span class="badge-default">Padrão: 'NÃO INFORMADO'</span></td>
+          </tr>
+          <tr>
+            <td><strong>prontuario</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">Número do prontuário físico da unidade</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>cns</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">Cartão Nacional de Saúde (número do SUS)</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>data_nascimento</strong></td>
+            <td class="field-type">DATE</td>
+            <td>NÃO</td>
+            <td class="field-desc">Data de nascimento da gestante</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>logradouro</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">Endereço (rua, avenue, etc.) da gestante</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>numero</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">Número do endereço</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>complemento</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">Complemento do endereço</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>bairro</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">Bairro de residência</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>contato</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">Telefone de contato da gestante</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>email</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">E-mail da gestante</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>cidade</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">Cidade de residência</td>
+            <td><span class="badge-default">Padrão: 'SÃO PAULO'</span></td>
+          </tr>
+          <tr>
+            <td><strong>uf</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">Estado de residência</td>
+            <td><span class="badge-default">Padrão: 'SP'</span></td>
+          </tr>
+          <tr>
+            <td><strong>operador_responsavel</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">Nome do operador que realizou o cadastro</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>unidade_cnes</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">Código CNES da unidade vinculada à paciente</td>
+            <td><span class="fk">FK → unidades_saude.cnes</span></td>
+          </tr>
+          <tr>
+            <td><strong>created_at</strong></td>
+            <td class="field-type">TIMESTAMPTZ</td>
+            <td>NÃO</td>
+            <td class="field-desc">Data e hora de criação do registro</td>
+            <td><span class="badge-default">Padrão: now()</span></td>
+          </tr>
+          <tr>
+            <td><strong>updated_at</strong></td>
+            <td class="field-type">TIMESTAMPTZ</td>
+            <td>NÃO</td>
+            <td class="field-desc">Data e hora da última atualização</td>
+            <td><span class="badge-default">Automático</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 4. CATEGORIAS PROFISSIONAIS -->
+  <section id="categorias_profissionais">
+    <div class="table-card">
+      <div class="table-header">
+        <div class="table-icon">📋</div>
+        <div class="table-name">categorias_profissionais</div>
+      </div>
+      <p style="color: #6b7280; margin-bottom: 15px;">Tabela de domínio que armazena as categorias profissionais (códigos CBO) utilizadas no sistema.</p>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>Campo</th>
+            <th>Tipo</th>
+            <th>Obrigatório</th>
+            <th>Descrição</th>
+            <th>Restrições</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>cbo</strong></td>
+            <td class="field-type">TEXT</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">Código CBO (Código Brasileiro de Ocupações) - identificador da categoria</td>
+            <td><span class="pk">PK</span></td>
+          </tr>
+          <tr>
+            <td><strong>categoria</strong></td>
+            <td class="field-type">TEXT</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">Nome/descrição da categoria profissional</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>created_at</strong></td>
+            <td class="field-type">TIMESTAMPTZ</td>
+            <td>NÃO</td>
+            <td class="field-desc">Data e hora de criação do registro</td>
+            <td><span class="badge-default">Padrão: now()</span></td>
+          </tr>
+          <tr>
+            <td><strong>updated_at</strong></td>
+            <td class="field-type">TIMESTAMPTZ</td>
+            <td>NÃO</td>
+            <td class="field-desc">Data e hora da última atualização</td>
+            <td><span class="badge-default">Automático</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 5. PROFISSIONAIS -->
+  <section id="profissionais">
+    <div class="table-card">
+      <div class="table-header">
+        <div class="table-icon">👨‍⚕️</div>
+        <div class="table-name">profissionais</div>
+      </div>
+      <p style="color: #6b7280; margin-bottom: 15px;">Tabela que armazena os profissionais de saúde que atuam no sistema (médicos, enfermeiros, ACS, etc.).</p>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>Campo</th>
+            <th>Tipo</th>
+            <th>Obrigatório</th>
+            <th>Descrição</th>
+            <th>Restrições</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>cpf</strong></td>
+            <td class="field-type">TEXT</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">CPF do profissional (identificador principal)</td>
+            <td><span class="pk">PK</span></td>
+          </tr>
+          <tr>
+            <td><strong>nome</strong></td>
+            <td class="field-type">TEXT</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">Nome completo do profissional</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>cns</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">Cartão Nacional de Saúde do profissional</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>cbo</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">Código CBO da categoria profissional</td>
+            <td><span class="fk">FK → categorias_profissionais.cbo</span></td>
+          </tr>
+          <tr>
+            <td><strong>equipe</strong></td>
+            <td class="field-type">TEXT</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">Nome da equipe de saúde a qual o profissional pertence</td>
+            <td><span class="badge-default">Padrão: 'SEM EQUIPE'</span></td>
+          </tr>
+          <tr>
+            <td><strong>vinculo</strong></td>
+            <td class="field-type">TEXT</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">Tipo de vínculo do profissional com a unidade</td>
+            <td><span class="badge-default">CHECK: 'DIRETO' ou 'INTERMEDIADO' | Padrão: 'INTERMEDIADO'</span></td>
+          </tr>
+          <tr>
+            <td><strong>tipo_vinculo</strong></td>
+            <td class="field-type">TEXT</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">Modalidade de contratação</td>
+            <td><span class="badge-default">CHECK: 'CLT', 'ESTATUTARIO' ou 'AUTÔNOMO' | Padrão: 'CLT'</span></td>
+          </tr>
+          <tr>
+            <td><strong>chs</strong></td>
+            <td class="field-type">INTEGER</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">Carga Horária Semanal de trabalho</td>
+            <td><span class="badge-default">CHECK: 20, 30 ou 40 | Padrão: 20</span></td>
+          </tr>
+          <tr>
+            <td><strong>situacao</strong></td>
+            <td class="field-type">TEXT</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">Situação atual do profissional (ativo/inativo)</td>
+            <td><span class="badge-default">CHECK: 'ATIVO' ou 'INATIVO' | Padrão: 'ATIVO'</span></td>
+          </tr>
+          <tr>
+            <td><strong>unidade_cnes</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">Código CNES da unidade onde o profissional atua</td>
+            <td><span class="fk">FK → unidades_saude.cnes</span></td>
+          </tr>
+          <tr>
+            <td><strong>unidade_cnes_operador</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">Código CNES da unidade que registrou o profissional</td>
+            <td><span class="fk">FK → unidades_saude.cnes</span></td>
+          </tr>
+          <tr>
+            <td><strong>created_at</strong></td>
+            <td class="field-type">TIMESTAMPTZ</td>
+            <td>NÃO</td>
+            <td class="field-desc">Data e hora de criação do registro</td>
+            <td><span class="badge-default">Padrão: now()</span></td>
+          </tr>
+          <tr>
+            <td><strong>updated_at</strong></td>
+            <td class="field-type">TIMESTAMPTZ</td>
+            <td>NÃO</td>
+            <td class="field-desc">Data e hora da última atualização</td>
+            <td><span class="badge-default">Automático</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 6. ROTINAS -->
+  <section id="rotinas">
+    <div class="table-card">
+      <div class="table-header">
+        <div class="table-icon">🩺</div>
+        <div class="table-name">rotinas</div>
+      </div>
+      <p style="color: #6b7280; margin-bottom: 15px;">Tabela de domínio que define as rotinas (exames, vacinas, medicações) do pré-natal conforme protocolo clínico.</p>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>Campo</th>
+            <th>Tipo</th>
+            <th>Obrigatório</th>
+            <th>Descrição</th>
+            <th>Restrições</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>id</strong></td>
+            <td class="field-type">UUID</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">Identificador único da rotina (gerado automaticamente)</td>
+            <td><span class="pk">PK</span></td>
+          </tr>
+          <tr>
+            <td><strong>tipo</strong></td>
+            <td class="field-type">TEXT</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">Tipo de rotina: exame, vaccine ou medicação</td>
+            <td><span class="badge-default">CHECK: 'EXAME', 'VACINA' ou 'MEDICACAO'</span></td>
+          </tr>
+          <tr>
+            <td><strong>descricao</strong></td>
+            <td class="field-type">TEXT</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">Nome/descrição da rotina (ex: VDRL, HIV, Glicemia)</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>trimestre</strong></td>
+            <td class="field-type">TEXT</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">Trimestre gestacional em que a rotina deve ser realizada</td>
+            <td><span class="badge-default">CHECK: 'PRIMEIRO', 'SEGUNDO' ou 'TERCEIRO'</span></td>
+          </tr>
+          <tr>
+            <td><strong>categoria</strong></td>
+            <td class="field-type">TEXT</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">Classificação da rotina quanto à obrigatoriedade</td>
+            <td><span class="badge-default">CHECK: 'OBRIGATORIO', 'OPCIONAL' ou 'EVENTUAL' | Padrão: 'OBRIGATORIO'</span></td>
+          </tr>
+          <tr>
+            <td><strong>unidade_cnes</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">Código CNES da unidade específica (opcional)</td>
+            <td><span class="fk">FK → unidades_saude.cnes</span></td>
+          </tr>
+          <tr>
+            <td><strong>created_at</strong></td>
+            <td class="field-type">TIMESTAMPTZ</td>
+            <td>NÃO</td>
+            <td class="field-desc">Data e hora de criação do registro</td>
+            <td><span class="badge-default">Padrão: now()</span></td>
+          </tr>
+          <tr>
+            <td><strong>updated_at</strong></td>
+            <td class="field-type">TIMESTAMPTZ</td>
+            <td>NÃO</td>
+            <td class="field-desc">Data e hora da última atualização</td>
+            <td><span class="badge-default">Automático</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 7. GESTAÇÕES -->
+  <section id="gestacoes">
+    <div class="table-card">
+      <div class="table-header">
+        <div class="table-icon">🤰</div>
+        <div class="table-name">gestacoes</div>
+      </div>
+      <p style="color: #6b7280; margin-bottom: 15px;">Tabela central que armazena os registros de gestação das pacientes, incluindo dados clínicos e de acompanhamento.</p>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>Campo</th>
+            <th>Tipo</th>
+            <th>Obrigatório</th>
+            <th>Descrição</th>
+            <th>Restrições</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>sispn</strong></td>
+            <td class="field-type">TEXT</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">SISPN - Número do sistema de informação do pré-natal (identificador único da gestação)</td>
+            <td><span class="pk">PK</span></td>
+          </tr>
+          <tr>
+            <td><strong>cpf_paciente</strong></td>
+            <td class="field-type">TEXT</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">CPF da gestante (paciente) vinculada à gestação</td>
+            <td><span class="fk">FK → pacientes.cpf</span></td>
+          </tr>
+          <tr>
+            <td><strong>dum</strong></td>
+            <td class="field-type">DATE</td>
+            <td>NÃO</td>
+            <td class="field-desc">Data da Última Menstruação - base para cálculo da DPP</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>dpp</strong></td>
+            <td class="field-type">DATE</td>
+            <td>NÃO</td>
+            <td class="field-desc">Data Provável do Parto - calculada automaticamente a partir da DUM</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>data_abertura</strong></td>
+            <td class="field-type">DATE</td>
+            <td>NÃO</td>
+            <td class="field-desc">Data em que a gestação foi aberta/cadastrada no sistema</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>data_cadastro</strong></td>
+            <td class="field-type">DATE</td>
+            <td>NÃO</td>
+            <td class="field-desc">Data do registro inicial da gestação</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>operador</strong></td>
+            <td class="field-type">TEXT</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">Nome do operador que realizou o cadastro da gestação</td>
+            <td><span class="badge-default">Padrão: 'NÃO INFORMADO'</span></td>
+          </tr>
+          <tr>
+            <td><strong>referencia_tecnica</strong></td>
+            <td class="field-type">TEXT</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">Nome do profissional de referência técnica (médico/enfermeiro responsável)</td>
+            <td><span class="badge-default">Padrão: 'NÃO INFORMADO'</span></td>
+          </tr>
+          <tr>
+            <td><strong>acs</strong></td>
+            <td class="field-type">TEXT</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">Nome do Agente Comunitário de Saúde responsável pelo acompanhamento</td>
+            <td><span class="badge-default">Padrão: 'NÃO INFORMADO'</span></td>
+          </tr>
+          <tr>
+            <td><strong>equipe</strong></td>
+            <td class="field-type">TEXT</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">Nome da equipe de saúde responsável pelo acompanhamento</td>
+            <td><span class="badge-default">Padrão: 'NÃO INFORMADO'</span></td>
+          </tr>
+          <tr>
+            <td><strong>idade_cadastro</strong></td>
+            <td class="field-type">INTEGER</td>
+            <td>NÃO</td>
+            <td class="field-desc">Idade da gestante no momento do cadastro</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>fase_vida_cadastro</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">Fase de vida da gestante no momento do cadastro</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>gestacao_anterior</strong></td>
+            <td class="field-type">INTEGER</td>
+            <td>NÃO</td>
+            <td class="field-desc">Número de gestações anteriores</td>
+            <td><span class="badge-default">Padrão: 0</span></td>
+          </tr>
+          <tr>
+            <td><strong>aborto</strong></td>
+            <td class="field-type">INTEGER</td>
+            <td>NÃO</td>
+            <td class="field-desc">Quantidade de abortos anteriores</td>
+            <td><span class="badge-default">Padrão: 0</span></td>
+          </tr>
+          <tr>
+            <td><strong>parto</strong></td>
+            <td class="field-type">INTEGER</td>
+            <td>NÃO</td>
+            <td class="field-desc">Quantidade de partos anteriores</td>
+            <td><span class="badge-default">Padrão: 0</span></td>
+          </tr>
+          <tr>
+            <td><strong>sifilis</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">Status do teste de sífilis no início do pré-natal</td>
+            <td><span class="badge-default">CHECK: 'SIM', 'NÃO' ou 'NÃO SABE'</span></td>
+          </tr>
+          <tr>
+            <td><strong>sifilis_tratada</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">Indica se houve tratamento para sífilis</td>
+            <td><span class="badge-default">CHECK: 'SIM', 'NÃO' ou 'NÃO SABE'</span></td>
+          </tr>
+          <tr>
+            <td><strong>hiv</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">Resultado do teste de HIV no início do pré-natal</td>
+            <td><span class="badge-default">CHECK: 'POSITIVO' ou 'NEGATIVO'</span></td>
+          </tr>
+          <tr>
+            <td><strong>hepatite_b</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">Resultado do teste de Hepatite B</td>
+            <td><span class="badge-default">CHECK: 'REAGENTE' ou 'NÃO REAGENTE'</span></td>
+          </tr>
+          <tr>
+            <td><strong>hepatite_c</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">Resultado do teste de Hepatite C</td>
+            <td><span class="badge-default">CHECK: 'REAGENTE' ou 'NÃO REAGENTE'</span></td>
+          </tr>
+          <tr>
+            <td><strong>classificacao_pn</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">Classificação de risco da gestação (pré-natal)</td>
+            <td><span class="badge-default">CHECK: 'HABITUAL' ou 'RISCO'</span></td>
+          </tr>
+          <tr>
+            <td><strong>alto_risco_compartilhado</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">Indica se a gestação de alto risco é compartilhada com outro nível de atenção</td>
+            <td><span class="badge-default">CHECK: 'SIM' ou 'NÃO'</span></td>
+          </tr>
+          <tr>
+            <td><strong>unidade_cnes</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">Código CNES da unidade onde a gestação foi cadastrada</td>
+            <td><span class="fk">FK → unidades_saude.cnes</span></td>
+          </tr>
+          <tr>
+            <td><strong>created_at</strong></td>
+            <td class="field-type">TIMESTAMPTZ</td>
+            <td>NÃO</td>
+            <td class="field-desc">Data e hora de criação do registro</td>
+            <td><span class="badge-default">Padrão: now()</span></td>
+          </tr>
+          <tr>
+            <td><strong>updated_at</strong></td>
+            <td class="field-type">TIMESTAMPTZ</td>
+            <td>NÃO</td>
+            <td class="field-desc">Data e hora da última atualização</td>
+            <td><span class="badge-default">Automático</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 8. ATENDIMENTOS -->
+  <section id="atendimentos">
+    <div class="table-card">
+      <div class="table-header">
+        <div class="table-icon">📅</div>
+        <div class="table-name">atendimentos</div>
+      </div>
+      <p style="color: #6b7280; margin-bottom: 15px;">Tabela que armazena os registros de consultas/atendimentos realizados durante o pré-natal.</p>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>Campo</th>
+            <th>Tipo</th>
+            <th>Obrigatório</th>
+            <th>Descrição</th>
+            <th>Restrições</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>id_atendimento</strong></td>
+            <td class="field-type">UUID</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">Identificador único do atendimento (gerado automaticamente)</td>
+            <td><span class="pk">PK</span></td>
+          </tr>
+          <tr>
+            <td><strong>sispn</strong></td>
+            <td class="field-type">TEXT</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">SISPN da gestação vinculada ao atendimento</td>
+            <td><span class="fk">FK → gestacoes.sispn</span></td>
+          </tr>
+          <tr>
+            <td><strong>data_consulta</strong></td>
+            <td class="field-type">DATE</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">Data em que a consulta foi realizada</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>trimestre_consulta</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">Trimestre gestacional em que a consulta foi realizada</td>
+            <td><span class="badge-default">CHECK: '1º TRIMESTRE', '2º TRIMESTRE' ou '3º TRIMESTRE'</span></td>
+          </tr>
+          <tr>
+            <td><strong>cbo</strong></td>
+            <td class="field-type">TEXT</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">Código CBO do profissional que realizou o atendimento</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>cpf</strong></td>
+            <td class="field-type">TEXT</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">CPF do profissional que realizou o atendimento</td>
+            <td><span class="badge-default">Padrão: 'NÃO INFORMADO'</span></td>
+          </tr>
+          <tr>
+            <td><strong>data_proxima_consulta</strong></td>
+            <td class="field-type">DATE</td>
+            <td>NÃO</td>
+            <td class="field-desc">Data agendada para a próxima consulta</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>observacoes_clinicas</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">Observações clínicas registradas na consulta (anamnese, evolução, etc.)</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>cpf_operador</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">CPF do operador que registrou o atendimento</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>unidade_cnes</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">Código CNES da unidade onde o atendimento foi realizado</td>
+            <td><span class="fk">FK → unidades_saude.cnes</span></td>
+          </tr>
+          <tr>
+            <td><strong>created_at</strong></td>
+            <td class="field-type">TIMESTAMPTZ</td>
+            <td>NÃO</td>
+            <td class="field-desc">Data e hora de criação do registro</td>
+            <td><span class="badge-default">Padrão: now()</span></td>
+          </tr>
+          <tr>
+            <td><strong>updated_at</strong></td>
+            <td class="field-type">TIMESTAMPTZ</td>
+            <td>NÃO</td>
+            <td class="field-desc">Data e hora da última atualização</td>
+            <td><span class="badge-default">Automático</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 9. DESFECHOS -->
+  <section id="desfechos">
+    <div class="table-card">
+      <div class="table-header">
+        <div class="table-icon">✅</div>
+        <div class="table-name">desfechos</div>
+      </div>
+      <p style="color: #6b7280; margin-bottom: 15px;">Tabela que armazena os desfechos (encerramentos) das gestações.</p>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>Campo</th>
+            <th>Tipo</th>
+            <th>Obrigatório</th>
+            <th>Descrição</th>
+            <th>Restrições</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>id</strong></td>
+            <td class="field-type">UUID</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">Identificador único do desfecho (gerado automaticamente)</td>
+            <td><span class="pk">PK</span></td>
+          </tr>
+          <tr>
+            <td><strong>sispn</strong></td>
+            <td class="field-type">TEXT</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">SISPN da gestação encerrada</td>
+            <td><span class="fk">FK → gestacoes.sispn</span></td>
+          </tr>
+          <tr>
+            <td><strong>tipo_desfecho</strong></td>
+            <td class="field-type">TEXT</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">Tipo de desfecho da gestação</td>
+            <td><span class="badge-default">CHECK: 'PARTO', 'ABORTO', 'MUDOU-SE', 'ÓBITO', 'CONVÊNIO MÉDICO' ou 'OUTROS'</span></td>
+          </tr>
+          <tr>
+            <td><strong>data_desfecho</strong></td>
+            <td class="field-type">DATE</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">Data em que ocorreu o desfecho</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>unidade_cnes</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">Código CNES da unidade onde foi registrado o desfecho</td>
+            <td><span class="fk">FK → unidades_saude.cnes</span></td>
+          </tr>
+          <tr>
+            <td><strong>created_at</strong></td>
+            <td class="field-type">TIMESTAMPTZ</td>
+            <td>NÃO</td>
+            <td class="field-desc">Data e hora de criação do registro</td>
+            <td><span class="badge-default">Padrão: now()</span></td>
+          </tr>
+          <tr>
+            <td><strong>updated_at</strong></td>
+            <td class="field-type">TIMESTAMPTZ</td>
+            <td>NÃO</td>
+            <td class="field-desc">Data e hora da última atualização</td>
+            <td><span class="badge-default">Automático</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 10. RECÉM-NASCIDOS -->
+  <section id="recem_nascidos">
+    <div class="table-card">
+      <div class="table-header">
+        <div class="table-icon">👶</div>
+        <div class="table-name">recem_nascidos</div>
+      </div>
+      <p style="color: #6b7280; margin-bottom: 15px;">Tabela que armazena os dados dos recém-nascidos relacionados aos desfechos do tipo "PARTO".</p>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>Campo</th>
+            <th>Tipo</th>
+            <th>Obrigatório</th>
+            <th>Descrição</th>
+            <th>Restrições</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>id</strong></td>
+            <td class="field-type">UUID</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">Identificador único do RN (gerado automaticamente)</td>
+            <td><span class="pk">PK</span></td>
+          </tr>
+          <tr>
+            <td><strong>id_desfecho</strong></td>
+            <td class="field-type">UUID</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">ID do desfecho (parto) vinculado ao RN</td>
+            <td><span class="fk">FK → desfechos.id</span></td>
+          </tr>
+          <tr>
+            <td><strong>nome_rn</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">Nome do recém-nascido</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>cpf_rn</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">CPF do recém-nascido (quando aplicável)</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>data_nascimento</strong></td>
+            <td class="field-type">DATE</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">Data de nascimento do RN</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>data_consulta_rn</strong></td>
+            <td class="field-type">DATE</td>
+            <td>NÃO</td>
+            <td class="field-desc">Data da consulta de puericultura do RN (até 10 dias)</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>comparecimento</strong></td>
+            <td class="field-type">BOOLEAN</td>
+            <td>NÃO</td>
+            <td class="field-desc">Indica se a gestante compareceu à consulta do RN</td>
+            <td><span class="badge-default">Padrão: false</span></td>
+          </tr>
+          <tr>
+            <td><strong>created_at</strong></td>
+            <td class="field-type">TIMESTAMPTZ</td>
+            <td>NÃO</td>
+            <td class="field-desc">Data e hora de criação do registro</td>
+            <td><span class="badge-default">Padrão: now()</span></td>
+          </tr>
+          <tr>
+            <td><strong>updated_at</strong></td>
+            <td class="field-type">TIMESTAMPTZ</td>
+            <td>NÃO</td>
+            <td class="field-desc">Data e hora da última atualização</td>
+            <td><span class="badge-default">Automático</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 11. REGISTRO DE ROTINAS -->
+  <section id="registro_rotinas">
+    <div class="table-card">
+      <div class="table-header">
+        <div class="table-icon">📊</div>
+        <div class="table-name">registro_rotinas</div>
+      </div>
+      <p style="color: #6b7280; margin-bottom: 15px;">Tabela que armazena os registros de realização das rotinas (exames, vaccines, medicações) durante o pré-natal.</p>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>Campo</th>
+            <th>Tipo</th>
+            <th>Obrigatório</th>
+            <th>Descrição</th>
+            <th>Restrições</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>id_registro</strong></td>
+            <td class="field-type">UUID</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">Identificador único do registro (gerado automaticamente)</td>
+            <td><span class="pk">PK</span></td>
+          </tr>
+          <tr>
+            <td><strong>sispn</strong></td>
+            <td class="field-type">TEXT</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">SISPN da gestação vinculada ao registro</td>
+            <td><span class="fk">FK → gestacoes.sispn</span></td>
+          </tr>
+          <tr>
+            <td><strong>id_rotina</strong></td>
+            <td class="field-type">UUID</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">ID da rotina (exame/vacina/medicação) realizada</td>
+            <td><span class="fk">FK → rotinas.id</span></td>
+          </tr>
+          <tr>
+            <td><strong>tipo</strong></td>
+            <td class="field-type">TEXT</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">Tipo de registro: exame, vaccine ou medicação</td>
+            <td><span class="badge-default">CHECK: 'EXAME', 'VACINA' ou 'MEDICACAO'</span></td>
+          </tr>
+          <tr>
+            <td><strong>data_realizacao</strong></td>
+            <td class="field-type">DATE</td>
+            <td><span class="nn">SIM</span></td>
+            <td class="field-desc">Data em que a rotina foi realizada</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>resultado</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">Resultado do exame/rotina realizada</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>observacoes</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">Observações adicionais sobre o registro</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>trimestre_realizacao</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">Trimestre gestacional em que a rotina foi realizada</td>
+            <td><span class="badge-default">CHECK: '1º TRIMESTRE', '2º TRIMESTRE' ou '3º TRIMESTRE'</span></td>
+          </tr>
+          <tr>
+            <td><strong>cbo</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">Código CBO do profissional que realizou a rotina</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>cpf_profissional</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">CPF do profissional que realizou a rotina</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>cpf_operador</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">CPF do operador que registrou a rotina</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>unidade_cnes</strong></td>
+            <td class="field-type">TEXT</td>
+            <td>NÃO</td>
+            <td class="field-desc">Código CNES da unidade onde a rotina foi registrada</td>
+            <td><span class="fk">FK → unidades_saude.cnes</span></td>
+          </tr>
+          <tr>
+            <td><strong>created_at</strong></td>
+            <td class="field-type">TIMESTAMPTZ</td>
+            <td>NÃO</td>
+            <td class="field-desc">Data e hora de criação do registro</td>
+            <td><span class="badge-default">Padrão: now()</span></td>
+          </tr>
+          <tr>
+            <td><strong>updated_at</strong></td>
+            <td class="field-type">TIMESTAMPTZ</td>
+            <td>NÃO</td>
+            <td class="field-desc">Data e hora da última atualização</td>
+            <td><span class="badge-default">Automático</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 12. RELACIONAMENTOS -->
+  <section id="relacionamentos">
+    <div class="table-card">
+      <div class="table-header">
+        <div class="table-icon">🔗</div>
+        <div class="table-name">Diagrama de Relacionamentos</div>
+      </div>
+      
+      <div class="relationships">
+        <h4>Entidades e Relacionamentos</h4>
+        
+        <p style="margin-bottom: 20px; color: #475569;"><strong>Legenda:</strong> PK = Chave Primária | FK = Chave Estrangeira | 1:N = Um para Muitos | N:1 = Muitos para Um | 1:1 = Um para Um</p>
+        
+        <div style="margin-bottom: 25px;">
+          <h5 style="color: #0369a1; margin-bottom: 10px;">1. UNIDADES SAÚDE (1:N) → OPERADORES</h5>
+          <p style="color: #64748b; margin-left: 15px;">Uma unidade de saúde pode ter vários operadores cadastrados. Um operador pertence a uma única unidade.</p>
+        </div>
+        
+        <div style="margin-bottom: 25px;">
+          <h5 style="color: #0369a1; margin-bottom: 10px;">2. PACIENTES (1:N) → GESTAÇÕES</h5>
+          <p style="color: #64748b; margin-left: 15px;">Uma paciente pode ter várias gestações ao longo do tempo. Cada gestação está vinculada a uma única paciente.</p>
+        </div>
+        
+        <div style="margin-bottom: 25px;">
+          <h5 style="color: #0369a1; margin-bottom: 10px;">3. GESTAÇÕES (1:N) → ATENDIMENTOS</h5>
+          <p style="color: #64748b; margin-left: 15px;">Uma gestação pode ter vários atendimentos/consultas. Cada atendimento pertence a uma única gestação.</p>
+        </div>
+        
+        <div style="margin-bottom: 25px;">
+          <h5 style="color: #0369a1; margin-bottom: 10px;">4. GESTAÇÕES (1:N) → DESFECHOS</h5>
+          <p style="color: #64748b; margin-left: 15px;">Uma gestação pode ter apenas um desfecho (encerramento). Cada desfecho pertence a uma única gestação.</p>
+        </div>
+        
+        <div style="margin-bottom: 25px;">
+          <h5 style="color: #0369a1; margin-bottom: 10px;">5. DESFECHOS (1:N) → RECÉM-NASCIDOS</h5>
+          <p style="color: #64748b; margin-left: 15px;">Um desfecho do tipo "PARTO" pode ter vários RNs (gemelar). Cada RN pertence a um único desfecho.</p>
+        </div>
+        
+        <div style="margin-bottom: 25px;">
+          <h5 style="color: #0369a1; margin-bottom: 10px;">6. ROTINAS (1:N) → REGISTRO ROTINAS</h5>
+          <p style="color: #64748b; margin-left: 15px;">Uma rotina pode ser realizada várias vezes (em diferentes gestações). Cada registro pertence a uma única rotina.</p>
+        </div>
+        
+        <div style="margin-bottom: 25px;">
+          <h5 style="color: #0369a1; margin-bottom: 10px;">7. CATEGORIAS PROFISSIONAIS (1:N) → PROFISSIONAIS</h5>
+          <p style="color: #64748b; margin-left: 15px;">Uma categoria profissional (CBO) pode ter vários profissionais. Cada profissional possui uma única categoria.</p>
+        </div>
+        
+        <div style="margin-bottom: 25px;">
+          <h5 style="color: #0369a1; margin-bottom: 10px;">8. UNIDADES SAÚDE (1:N) → PROFISSIONAIS</h5>
+          <p style="color: #64748b; margin-left: 15px;">Uma unidade de saúde pode ter vários profissionais atuação. Um profissional pode atuar em uma unidade.</p>
+        </div>
+        
+        <div style="margin-bottom: 25px;">
+          <h5 style="color: #0369a1; margin-bottom: 10px;">9. UNIDADES SAÚDE (1:N) → GESTAÇÕES</h5>
+          <p style="color: #64748b; margin-left: 15px;">Uma unidade de saúde pode registrar várias gestações. Cada gestação é vinculada a uma unidade.</p>
+        </div>
+        
+        <div style="margin-bottom: 25px;">
+          <h5 style="color: #0369a1; margin-bottom: 10px;">10. UNIDADES SAÚDE (1:N) → ROTINAS (opcional)</h5>
+          <p style="color: #64748b; margin-left: 15px;">Uma unidade pode ter rotinas específicas configuradas (opcional).</p>
+        </div>
+        
+        <div style="margin-bottom: 0;">
+          <h5 style="color: #0369a1; margin-bottom: 10px;">11. UNIDADES SAÚDE (1:N) → REGISTRO ROTINAS</h5>
+          <p style="color: #64748b; margin-left: 15px;">Uma unidade pode ter vários registros de rotinas. Cada registro pertence a uma unidade.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <p>Dicionário de Dados - Sistema Saúde Maternal | Versão 1.0 | 2026</p>
+  </footer>
+
+</main>
+</div>
+
+</body>
+</html>
