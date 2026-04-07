@@ -46,6 +46,7 @@ export default function PacientesPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [lifeStageFilter, setLifeStageFilter] = useState('');
   const itemsPerPage = 8;
 
   const [formData, setFormData] = useState<Partial<Paciente>>({
@@ -189,6 +190,12 @@ export default function PacientesPage() {
   const filteredPacientes = useMemo(() => {
     return pacientes.filter(pac => {
       const query = searchQuery.toLowerCase().trim();
+      
+      if (lifeStageFilter) {
+        const { lifeStage } = calculateAge(pac.data_nascimento);
+        if (lifeStage !== lifeStageFilter) return false;
+      }
+
       if (!query) return true;
 
       const normalize = (str: string) => 
@@ -205,7 +212,7 @@ export default function PacientesPage() {
              (queryDigits !== '' && cpf.includes(queryDigits)) ||
              prontuario.includes(queryNormalizada);
     });
-  }, [pacientes, searchQuery]);
+  }, [pacientes, searchQuery, lifeStageFilter]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -660,6 +667,38 @@ export default function PacientesPage() {
                 </div>
               </div>
 
+              {/* Filtros */}
+              <div className="px-6 md:px-10 py-4 border-b border-outline-variant/5">
+                <div className="flex flex-col sm:flex-row flex-wrap items-start gap-3">
+                  <div className="flex items-center gap-2 bg-primary/10 px-5 py-2.5 rounded-full border border-primary/20 shrink-0">
+                    <span className="material-symbols-outlined text-primary text-sm">filter_alt</span>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-primary">Filtros Ativos</span>
+                  </div>
+
+                  <select 
+                    className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
+                    value={lifeStageFilter}
+                    onChange={(e) => { setLifeStageFilter(e.target.value); setCurrentPage(1); }}
+                  >
+                    <option value="">Fase da Vida</option>
+                    <option value="INFÂNCIA">INFÂNCIA</option>
+                    <option value="ADOLESCÊNCIA">ADOLESCÊNCIA</option>
+                    <option value="IDADE ADULTA">IDADE ADULTA</option>
+                    <option value="VELHICE">VELHICE</option>
+                  </select>
+
+                  {lifeStageFilter && (
+                    <button 
+                      onClick={() => setLifeStageFilter('')}
+                      className="w-full lg:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-error/10 text-error text-[9px] font-black uppercase tracking-widest hover:bg-error hover:text-white transition-all border border-error/20"
+                    >
+                      <span className="material-symbols-outlined text-sm">filter_alt_off</span>
+                      Limpar
+                    </button>
+                  )}
+                </div>
+              </div>
+
               <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent">
                 {loading ? (
                   <div className="p-24 text-center space-y-4">
@@ -675,13 +714,14 @@ export default function PacientesPage() {
                   </div>
                 ) : (
                   <>
-                    <table className="w-full text-left border-separate border-spacing-0 min-w-[1100px]">
+                    <table className="w-full text-left border-separate border-spacing-0 min-w-[1200px]">
                       <thead className="sticky top-0 z-30 bg-surface-container-low">
                         <tr>
-                          <th className="px-6 py-4 text-table-header border-b border-slate-300 dark:border-slate-700">Gestante</th>
-                          <th className="px-4 py-4 text-table-header border-b border-slate-300 dark:border-slate-700 w-[160px]">Fase</th>
-                          <th className="px-4 py-4 text-table-header border-b border-slate-300 dark:border-slate-700">Endereço</th>
-                          <th className="px-6 py-4 text-table-header text-center border-b border-slate-300 dark:border-slate-700 w-[120px]">Ações</th>
+                          <th className="px-4 py-4 text-table-header border-b border-slate-300 dark:border-slate-700 w-[320px]">Gestante</th>
+                          <th className="px-4 py-4 text-table-header border-b border-slate-300 dark:border-slate-700 w-[180px]">Prontuário</th>
+                          <th className="px-4 py-4 text-table-header border-b border-slate-300 dark:border-slate-700 w-[220px]">Fase da Vida</th>
+                          <th className="px-4 py-4 text-table-header border-b border-slate-300 dark:border-slate-700 w-1/4">Endereço</th>
+                          <th className="px-4 py-4 text-table-header text-center border-b border-slate-300 dark:border-slate-700 w-1/8">Ações</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -695,29 +735,31 @@ export default function PacientesPage() {
                                 key={pac.cpf} 
                                 className="hover:bg-orange-50 dark:hover:bg-slate-800/50 transition-all group"
                               >
-                                <td className="px-6 py-5">
-                                  <div className="flex items-start gap-4">
-                                    <div className="min-w-0 flex-1">
-                                      <span className="text-xs font-mono font-bold text-orange-600">{formatCpf(pac.cpf || '')}</span>
-                                      <p className="font-black text-on-surface font-headline text-base group-hover:text-orange-600 transition-colors uppercase truncate">{pac.gestante}</p>
-                                      <span className="text-table-cell text-black dark:text-slate-300 uppercase">CNS: {formatCns(pac.cns || '') || '---'}</span>
-                                    </div>
-                                    <div className="min-w-0 flex-1 border-l border-gray-200 dark:border-gray-700 pl-4">
-                                      <span className="text-table-cell text-black dark:text-slate-200 uppercase block">{pac.prontuario || '---'}</span>
-                                      <span className="text-table-cell text-black dark:text-slate-200 uppercase block mt-1">Mãe: {pac.nome_mae || 'NÃO INFORMADO'}</span>
-                                    </div>
+                                <td className="px-4 py-5">
+                                  <div className="flex flex-col gap-1 text-justify">
+                                    <span className="text-[10px] font-mono font-bold text-orange-600">CPF: {formatCpf(pac.cpf || '')}</span>
+                                    <p className="font-black text-on-surface font-headline text-base group-hover:text-orange-600 transition-colors uppercase">{pac.gestante}</p>
+                                    <span className="text-table-cell text-black dark:text-slate-300 uppercase">CNS: {formatCns(pac.cns || '') || '---'}</span>
                                   </div>
                                 </td>
                                 <td className="px-4 py-5">
-                                  <span className={`text-table-cell px-3 py-1.5 rounded-lg uppercase tracking-wide border block w-fit ${
-                                    lifeStage === 'INFÂNCIA' ? 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/50 dark:text-blue-300 dark:border-blue-800' :
-                                    lifeStage === 'ADOLESCÊNCIA' ? 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/50 dark:text-purple-300 dark:border-purple-800' :
-                                    lifeStage === 'VELHICE' ? 'bg-error/10 text-error border-error/20 dark:bg-red-900/50 dark:text-red-300 dark:border-red-800' :
-                                    'bg-success/10 text-success border-success/20 dark:bg-green-900/50 dark:text-green-300 dark:border-green-800'
-                                  }`}>
-                                    {lifeStage}
-                                  </span>
-                                  <span className="text-table-cell text-black dark:text-slate-300 mt-2 block">{ageText}</span>
+                                  <div className="flex flex-col gap-1 text-justify">
+                                    <span className="text-table-cell text-black dark:text-slate-200 uppercase">{pac.prontuario || '---'}</span>
+                                    <span className="text-table-cell text-black dark:text-slate-200 uppercase">{pac.nome_mae || 'NÃO INFORMADO'}</span>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-5">
+                                  <div className="flex flex-col gap-1 text-justify">
+                                    <span className="text-table-cell text-black dark:text-slate-300">{ageText}</span>
+                                    <span className={`text-table-cell px-3 py-1.5 rounded-lg uppercase tracking-wide border block w-fit ${
+                                      lifeStage === 'INFÂNCIA' ? 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/50 dark:text-blue-300 dark:border-blue-800' :
+                                      lifeStage === 'ADOLESCÊNCIA' ? 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/50 dark:text-purple-300 dark:border-purple-800' :
+                                      lifeStage === 'VELHICE' ? 'bg-error/10 text-error border-error/20 dark:bg-red-900/50 dark:text-red-300 dark:border-red-800' :
+                                      'bg-success/10 text-success border-success/20 dark:bg-green-900/50 dark:text-green-300 dark:border-green-800'
+                                    }`}>
+                                      {lifeStage}
+                                    </span>
+                                  </div>
                                 </td>
                                 <td className="px-4 py-5">
                                   <div className="flex items-start gap-2">
