@@ -80,9 +80,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
       name: 'Manutenção', 
       icon: 'settings', 
       subItems: [
-        { name: 'Manual do Sistema', href: '/MANUAL.md', target: '_blank' },
-        { name: 'Backup Dados', href: '/manutencao/backup' },
-        { name: 'Histórico', href: '/manutencao/historico' },
+        { name: 'Manual do Sistema', href: '/MANUAL.txt', target: '_blank' },
         { 
           name: 'Exportar Layout', 
           href: '#',
