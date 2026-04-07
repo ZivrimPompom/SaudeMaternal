@@ -102,13 +102,14 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
           ]
         },
       ]
-    },
+    }, 
     { 
-      name: 'Sobre', 
+      name: 'Sobre',
       icon: 'info', 
       subItems: [
-        { name: 'Manual 1', href: '/manual 1.html', target: '_blank' },
-        { name: 'Manual 2', href: '/manual 2.html', target: '_blank' },
+        { name: 'Conceito', href: '/conceito.html', target: '_blank' },
+        { name: 'Operacional', href: '/operacional.html', target: '_blank' },
+        { name: 'Dicionário', href: '/dicionario.html', target: '_blank' },
       ]
     }
   ];
