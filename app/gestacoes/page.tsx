@@ -37,6 +37,7 @@ interface Gestacao {
   created_at?: string;
   // Joined/Computed fields for display
   paciente_nome?: string;
+  paciente_nascimento?: string;
   referencia_tecnica_nome?: string;
   acs_nome?: string;
   operador_nome?: string;
@@ -139,10 +140,10 @@ const calculateAge = (birthDate: string) => {
 
   const ageText = `${years} ANOS, ${months} MESES`;
   
-  let lifeStage = 'ADULTO';
-  if (years < 12) lifeStage = 'CRIANÇA';
-  else if (years < 18) lifeStage = 'ADOLESCENTE';
-  else if (years >= 60) lifeStage = 'IDOSO';
+  let lifeStage = 'IDADE ADULTA';
+  if (years >= 0 && years <= 11) lifeStage = 'INFÂNCIA';
+  else if (years >= 12 && years <= 19) lifeStage = 'ADOLESCÊNCIA';
+  else if (years > 60) lifeStage = 'VELHICE';
   
   return { ageText, lifeStage };
 };
@@ -409,11 +410,15 @@ export default function GestacoesPage() {
         // Handle both object and array response from Supabase join
         const pacienteData = Array.isArray(g.pacientes) ? g.pacientes[0] : g.pacientes;
         let nome = pacienteData?.gestante;
+        let dataNascimento = pacienteData?.data_nascimento;
         
         // Fallback: if join failed, try to find in the fetched patients list
-        if (!nome) {
+        if (!nome || !dataNascimento) {
           const found = pacientesList.find(p => p.cpf === g.cpf_paciente);
-          if (found) nome = found.gestante;
+          if (found) {
+            if (!nome) nome = found.gestante;
+            if (!dataNascimento) dataNascimento = found.data_nascimento;
+          }
         }
 
         // Look up names for CPFs
@@ -424,6 +429,7 @@ export default function GestacoesPage() {
         return {
           ...g,
           paciente_nome: nome || 'PACIENTE NÃO ENCONTRADO',
+          paciente_nascimento: dataNascimento,
           referencia_tecnica_nome: refTec,
           acs_nome: acsNome,
           operador_nome: opNome
@@ -481,10 +487,10 @@ export default function GestacoesPage() {
           age--;
         }
 
-        let lifeStage = 'ADULTO';
-        if (age < 12) lifeStage = 'CRIANÇA';
-        else if (age < 18) lifeStage = 'ADOLESCENTE';
-        else if (age >= 60) lifeStage = 'IDOSO';
+        let lifeStage = 'IDADE ADULTA';
+        if (age >= 0 && age <= 11) lifeStage = 'INFÂNCIA';
+        else if (age >= 12 && age <= 19) lifeStage = 'ADOLESCÊNCIA';
+        else if (age > 60) lifeStage = 'VELHICE';
 
         setFormData(prev => ({ 
           ...prev, 
@@ -1322,7 +1328,7 @@ export default function GestacoesPage() {
                     <span className="material-symbols-outlined text-primary text-2xl">pregnant_woman</span>
                   </div>
                   <div>
-                    <h3 className="text-2xl font-black font-headline text-on-surface uppercase tracking-tight">Ciclos Gestacionais</h3>
+                    <h3 className="text-2xl font-black font-headline text-on-surface uppercase tracking-tight">Gestações</h3>
                     <p className="text-xs text-on-surface-variant/40 font-body uppercase tracking-widest font-bold">Monitoramento Ativo</p>
                   </div>
                 </div>
@@ -1419,69 +1425,84 @@ export default function GestacoesPage() {
                   </div>
                 ) : (
                   <>
-                    <table className="w-full text-left border-separate border-spacing-0 min-w-[1200px]">
+                    <table className="w-full text-left border-separate border-spacing-0 min-w-[1000px]">
                       <thead className="sticky top-0 z-30 bg-surface-container-low">
                         <tr>
-                          <th className="px-6 py-4 text-table-header border-b border-slate-300 dark:border-slate-700">Gestante</th>
-                          <th className="px-4 py-4 text-table-header border-b border-slate-300 dark:border-slate-700">DUM / DPP</th>
-                          <th className="px-4 py-4 text-table-header border-b border-slate-300 dark:border-slate-700">Semanas</th>
-                          <th className="px-4 py-4 text-table-header border-b border-slate-300 dark:border-slate-700">Equipe</th>
-                          <th className="px-4 py-4 text-table-header border-b border-slate-300 dark:border-slate-700">Status</th>
-                          <th className="px-6 py-4 text-table-header text-center border-b border-slate-300 dark:border-slate-700 w-[120px]">Ações</th>
+                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Gestante</th>
+                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Idade</th>
+                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">DUM / DPP</th>
+                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Semanas</th>
+                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Status</th>
+                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Equipe</th>
+                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-center">Ações</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                      <tbody className="divide-y divide-outline-variant/5">
                         {filteredGestacoes
                           .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
                           .map((g) => {
                             const weeks = getGestacaoWeeks(g.dum);
                             const captacao = getStatusCaptacao(g.dum, g.data_cadastro);
                             const status = getGestacaoStatus(g.dpp);
+                            const ageInfo = g.paciente_nascimento ? calculateAge(g.paciente_nascimento) : { ageText: '---', lifeStage: '---' as const };
                             
                             return (
-                              <motion.tr layout key={g.sispn} className="hover:bg-orange-50 dark:hover:bg-slate-800/50 transition-all group">
-                                <td className="px-6 py-5">
-                                  <div className="flex flex-col gap-1">
-                                    <span className="text-xs font-mono font-bold text-orange-600">{formatCpf(g.cpf_paciente)}</span>
-                                    <p className="font-black text-black font-headline text-base group-hover:text-orange-600 transition-colors uppercase">{g.paciente_nome}</p>
-                                    <span className="text-table-cell text-black font-mono">SISPN: {formatSispn(g.sispn)}</span>
+                              <motion.tr layout key={g.sispn} className="hover:bg-primary/[0.02] transition-colors group">
+                                <td className="px-4 py-3">
+                                  <div className="flex flex-col gap-0.5">
+                                    <span className="text-[10px] font-mono font-bold text-primary">{formatCpf(g.cpf_paciente)}</span>
+                                    <p className="font-black text-xs text-on-surface uppercase leading-tight">{g.paciente_nome}</p>
+                                    <span className="text-[10px] font-mono font-bold text-primary">SISPN: {formatSispn(g.sispn)}</span>
                                   </div>
                                 </td>
-                                <td className="px-4 py-5">
-                                  <div className="flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-slate-600 dark:text-slate-400 text-base">calendar_today</span>
-                                    <span className="text-table-cell text-black dark:text-slate-200">DUM: {new Date(g.dum).toLocaleDateString('pt-BR')}</span>
-                                  </div>
-                                  <div className="flex items-center gap-2 mt-1">
-                                    <span className="material-symbols-outlined text-slate-600 dark:text-slate-400 text-base">event_repeat</span>
-                                    <span className="text-table-cell text-black dark:text-slate-300">DPP: {new Date(g.dpp).toLocaleDateString('pt-BR')}</span>
+                                <td className="px-4 py-3">
+                                  <div className="flex flex-col gap-0.5">
+                                    <span className="text-[10px] font-bold text-on-surface">{ageInfo.ageText}</span>
+                                    <span className={`text-[9px] font-black px-2 py-0.5 rounded-full w-fit ${
+                                      ageInfo.lifeStage === 'INFÂNCIA' ? 'bg-blue-100 text-blue-700' :
+                                      ageInfo.lifeStage === 'ADOLESCÊNCIA' ? 'bg-purple-100 text-purple-700' :
+                                      ageInfo.lifeStage === 'VELHICE' ? 'bg-error/10 text-error' :
+                                      'bg-success/10 text-success'
+                                    }`}>
+                                      {ageInfo.lifeStage}
+                                    </span>
                                   </div>
                                 </td>
-                                <td className="px-4 py-5">
-                                  <span className="text-sm font-black text-black dark:text-slate-100">{weeks} SEMANAS</span>
-                                  <span className={`text-table-cell px-3 py-1.5 rounded-lg block w-fit uppercase tracking-wide border mt-1 ${captacao === 'PRECOCE' ? 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/50 dark:text-emerald-300 dark:border-emerald-800' : 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/50 dark:text-amber-300 dark:border-amber-800'}`}>
+                                <td className="px-4 py-3">
+                                  <div className="flex flex-col gap-0.5">
+                                    <span className="text-[10px] text-on-surface">DUM: {new Date(g.dum).toLocaleDateString('pt-BR')}</span>
+                                    <span className="text-[10px] text-on-surface">DPP: {new Date(g.dpp).toLocaleDateString('pt-BR')}</span>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3">
+                                  <span className="text-[10px] font-black text-on-surface">{weeks} SEM</span>
+                                  <span className={`text-[9px] font-black px-2 py-0.5 rounded-full block w-fit mt-1 ${
+                                    captacao === 'PRECOCE' ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'
+                                  }`}>
                                     {captacao}
                                   </span>
                                 </td>
-                                <td className="px-4 py-5">
-                                  <span className="text-table-cell text-orange-600 uppercase tracking-wide">EQUIPE {g.equipe}</span>
-                                  <p className="text-table-cell text-black dark:text-slate-300 uppercase">{g.referencia_tecnica_nome}</p>
-                                  <span className="text-table-cell text-black dark:text-slate-400 uppercase">ACS: {g.acs_nome}</span>
-                                </td>
-                                <td className="px-4 py-5">
-                                  <span className={`text-table-cell px-3 py-1.5 rounded-lg uppercase tracking-wide border ${status === 'ATIVA' ? 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/50 dark:text-blue-300 dark:border-blue-800' : 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-800'}`}>
+                                <td className="px-4 py-3">
+                                  <span className={`text-[9px] font-black px-2 py-1 rounded-full ${
+                                    status === 'ATIVA' ? 'bg-success/10 text-success' : 'bg-error/10 text-error'
+                                  }`}>
                                     {status}
                                   </span>
                                 </td>
-                                <td className="px-6 py-5 text-center">
-                                  <div className="flex items-center justify-center gap-3">
-                                    <button onClick={() => handleEdit(g)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-100 text-orange-700 hover:bg-orange-600 hover:text-white transition-all shadow-sm group/btn border border-orange-200 hover:border-orange-600">
-                                      <span className="material-symbols-outlined text-base">edit</span>
-                                      <span className="text-table-cell uppercase tracking-wider hidden group-hover/btn:inline">Editar</span>
+                                <td className="px-4 py-3">
+                                  <div className="flex flex-col gap-0.5">
+                                    <span className="text-[9px] font-black text-primary uppercase">{g.equipe}</span>
+                                    <span className="text-[9px] text-on-surface-variant/50 uppercase">{g.referencia_tecnica_nome}</span>
+                                    <span className="text-[9px] text-on-surface-variant/40 uppercase">ACS: {g.acs_nome}</span>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3">
+                                  <div className="flex items-center justify-center gap-1">
+                                    <button onClick={() => handleEdit(g)} className="p-1.5 rounded-lg bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white transition-all" title="Editar">
+                                      <span className="material-symbols-outlined text-sm">edit</span>
                                     </button>
-                                    <button onClick={() => setDeleteConfirmId(g.sispn)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-100 text-red-700 hover:bg-red-600 hover:text-white transition-all shadow-sm group/btn border border-red-200 hover:border-red-600">
-                                      <span className="material-symbols-outlined text-base">delete</span>
-                                      <span className="text-table-cell uppercase tracking-wider hidden group-hover/btn:inline">Excluir</span>
+                                    <button onClick={() => setDeleteConfirmId(g.sispn)} className="p-1.5 rounded-lg bg-error text-white hover:bg-error/80 transition-all" title="Excluir">
+                                      <span className="material-symbols-outlined text-sm">delete</span>
                                     </button>
                                   </div>
                                 </td>

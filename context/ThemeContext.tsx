@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
-type Theme = 'light' | 'dark' | 'high-contrast';
+type Theme = 'light' | 'dark';
 
 interface ThemeContextType {
   theme: Theme;
@@ -17,9 +17,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme') as Theme;
-    if (savedTheme && ['light', 'dark', 'high-contrast'].includes(savedTheme)) {
+    if (savedTheme && ['light', 'dark'].includes(savedTheme)) {
       setThemeState(savedTheme);
-      document.documentElement.classList.remove('light', 'dark', 'high-contrast');
+      document.documentElement.classList.remove('light', 'dark');
       document.documentElement.classList.add(savedTheme);
     } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
       setThemeState('dark');
@@ -30,20 +30,19 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const toggleTheme = () => {
     const nextTheme: Record<Theme, Theme> = {
       light: 'dark',
-      dark: 'high-contrast',
-      'high-contrast': 'light'
+      dark: 'light'
     };
     const newTheme = nextTheme[theme];
     setThemeState(newTheme);
     localStorage.setItem('theme', newTheme);
-    document.documentElement.classList.remove('light', 'dark', 'high-contrast');
+    document.documentElement.classList.remove('light', 'dark');
     document.documentElement.classList.add(newTheme);
   };
 
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);
     localStorage.setItem('theme', newTheme);
-    document.documentElement.classList.remove('light', 'dark', 'high-contrast');
+    document.documentElement.classList.remove('light', 'dark');
     document.documentElement.classList.add(newTheme);
   };
 

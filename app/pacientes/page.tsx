@@ -178,10 +178,10 @@ export default function PacientesPage() {
 
     const ageText = `${years} ANOS, ${months} MESES`;
     
-    let lifeStage = 'ADULTO';
-    if (years < 12) lifeStage = 'CRIANÇA';
-    else if (years < 18) lifeStage = 'ADOLESCENTE';
-    else if (years >= 60) lifeStage = 'IDOSO';
+    let lifeStage = 'IDADE ADULTA';
+    if (years >= 0 && years <= 11) lifeStage = 'INFÂNCIA';
+    else if (years >= 12 && years <= 19) lifeStage = 'ADOLESCÊNCIA';
+    else if (years > 60) lifeStage = 'VELHICE';
     
     return { ageText, lifeStage };
   };
@@ -496,10 +496,10 @@ export default function PacientesPage() {
                         <div className="w-full bg-surface-container-low/50 border-2 border-dashed border-outline-variant/20 rounded-2xl px-6 py-4 min-h-[52px] flex items-center">
                           <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest ${
                             !formData.data_nascimento ? 'text-on-surface-variant/30' :
-                            calculateAge(formData.data_nascimento).lifeStage === 'CRIANÇA' ? 'bg-blue-100 text-blue-700' :
-                            calculateAge(formData.data_nascimento).lifeStage === 'ADOLESCENTE' ? 'bg-purple-100 text-purple-700' :
-                            calculateAge(formData.data_nascimento).lifeStage === 'IDOSO' ? 'bg-orange-100 text-orange-700' :
-                            'bg-green-100 text-green-700'
+                            calculateAge(formData.data_nascimento).lifeStage === 'INFÂNCIA' ? 'bg-blue-100 text-blue-700' :
+                            calculateAge(formData.data_nascimento).lifeStage === 'ADOLESCÊNCIA' ? 'bg-purple-100 text-purple-700' :
+                            calculateAge(formData.data_nascimento).lifeStage === 'VELHICE' ? 'bg-error/10 text-error' :
+                            'bg-success/10 text-success'
                           }`}>
                             {formData.data_nascimento ? calculateAge(formData.data_nascimento).lifeStage : '---'}
                           </span>
@@ -710,10 +710,10 @@ export default function PacientesPage() {
                                 </td>
                                 <td className="px-4 py-5">
                                   <span className={`text-table-cell px-3 py-1.5 rounded-lg uppercase tracking-wide border block w-fit ${
-                                    lifeStage === 'CRIANÇA' ? 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/50 dark:text-blue-300 dark:border-blue-800' :
-                                    lifeStage === 'ADOLESCENTE' ? 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/50 dark:text-purple-300 dark:border-purple-800' :
-                                    lifeStage === 'IDOSO' ? 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/50 dark:text-orange-300 dark:border-orange-800' :
-                                    'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/50 dark:text-emerald-300 dark:border-emerald-800'
+                                    lifeStage === 'INFÂNCIA' ? 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/50 dark:text-blue-300 dark:border-blue-800' :
+                                    lifeStage === 'ADOLESCÊNCIA' ? 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/50 dark:text-purple-300 dark:border-purple-800' :
+                                    lifeStage === 'VELHICE' ? 'bg-error/10 text-error border-error/20 dark:bg-red-900/50 dark:text-red-300 dark:border-red-800' :
+                                    'bg-success/10 text-success border-success/20 dark:bg-green-900/50 dark:text-green-300 dark:border-green-800'
                                   }`}>
                                     {lifeStage}
                                   </span>

@@ -407,13 +407,14 @@ export default function RotinasPage() {
                   </div>
                 ) : (
                   <>
-                    <table className="w-full text-left border-separate border-spacing-0 min-w-[1100px]">
+                    <table className="w-full text-left border-separate border-spacing-0 min-w-[800px]">
                       <thead className="sticky top-0 z-30 bg-surface-container-low">
                         <tr>
-                          <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/60 font-headline border-b border-outline-variant/5">Descrição / Tipo</th>
-                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/60 font-headline border-b border-outline-variant/5">Trimestre</th>
-                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/60 font-headline border-b border-outline-variant/5">Categoria</th>
-                          <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/60 font-headline text-center border-b border-outline-variant/5 w-[180px]">Ações</th>
+                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Descrição</th>
+                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Tipo</th>
+                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Trimestre</th>
+                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Categoria</th>
+                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-center">Ações</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-outline-variant/5">
@@ -423,51 +424,49 @@ export default function RotinasPage() {
                             <motion.tr 
                               layout
                               key={rot.id} 
-                              className="hover:bg-surface-container-low/50 transition-all group"
+                              className="hover:bg-primary/[0.02] transition-colors group"
                             >
-                            <td className="px-6 py-4">
-                              <div className="flex flex-col gap-1">
-                                <span className={`text-[9px] font-black uppercase tracking-widest w-fit px-2 py-0.5 rounded ${
-                                  rot.tipo === 'EXAME' ? 'bg-blue-100 text-blue-700' : 
-                                  rot.tipo === 'VACINA' ? 'bg-green-100 text-green-700' : 
-                                  'bg-purple-100 text-purple-700'
-                                }`}>
-                                  {rot.tipo}
-                                </span>
-                                <p className="font-black text-on-surface font-headline text-sm group-hover:text-primary transition-colors uppercase">{rot.descricao}</p>
-                              </div>
+                            <td className="px-4 py-3">
+                              <p className="font-black text-xs text-on-surface uppercase leading-tight">{rot.descricao}</p>
                             </td>
-                            <td className="px-4 py-4">
-                              <span className="text-[10px] font-black text-on-surface-variant/60 uppercase tracking-tighter">
-                                {rot.trimestre} Trimestre
+                            <td className="px-4 py-3">
+                              <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${
+                                rot.tipo === 'EXAME' ? 'bg-blue-100 text-blue-700' : 
+                                rot.tipo === 'VACINA' ? 'bg-success/10 text-success' : 
+                                'bg-purple-100 text-purple-700'
+                              }`}>
+                                {rot.tipo}
                               </span>
                             </td>
-                            <td className="px-4 py-4">
-                              <span className={`inline-flex px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest w-fit ${
-                                rot.categoria === 'OBRIGATORIO' ? 'bg-orange-50 text-orange-700' : 
-                                rot.categoria === 'OPCIONAL' ? 'bg-slate-50 text-slate-600' : 
-                                'bg-yellow-50 text-yellow-700'
+                            <td className="px-4 py-3">
+                              <span className="text-[9px] font-black text-on-surface uppercase tracking-widest">
+                                {rot.trimestre}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className={`inline-flex px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                                rot.categoria === 'OBRIGATORIO' ? 'bg-primary/10 text-primary' : 
+                                rot.categoria === 'OPCIONAL' ? 'bg-surface-container-high text-on-surface-variant' : 
+                                'bg-warning/10 text-warning'
                               }`}>
                                 {rot.categoria}
                               </span>
                             </td>
-                            <td className="px-6 py-4 bg-surface-container-lowest group-hover:bg-surface-container-low transition-colors">
-                              <div className="flex items-center justify-center gap-2">
+                            <td className="px-4 py-3">
+                              <div className="flex items-center justify-center gap-1">
                                 <button 
                                   onClick={() => handleEdit(rot)}
-                                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary/5 text-primary hover:bg-primary hover:text-white transition-all shadow-sm group/btn"
-                                  title="Editar Rotina"
+                                  className="p-1.5 rounded-lg bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white transition-all"
+                                  title="Editar"
                                 >
                                   <Edit2 className="w-3.5 h-3.5" />
-                                  <span className="text-[9px] font-black uppercase tracking-widest hidden group-hover/btn:inline">Editar</span>
                                 </button>
                                 <button 
                                   onClick={() => setDeleteConfirmId(rot.id)}
-                                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all shadow-sm group/btn"
-                                  title="Excluir Rotina"
+                                  className="p-1.5 rounded-lg bg-error text-white hover:bg-error/80 transition-all"
+                                  title="Excluir"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
-                                  <span className="text-[9px] font-black uppercase tracking-widest hidden group-hover/btn:inline">Excluir</span>
                                 </button>
                               </div>
                             </td>

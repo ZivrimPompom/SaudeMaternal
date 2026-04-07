@@ -19,13 +19,11 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
 
   const getThemeIcon = () => {
     if (theme === 'light') return 'dark_mode';
-    if (theme === 'dark') return 'contrast';
     return 'light_mode';
   };
 
   const getThemeTitle = () => {
     if (theme === 'light') return 'Ativar Modo Escuro';
-    if (theme === 'dark') return 'Ativar Alto Contraste';
     return 'Ativar Modo Claro';
   };
 
@@ -102,6 +100,11 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
           setGestacoes(gestData);
           console.log('Fetched', rotData.length, 'rotinas and', gestData.length, 'gestacoes');
         }
+        if (isDesfechosPage) {
+          const gestData = await fetchChunked('gestacoes', 'sispn, dum');
+          setGestacoes(gestData);
+          console.log('Fetched', gestData.length, 'gestacoes for desfechos');
+        }
       };
       fetchData();
     }
@@ -118,9 +121,15 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
         const valid: any[] = [];
         const rejected: any[] = [];
         data.forEach(item => {
-          const cpf = (item.cpf || '').replace(/\D/g, '');
+          const cpf = (item.cpf || '').replace(/\D/g, '').padStart(11, '0');
           if (cpf.length !== 11) {
             rejected.push({ ...item, MOTIVO_REJEICAO: 'CPF inválido (deve ter 11 dígitos)' });
+            return;
+          }
+
+          const cns = (item.cns || '').replace(/\D/g, '').padStart(15, '0');
+          if (cns && cns.length !== 15) {
+            rejected.push({ ...item, MOTIVO_REJEICAO: 'CNS inválido (deve ter 15 dígitos)' });
             return;
           }
 
@@ -137,7 +146,7 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
             ...item,
             gestante: (item.gestante || '').toUpperCase(),
             cpf,
-            cns: (item.cns || '').replace(/\D/g, ''),
+            cns: cns || null,
             prontuario: (item.prontuario || '').toUpperCase(),
             data_nascimento: dataNascimento,
             nome_mae: (item.nome_mae || 'NÃO INFORMADO').toUpperCase(),
@@ -165,24 +174,31 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
         const valid: any[] = [];
         const rejected: any[] = [];
         data.forEach(item => {
-          const cpf = (item.cpf || '').replace(/\D/g, '');
+          const cpf = (item.cpf || '').replace(/\D/g, '').padStart(11, '0');
           if (cpf.length !== 11) {
-            rejected.push({ ...item, MOTIVO_REJEICAO: 'CPF inválido' });
-          } else {
-            valid.push({
-              ...item,
-              nome: (item.nome || '').toUpperCase(),
-              cpf,
-              cns: (item.cns || '').replace(/\D/g, ''),
-              cbo: (item.cbo || '').replace(/\D/g, ''),
-              unidade_cnes: item.unidade_cnes || null,
-              equipe: item.equipe || 'SEM EQUIPE',
-              situacao: (item.situacao || 'ATIVO').toUpperCase(),
-              vinculo: (item.vinculo || 'INTERMEDIADO').toUpperCase(),
-              tipo_vinculo: (item.tipo_vinculo || 'CLT').toUpperCase(),
-              chs: parseInt(item.chs) || 20
-            });
+            rejected.push({ ...item, MOTIVO_REJEICAO: 'CPF inválido (deve ter 11 dígitos)' });
+            return;
           }
+
+          const cns = (item.cns || '').replace(/\D/g, '').padStart(15, '0');
+          if (cns && cns.length !== 15) {
+            rejected.push({ ...item, MOTIVO_REJEICAO: 'CNS inválido (deve ter 15 dígitos)' });
+            return;
+          }
+
+          valid.push({
+            ...item,
+            nome: (item.nome || '').toUpperCase(),
+            cpf,
+            cns: cns || null,
+            cbo: (item.cbo || '').replace(/\D/g, ''),
+            unidade_cnes: item.unidade_cnes || null,
+            equipe: item.equipe || 'SEM EQUIPE',
+            situacao: (item.situacao || 'ATIVO').toUpperCase(),
+            vinculo: (item.vinculo || 'INTERMEDIADO').toUpperCase(),
+            tipo_vinculo: (item.tipo_vinculo || 'CLT').toUpperCase(),
+            chs: parseInt(item.chs) || 20
+          });
         });
         return { valid, rejected };
       }
@@ -193,20 +209,30 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
       requiredColumns: ['cnes', 'nome_fantasia'],
       conflictColumn: "cnes",
       transformData: (data: any[]) => {
-        const valid = data.map(item => ({
-          ...item,
-          nome_fantasia: (item.nome_fantasia || '').toUpperCase(),
-          cnes: item.cnes,
-          telefone: (item.telefone || '').replace(/\D/g, ''),
-          logradouro: (item.logradouro || '').toUpperCase(),
-          numero: (item.numero || '').toUpperCase(),
-          complemento: (item.complemento || '').toUpperCase(),
-          bairro: (item.bairro || '').toUpperCase(),
-          municipio: (item.municipio || 'SAO PAULO').toUpperCase(),
-          uf: (item.uf || 'SP').toUpperCase(),
-          cep: item.cep || ''
-        }));
-        return { valid, rejected: [] };
+        const valid: any[] = [];
+        const rejected: any[] = [];
+        data.forEach(item => {
+          const cnes = (item.cnes || '').replace(/\D/g, '');
+          if (cnes.length < 7) {
+            rejected.push({ ...item, MOTIVO_REJEICAO: 'CNES inválido (deve ter 7 dígitos)' });
+            return;
+          }
+
+          valid.push({
+            ...item,
+            nome_fantasia: (item.nome_fantasia || '').toUpperCase(),
+            cnes,
+            telefone: (item.telefone || '').replace(/\D/g, ''),
+            logradouro: (item.logradouro || '').toUpperCase(),
+            numero: (item.numero || '').toUpperCase(),
+            complemento: (item.complemento || '').toUpperCase(),
+            bairro: (item.bairro || '').toUpperCase(),
+            municipio: (item.municipio || 'SAO PAULO').toUpperCase(),
+            uf: (item.uf || 'SP').toUpperCase(),
+            cep: (item.cep || '').replace(/\D/g, '').padStart(8, '0')
+          });
+        });
+        return { valid, rejected };
       }
     };
     if (isGestacoesPage) return {
@@ -252,9 +278,10 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
           if (m < 0 || (m === 0 && ref.getDate() < birth.getDate())) {
             age--;
           }
-          let phase = 'ADULTO';
-          if (age < 20) phase = 'ADOLESCENTE';
-          if (age >= 60) phase = 'IDOSO';
+          let phase = 'IDADE ADULTA';
+          if (age >= 0 && age <= 11) phase = 'INFÂNCIA';
+          else if (age >= 12 && age <= 19) phase = 'ADOLESCÊNCIA';
+          else if (age > 60) phase = 'VELHICE';
           return { age, phase };
         };
 
@@ -375,7 +402,7 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
             valid.push({
               ...item,
               sispn,
-              cpf: (item.cpf || '').replace(/\D/g, ''),
+              cpf: (item.cpf || '').replace(/\D/g, '').padStart(11, '0'),
               data_consulta: formatDate(item.data_consulta),
               data_proxima_consulta: formatDate(item.data_proxima_consulta),
               cbo: (item.cbo || '').replace(/\D/g, ''),
@@ -479,7 +506,7 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
             rejectionReason += `Rotina "${descricaoCsv}" não encontrada.`;
           }
 
-          const cpfProf = (item.cpf_profissional || '').replace(/\D/g, '');
+          const cpfProf = (item.cpf_profissional || '').replace(/\D/g, '').padStart(11, '0');
           const transformedItem = {
             ...item,
             sispn,
@@ -573,8 +600,8 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
       }
     };
     if (isDesfechosPage) return {
-      tableName: "desfechos",
-      expectedColumns: ['sispn', 'tipo_desfecho', 'data_desfecho'],
+      tableName: "desfechos_e_rn",
+      expectedColumns: ['sispn', 'tipo_desfecho', 'data_desfecho', 'nome_rn', 'cpf_rn', 'data_consulta_rn'],
       requiredColumns: ['sispn', 'tipo_desfecho', 'data_desfecho'],
       conflictColumn: "id",
       transformData: (data: any[]) => {
@@ -590,9 +617,43 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
           return dateStr;
         };
 
+        const parseScientificNotation = (val: any) => {
+          if (!val) return '';
+          const str = val.toString().replace(',', '.').replace(/[^\d.Ee]/g, '');
+          if (str.includes('E') || str.includes('e')) {
+            const num = parseFloat(str);
+            if (!isNaN(num)) return Math.round(num).toString();
+          }
+          return str.replace(/\D/g, '');
+        };
+
         const normalizeSispn = (val: any) => {
           if (!val) return '';
-          return val.toString().replace(/\D/g, '').replace(/^0+/, '');
+          const parsed = parseScientificNotation(val);
+          return parsed.replace(/^0+/, '');
+        };
+
+        const normalizeCpf = (val: any) => {
+          if (!val) return '';
+          const str = val.toString();
+          if (str.includes(',') && (str.includes('E') || str.includes('e'))) {
+            const parts = str.split(/[,\s]+/);
+            return parseScientificNotation(parts[0]).padStart(11, '0').slice(0, 11);
+          }
+          return parseScientificNotation(val).padStart(11, '0').slice(0, 11);
+        };
+
+        const normalizeTipoDesfecho = (tipo: string) => {
+          const t = tipo.toUpperCase().trim()
+            .replace(/Ç/g, 'C')
+            .replace(/Í/g, 'I')
+            .replace(/Ô/g, 'O')
+            .replace(/0/g, 'O');
+          
+          if (t === 'CONVENIO MEDICO' || t === 'CONVENIO MEDICO' || t === 'CONVÊNIO MÉDICO') {
+            return 'CONVÊNIO MÉDICO';
+          }
+          return t;
         };
 
         const desfechoOptions = ['PARTO', 'ABORTO', 'MUDOU-SE', 'ÓBITO', 'CONVÊNIO MÉDICO', 'OUTROS'];
@@ -610,7 +671,7 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
             }
           }
 
-          const tipo = (item.tipo_desfecho || '').toUpperCase().trim();
+          const tipo = normalizeTipoDesfecho(item.tipo_desfecho || item.desfecho || '');
           if (!desfechoOptions.includes(tipo)) {
             rejectionReason = rejectionReason ? `${rejectionReason} | ` : '';
             rejectionReason += `Tipo de desfecho "${tipo}" inválido. Opções: ${desfechoOptions.join(', ')}`;
@@ -620,11 +681,15 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
             rejected.push({ ...item, MOTIVO_REJEICAO: rejectionReason });
           } else {
             valid.push({
-              ...item,
               sispn,
               tipo_desfecho: tipo,
-              data_desfecho: formatDate(item.data_desfecho),
-              unidade_cnes: user?.unidade_cnes || null
+              data_desfecho: formatDate(item.data_desfecho || item.data),
+              nome_rn: item.nome_rn || null,
+              cpf_rn: item.cpf_rn ? normalizeCpf(item.cpf_rn) : null,
+              data_consulta_rn: item.data_consulta_rn ? formatDate(item.data_consulta_rn) : null,
+              comparecimento: item.data_consulta_rn ? true : false,
+              unidade_cnes: user?.unidade_cnes || null,
+              cpf_operador: user?.cpf || null
             });
           }
         });

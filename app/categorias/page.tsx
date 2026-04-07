@@ -367,7 +367,7 @@ export default function CategoriasPage() {
                     <Briefcase className="text-secondary w-6 h-6" />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-black font-headline text-on-surface">Categorias Ativas</h3>
+                    <h3 className="text-2xl font-black font-headline text-on-surface">Categorias</h3>
                     <p className="text-xs text-on-surface-variant/60 font-body uppercase tracking-widest font-bold">Listagem Geral de CBOs</p>
                   </div>
                 </div>
@@ -391,11 +391,12 @@ export default function CategoriasPage() {
                   </div>
                 ) : (
                   <>
-                    <table className="w-full text-left border-separate border-spacing-0 min-w-[1000px]">
+                    <table className="w-full text-left border-separate border-spacing-0 min-w-[600px]">
                       <thead className="sticky top-0 z-30 bg-surface-container-low">
                         <tr>
-                          <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/60 font-headline border-b border-outline-variant/5">CBO / Categoria</th>
-                          <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant/60 font-headline text-center border-b border-outline-variant/5 w-[180px]">Ações</th>
+                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">CBO</th>
+                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Categoria</th>
+                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-center">Ações</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-outline-variant/5">
@@ -405,31 +406,29 @@ export default function CategoriasPage() {
                             <motion.tr 
                               layout
                               key={cat.cbo} 
-                              className="hover:bg-surface-container-low/50 transition-all group"
+                              className="hover:bg-primary/[0.02] transition-colors group"
                             >
-                            <td className="px-6 py-4">
-                              <div className="flex flex-col gap-1">
-                                <span className="text-[10px] font-black text-secondary tracking-widest">{cat.cbo}</span>
-                                <p className="font-black text-on-surface font-headline text-sm group-hover:text-secondary transition-colors uppercase">{cat.categoria}</p>
-                              </div>
+                            <td className="px-4 py-3">
+                              <span className="text-[10px] font-mono font-bold text-primary">{cat.cbo}</span>
                             </td>
-                            <td className="px-6 py-4 bg-surface-container-lowest group-hover:bg-surface-container-low transition-colors">
-                              <div className="flex items-center justify-center gap-2">
+                            <td className="px-4 py-3">
+                              <p className="font-black text-xs text-on-surface uppercase">{cat.categoria}</p>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center justify-center gap-1">
                                 <button 
                                   onClick={() => handleEdit(cat)}
-                                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-secondary/5 text-secondary hover:bg-secondary hover:text-white transition-all shadow-sm group/btn"
-                                  title="Editar Categoria"
+                                  className="p-1.5 rounded-lg bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white transition-all"
+                                  title="Editar"
                                 >
                                   <Edit2 className="w-3.5 h-3.5" />
-                                  <span className="text-[9px] font-black uppercase tracking-widest hidden group-hover/btn:inline">Editar</span>
                                 </button>
                                 <button 
                                   onClick={() => setDeleteConfirmCbo(cat.cbo)}
-                                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all shadow-sm group/btn"
-                                  title="Excluir Categoria"
+                                  className="p-1.5 rounded-lg bg-error text-white hover:bg-error/80 transition-all"
+                                  title="Excluir"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
-                                  <span className="text-[9px] font-black uppercase tracking-widest hidden group-hover/btn:inline">Excluir</span>
                                 </button>
                               </div>
                             </td>

@@ -128,18 +128,10 @@ export default function ProfissionaisPage() {
     
     let prosResponse = await supabase
       .from('profissionais')
-      .select('*, categorias_profissionais(cbo, categoria), unidades_saude(nome_fantasia)')
+      .select('*, categorias_profissionais(cbo, categoria)')
       .order('nome')
       .limit(5000);
     
-    if (prosResponse.error && prosResponse.error.message.includes('relationship')) {
-      // Fallback if relationship doesn't exist yet
-      prosResponse = await supabase
-        .from('profissionais')
-        .select('*, categorias_profissionais(cbo, categoria)')
-        .order('nome');
-    }
-
     const [catsResponse, unitsResponse] = await Promise.all([
       supabase
         .from('categorias_profissionais')
@@ -151,18 +143,23 @@ export default function ProfissionaisPage() {
         .order('nome_fantasia')
     ]);
 
-    if (prosResponse.error) {
-      console.error('Erro ao carregar profissionais:', prosResponse.error);
-      setError(`Erro ao carregar profissionais: ${prosResponse.error.message}`);
-    } else {
-      setProfessionals(prosResponse.data as Profissional[]);
-    }
-
     if (catsResponse.error) console.error('Error fetching categories:', catsResponse.error);
     else setCategories(catsResponse.data as Categoria[]);
 
     if (unitsResponse.error) console.error('Error fetching units:', unitsResponse.error);
     else setUnits(unitsResponse.data as HealthUnit[]);
+
+    if (prosResponse.error) {
+      console.error('Erro ao carregar profissionais:', prosResponse.error);
+      setError(`Erro ao carregar profissionais: ${prosResponse.error.message}`);
+    } else {
+      // Enrich professionals with unit names
+      const enrichedData = (prosResponse.data || []).map((pro: any) => ({
+        ...pro,
+        unidades_saude: (unitsResponse.data || []).find((u: any) => u.cnes === pro.unidade_cnes) || null
+      }));
+      setProfessionals(enrichedData as Profissional[]);
+    }
 
     setLoading(false);
   };
@@ -615,15 +612,16 @@ export default function ProfissionaisPage() {
                   </div>
                 ) : (
                   <>
-                    <table className="w-full text-left border-separate border-spacing-0 min-w-[1000px]">
+                    <table className="w-full text-left border-separate border-spacing-0 min-w-[900px]">
                       <thead className="sticky top-0 z-30 bg-surface-container-low">
                         <tr>
-                          <th className="px-6 py-4 text-table-header w-[250px]">Profissional / CPF</th>
-                          <th className="px-4 py-4 text-table-header w-[200px]">CNS / CBO</th>
-                          <th className="px-4 py-4 text-table-header w-[120px]">Equipe</th>
-                          <th className="px-4 py-4 text-table-header">Vínculo</th>
-                          <th className="px-4 py-4 text-table-header">Situação</th>
-                          <th className="px-6 py-4 text-table-header text-center w-[180px]">Ações</th>
+                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Nome</th>
+                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">CPF</th>
+                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">CNS</th>
+                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Categoria</th>
+                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Equipe</th>
+                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Situação</th>
+                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-center">Ações</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-outline-variant/5">
@@ -633,75 +631,50 @@ export default function ProfissionaisPage() {
                             <motion.tr 
                               layout
                               key={pro.cpf} 
-                              className="hover:bg-surface-container-low/50 transition-all group"
+                              className="hover:bg-primary/[0.02] transition-colors group"
                             >
-                              <td className="px-6 py-4">
-                                <div className="flex flex-col gap-0.5">
-                                  <span className="text-[10px] font-black text-primary tracking-widest">{formatCpf(pro.cpf)}</span>
-                                  <p className="font-black text-on-surface font-headline text-sm group-hover:text-primary transition-colors uppercase line-clamp-1">{pro.nome}</p>
-                                  <span className="text-[9px] font-bold text-on-surface-variant/60 uppercase tracking-widest line-clamp-1">
-                                    {pro.unidades_saude?.nome_fantasia || 'Sem Unidade'}
-                                  </span>
+                              <td className="px-4 py-3">
+                                <p className="font-black text-xs text-on-surface uppercase leading-tight">{pro.nome}</p>
+                              </td>
+                              <td className="px-4 py-3">
+                                <span className="text-[10px] font-mono font-bold text-primary">{formatCpf(pro.cpf)}</span>
+                              </td>
+                              <td className="px-4 py-3">
+                                <span className="text-[10px] font-mono text-on-surface">{formatCns(pro.cns) || '---'}</span>
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="text-[10px]">
+                                  <p className="font-black text-primary uppercase">{pro.categorias_profissionais?.categoria || '---'}</p>
+                                  <p className="text-[9px] text-on-surface-variant/50">{pro.unidades_saude?.nome_fantasia || '---'}</p>
                                 </div>
                               </td>
-                              <td className="px-4 py-4">
-                                <div className="flex flex-col gap-0.5">
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="material-symbols-outlined text-on-surface-variant/30 text-[14px]">badge</span>
-                                    <span className="text-[10px] font-bold text-on-surface-variant/60 whitespace-nowrap">{formatCns(pro.cns) || '---'}</span>
-                                  </div>
-                                  <span className="text-[10px] font-black text-secondary uppercase tracking-tighter line-clamp-1">
-                                    {pro.categorias_profissionais?.categoria || '---'}
-                                  </span>
-                                </div>
-                              </td>
-                              <td className="px-4 py-4">
-                                <span className="text-[9px] font-black text-primary uppercase tracking-widest bg-primary/5 px-2 py-0.5 rounded-full">
+                              <td className="px-4 py-3">
+                                <span className="text-[9px] font-black text-on-surface uppercase tracking-widest bg-primary/5 px-2 py-0.5 rounded-full">
                                   {pro.equipe || 'SEM EQUIPE'}
                                 </span>
                               </td>
-                              <td className="px-4 py-4">
-                                <div className="flex flex-col gap-1">
-                                  <span className={`inline-flex px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest w-fit ${
-                                    pro.vinculo === 'DIRETO' ? 'bg-blue-50 text-blue-600' : 'bg-purple-50 text-purple-600'
-                                  }`}>
-                                    {pro.vinculo}
-                                  </span>
-                                  <div className="flex items-center gap-1">
-                                    <span className="text-[9px] font-bold text-on-surface-variant/60 uppercase tracking-tighter">
-                                      {pro.tipo_vinculo}
-                                    </span>
-                                    <span className="w-1 h-1 rounded-full bg-on-surface-variant/20"></span>
-                                    <span className="text-[9px] font-black text-on-surface-variant/60">
-                                      {pro.chs}H
-                                    </span>
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="px-4 py-4">
-                                <span className={`inline-flex px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest ${
-                                  pro.situacao === 'ATIVO' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'
+                              <td className="px-4 py-3">
+                                <span className={`inline-flex px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                                  pro.situacao === 'ATIVO' ? 'bg-success/10 text-success' : 'bg-error/10 text-error'
                                 }`}>
                                   {pro.situacao || 'ATIVO'}
                                 </span>
                               </td>
-                              <td className="px-6 py-4 bg-surface-container-lowest group-hover:bg-surface-container-low transition-colors">
-                                <div className="flex items-center justify-center gap-2">
+                              <td className="px-4 py-3">
+                                <div className="flex items-center justify-center gap-1">
                                   <button 
                                     onClick={() => handleEdit(pro)}
-                                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary/5 text-primary hover:bg-primary hover:text-white transition-all shadow-sm group/btn"
-                                    title="Editar Profissional"
+                                    className="p-1.5 rounded-lg bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white transition-all"
+                                    title="Editar"
                                   >
-                                    <span className="material-symbols-outlined text-[14px]">edit</span>
-                                    <span className="text-[9px] font-black uppercase tracking-widest hidden group-hover/btn:inline">Editar</span>
+                                    <span className="material-symbols-outlined text-sm">edit</span>
                                   </button>
                                   <button 
                                     onClick={() => setDeleteConfirmCpf(pro.cpf)}
-                                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all shadow-sm group/btn"
-                                    title="Excluir Profissional"
+                                    className="p-1.5 rounded-lg bg-error text-white hover:bg-error/80 transition-all"
+                                    title="Excluir"
                                   >
-                                    <span className="material-symbols-outlined text-[14px]">delete</span>
-                                    <span className="text-[9px] font-black uppercase tracking-widest hidden group-hover/btn:inline">Excluir</span>
+                                    <span className="material-symbols-outlined text-sm">delete</span>
                                   </button>
                                 </div>
                               </td>

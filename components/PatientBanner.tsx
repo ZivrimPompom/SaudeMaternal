@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { calculateAgeInfo, getStageColor } from '@/lib/ageUtils';
 
 interface PatientBannerProps {
   patient: {
@@ -17,18 +18,6 @@ interface PatientBannerProps {
 }
 
 export default function PatientBanner({ patient, className = '' }: PatientBannerProps) {
-  const calculateAge = (dob: string) => {
-    if (!dob) return '---';
-    const birth = new Date(dob);
-    const today = new Date();
-    let age = today.getFullYear() - birth.getFullYear();
-    const m = today.getMonth() - birth.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
-      age--;
-    }
-    return age;
-  };
-
   const calculateCaptacao = (dum: string, cadastro: string) => {
     if (!dum || !cadastro) return '---';
     const start = new Date(dum);
@@ -38,7 +27,7 @@ export default function PatientBanner({ patient, className = '' }: PatientBanner
     return diffWeeks <= 12 ? 'PRECOCE' : 'TARDIA';
   };
 
-  const age = calculateAge(patient.data_nascimento);
+  const ageInfo = calculateAgeInfo(patient.data_nascimento);
   const captacao = calculateCaptacao(patient.dum, patient.data_cadastro);
 
   const formatDate = (date: string) => {
@@ -77,8 +66,11 @@ export default function PatientBanner({ patient, className = '' }: PatientBanner
           <div>
             <p className="text-[10px] font-black text-on-surface-variant/40 uppercase tracking-widest mb-1">NASC. / IDADE</p>
             <p className="text-sm font-black text-on-surface leading-tight uppercase tracking-tight">
-              {formatDate(patient.data_nascimento)} <span className="text-on-surface-variant/20 mx-1">|</span> {age} ANOS
+              {formatDate(patient.data_nascimento)} <span className="text-on-surface-variant/20 mx-1">|</span> {ageInfo.text}
             </p>
+            <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest mt-1 inline-block ${getStageColor(ageInfo.stage)}`}>
+              {ageInfo.stage}
+            </span>
           </div>
 
           <div>

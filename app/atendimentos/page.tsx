@@ -23,7 +23,7 @@ interface Profissional {
 }
 
 interface Atendimento {
-  id_atendimento: string;
+  id_consulta: string;
   sispn: string;
   data_consulta: string;
   trimestre_consulta: '1º TRIMESTRE' | '2º TRIMESTRE' | '3º TRIMESTRE';
@@ -265,6 +265,7 @@ export default function AtendimentosPage() {
     
     gestacoes.forEach(g => {
       const status = getGestacaoStatus(g.dpp);
+      const weeksToDpp = g.dpp ? Math.max(0, Math.ceil((new Date(g.dpp).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24 * 7))) : null;
       if (!filters.status || status === filters.status) {
         patientMap.set(g.sispn, {
           ...g,
@@ -277,7 +278,8 @@ export default function AtendimentosPage() {
           currentTrimester: '---',
           hasAlert: false,
           alertMessage: '',
-          status: status
+          status: status,
+          weeksToDpp: weeksToDpp
         });
       }
     });
@@ -655,7 +657,7 @@ export default function AtendimentosPage() {
         const { error: updateError } = await supabase
           .from('atendimentos')
           .update(payloads[0])
-          .eq('id_atendimento', editingId);
+          .eq('id_consulta', editingId);
         if (updateError) throw updateError;
         setSuccess('Atendimento atualizado!');
       } else {
@@ -679,7 +681,7 @@ export default function AtendimentosPage() {
   const handleEdit = (con: Atendimento) => {
     if (!con) return;
     
-    setEditingId(con.id_atendimento);
+    setEditingId(con.id_consulta);
     const gest = Array.isArray(con.gestacoes) ? con.gestacoes[0] : con.gestacoes;
     const pac = gest?.pacientes;
     const pacObj = Array.isArray(pac) ? pac[0] : pac;
@@ -720,7 +722,7 @@ export default function AtendimentosPage() {
       const { error: delError } = await supabase
         .from('atendimentos')
         .delete()
-        .eq('id_atendimento', id);
+        .eq('id_consulta', id);
       if (delError) throw delError;
       setSuccess('Atendimento excluído!');
       setDeleteConfirmId(null);
@@ -1108,38 +1110,38 @@ export default function AtendimentosPage() {
                               <col style={{ width: '20%' }} />
                               <col style={{ width: '8%' }} />
                             </colgroup>
-                            <thead className="bg-surface-container-high">
+                            <thead className="bg-surface-container-low">
                               <tr>
-                                <th className="px-2 py-1.5 text-table-header">Data Consulta</th>
-                                <th className="px-2 py-1.5 text-table-header">Trimestre</th>
-                                <th className="px-2 py-1.5 text-table-header">Profissional</th>
-                                <th className="px-2 py-1.5 text-table-header">Próxima Consulta</th>
-                                <th className="px-2 py-1.5 text-table-header">Observações</th>
-                                <th className="px-2 py-1.5 text-table-header text-center">Ações</th>
+                                <th className="px-2 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Data Consulta</th>
+                                <th className="px-2 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Trimestre</th>
+                                <th className="px-2 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Profissional</th>
+                                <th className="px-2 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Próxima Consulta</th>
+                                <th className="px-2 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Observações</th>
+                                <th className="px-2 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-center">Ações</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-outline-variant/5">
                               {selectedPatientHistory.map((h) => (
-                                <tr key={h.id_atendimento} className="hover:bg-white/50 transition-colors group">
+                                <tr key={h.id_consulta} className="hover:bg-primary/[0.02] transition-colors group">
                                   <td className="px-2 py-1.5">
-                                    <div className="text-table-cell text-on-surface">{new Date(h.data_consulta).toLocaleDateString('pt-BR')}</div>
+                                    <div className="text-xs font-bold text-on-surface">{new Date(h.data_consulta).toLocaleDateString('pt-BR')}</div>
                                   </td>
                                   <td className="px-2 py-1.5">
-                                    <div className="text-table-cell text-on-surface uppercase">{h.trimestre_consulta}</div>
+                                    <div className="text-xs font-bold text-on-surface uppercase">{h.trimestre_consulta}</div>
                                   </td>
                                   <td className="px-2 py-1.5">
                                     <div className="text-[9px]">
-                                      <p className="font-black text-on-surface uppercase">{allProfessionals.find(p => p.cpf === h.cpf)?.nome || '---'}</p>
+                                      <p className="font-black text-sm text-on-surface uppercase">{allProfessionals.find(p => p.cpf === h.cpf)?.nome || '---'}</p>
                                       <p className="font-bold text-on-surface-variant/60 uppercase">{getCboCategory(h.cbo)}</p>
                                     </div>
                                   </td>
                                   <td className="px-2 py-1.5">
-                                    <div className="text-table-cell text-on-surface">
+                                    <div className="text-xs font-bold text-on-surface">
                                       {h.data_proxima_consulta ? new Date(h.data_proxima_consulta).toLocaleDateString('pt-BR') : '---'}
                                     </div>
                                   </td>
                                   <td className="px-2 py-1.5">
-                                    <div className="text-table-cell text-on-surface-variant truncate">
+                                    <div className="text-xs font-medium text-on-surface-variant truncate">
                                       {h.observacoes_clinicas || '---'}
                                     </div>
                                   </td>
@@ -1148,15 +1150,15 @@ export default function AtendimentosPage() {
                                       <button 
                                         type="button"
                                         onClick={() => handleEdit(h)} 
-                                        className="p-1 rounded-xl bg-white/50 text-on-surface-variant hover:bg-primary hover:text-white transition-all"
+                                        className="p-1 rounded-xl bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white transition-all"
                                         title="Editar"
                                       >
                                         <span className="material-symbols-outlined text-sm">edit</span>
                                       </button>
                                       <button 
                                         type="button"
-                                        onClick={() => setDeleteConfirmId(h.id_atendimento)} 
-                                        className="p-1 rounded-xl bg-white/50 text-on-surface-variant hover:bg-error hover:text-white transition-all"
+                                        onPointerDown={() => setDeleteConfirmId(h.id_consulta)} 
+                                        className="p-1 rounded-xl bg-error text-white hover:bg-error/80 transition-all z-50 relative"
                                         title="Excluir"
                                       >
                                         <span className="material-symbols-outlined text-sm">delete</span>
@@ -1188,58 +1190,58 @@ export default function AtendimentosPage() {
                             <col style={{ width: '20%' }} />
                             <col style={{ width: '8%' }} />
                           </colgroup>
-                          <thead className="bg-slate-100 dark:bg-slate-800">
+                          <thead className="bg-surface-container-low">
                             <tr>
-                              <th className="px-4 py-3 text-table-header">Data Consulta</th>
-                              <th className="px-4 py-3 text-table-header">Trimestre</th>
-                              <th className="px-4 py-3 text-table-header">Profissional</th>
-                              <th className="px-4 py-3 text-table-header">Próxima Consulta</th>
-                              <th className="px-4 py-3 text-table-header">Observações</th>
-                              <th className="px-4 py-3 text-table-header text-center">Ações</th>
+                              <th className="px-2 py-2 text-[9px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Data Consulta</th>
+                              <th className="px-2 py-2 text-[9px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Trimestre</th>
+                              <th className="px-2 py-2 text-[9px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Profissional</th>
+                              <th className="px-2 py-2 text-[9px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Próx.</th>
+                              <th className="px-2 py-2 text-[9px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Observações</th>
+                              <th className="px-2 py-2 text-[9px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-center">Ações</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+                          <tbody className="divide-y divide-outline-variant/5">
                             {selectedPatientHistory.map((h) => (
-                              <tr key={h.id_atendimento} className="hover:bg-orange-50 dark:hover:bg-slate-800/50 transition-colors group">
-                                <td className="px-4 py-4">
-                                  <div className="text-table-header text-black dark:text-slate-100">{new Date(h.data_consulta).toLocaleDateString('pt-BR')}</div>
+                              <tr key={h.id_consulta} className="hover:bg-primary/[0.02] transition-colors group">
+                                <td className="px-2 py-1.5">
+                                  <div className="text-[10px] font-bold text-on-surface">{new Date(h.data_consulta).toLocaleDateString('pt-BR')}</div>
                                 </td>
-                                <td className="px-4 py-4">
-                                  <div className="text-table-header text-black dark:text-slate-100 uppercase">{h.trimestre_consulta}</div>
+                                <td className="px-2 py-1.5">
+                                  <div className="text-[10px] font-bold text-on-surface uppercase">{h.trimestre_consulta}</div>
                                 </td>
-                                <td className="px-4 py-4">
-                                  <div className="text-xs">
-                                    <p className="font-black text-black dark:text-slate-100 uppercase">{allProfessionals.find(p => p.cpf === h.cpf)?.nome || '---'}</p>
-                                    <p className="font-medium text-slate-600 dark:text-slate-400 uppercase">{getCboCategory(h.cbo)}</p>
+                                <td className="px-2 py-1.5">
+                                  <div className="text-[9px]">
+                                    <p className="font-black text-[10px] text-on-surface uppercase">{allProfessionals.find(p => p.cpf === h.cpf)?.nome || '---'}</p>
+                                    <p className="font-medium text-on-surface-variant/60 uppercase">{getCboCategory(h.cbo)}</p>
                                   </div>
                                 </td>
-                                <td className="px-4 py-4">
-                                  <div className="text-table-header text-black dark:text-slate-100">
+                                <td className="px-2 py-1.5">
+                                  <div className="text-[10px] font-bold text-on-surface">
                                     {h.data_proxima_consulta ? new Date(h.data_proxima_consulta).toLocaleDateString('pt-BR') : '---'}
                                   </div>
                                 </td>
-                                <td className="px-4 py-4">
-                                  <div className="text-xs font-medium text-slate-700 dark:text-slate-400 truncate">
+                                <td className="px-2 py-1.5">
+                                  <div className="text-[10px] font-medium text-on-surface-variant truncate max-w-[120px]">
                                     {h.observacoes_clinicas || '---'}
                                   </div>
                                 </td>
-                                <td className="px-4 py-4">
-                                  <div className="flex items-center justify-center gap-2">
+                                <td className="px-2 py-1.5">
+                                  <div className="flex items-center justify-center gap-1">
                                     <button 
                                       type="button"
                                       onClick={() => handleEdit(h)} 
-                                      className="p-2 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-primary hover:text-white transition-all"
+                                      className="p-1 rounded-lg bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white transition-all"
                                       title="Editar"
                                     >
-                                      <span className="material-symbols-outlined text-base">edit</span>
+                                      <span className="material-symbols-outlined text-sm">edit</span>
                                     </button>
                                     <button 
                                       type="button"
-                                      onClick={() => setDeleteConfirmId(h.id_atendimento)} 
-                                      className="p-2 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-red-600 hover:text-white transition-all"
+                                      onPointerDown={() => setDeleteConfirmId(h.id_consulta)} 
+                                      className="p-1 rounded-lg bg-error text-white hover:bg-error/80 transition-all z-50 relative"
                                       title="Excluir"
                                     >
-                                      <span className="material-symbols-outlined text-base">delete</span>
+                                      <span className="material-symbols-outlined text-sm">delete</span>
                                     </button>
                                   </div>
                                 </td>
@@ -1339,86 +1341,90 @@ export default function AtendimentosPage() {
 
           <div className="bg-surface-container-lowest rounded-2xl shadow-2xl border border-outline-variant/10 overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-separate border-spacing-0">
-                <thead className="sticky top-0 z-30 bg-surface-container-low">
-                  <tr>
-                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Gestante</th>
-                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Status</th>
-                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Trimestre</th>
-                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Registros</th>
-                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Última Atividade</th>
-                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Alertas</th>
-                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-center">Ações</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-outline-variant/5">
-                  {loading ? (
-                    <tr><td colSpan={7} className="p-24 text-center"><div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full mx-auto"></div></td></tr>
-                  ) : filteredPatients.length === 0 ? (
-                    <tr><td colSpan={7} className="p-24 text-center opacity-20 text-xl font-black uppercase tracking-widest">Nenhum paciente encontrado</td></tr>
-                  ) : (
-                    filteredPatients.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((p) => (
-                      <tr key={p.sispn} className="hover:bg-primary/[0.02] transition-colors group">
-                        <td className="px-6 py-4">
-                          <p className="text-[10px] font-bold text-primary/50 uppercase tracking-widest">{p.paciente_cpf !== 'NÃO INFORMADO' ? p.paciente_cpf : '---'}</p>
-                          <p className="font-black text-sm text-on-surface uppercase tracking-tight group-hover:text-primary transition-colors">
-                            {p.paciente_nome}
-                          </p>
-                          <span className="text-[10px] font-bold text-on-surface-variant/40 font-mono">{p.sispn}</span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${p.status === 'ATIVA' ? 'bg-blue-100 text-blue-600' : 'bg-surface-container-high text-on-surface-variant/40'}`}>
-                            {p.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
-                            p.currentTrimester === '1º TRIMESTRE' ? 'bg-purple-100 text-purple-600' :
-                            p.currentTrimester === '2º TRIMESTRE' ? 'bg-amber-100 text-amber-600' :
-                            p.currentTrimester === '3º TRIMESTRE' ? 'bg-orange-100 text-orange-600' :
-                            'bg-surface-container-high text-on-surface-variant/40'
-                          }`}>
-                            {p.currentTrimester}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            <span className="material-symbols-outlined text-sm text-primary/40">medical_services</span>
-                            <span className="text-xs font-bold text-on-surface">{p.atendimentosCount} registros</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-xs font-bold text-on-surface">
-                          {p.lastAtendimentoDate ? new Date(p.lastAtendimentoDate).toLocaleDateString('pt-BR') : '---'}
-                        </td>
-                        <td className="px-6 py-4">
-                          {p.hasAlert ? (
-                            <span className="px-3 py-1 rounded-full bg-red-100 text-red-600 text-[9px] font-black uppercase tracking-widest flex items-center gap-1 w-fit">
-                              <span className="material-symbols-outlined text-[10px]">warning</span>
-                              {p.alertMessage}
-                            </span>
-                          ) : (
-                            <span className="px-3 py-1 rounded-full bg-green-100 text-green-600 text-[9px] font-black uppercase tracking-widest flex items-center gap-1 w-fit">
-                              <span className="material-symbols-outlined text-[10px]">check_circle</span>
-                              Em dia
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center justify-center gap-3">
-                            <button onClick={() => handleViewPatient(p.sispn)} className="p-3 rounded-2xl bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white transition-all" title="Visualizar Detalhes"><span className="material-symbols-outlined text-lg">visibility</span></button>
-                            <button onClick={() => { 
-                              setFormData({ sispn: p.sispn }); 
-                              setPatientSearch(p.paciente_nome); 
-                              setIsViewingHistory(false);
-                              setIsFormOpen(true); 
-                              window.scrollTo({ top: 0, behavior: 'smooth' });
-                            }} className="p-3 rounded-2xl bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white transition-all" title="Adicionar Registro"><span className="material-symbols-outlined text-lg">add</span></button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
+                    <table className="w-full text-left border-separate border-spacing-0">
+                      <thead className="sticky top-0 z-30 bg-surface-container-low">
+                        <tr>
+                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Gestante</th>
+                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Status</th>
+                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Registros</th>
+                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">DPP</th>
+                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Alertas</th>
+                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-center">Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-outline-variant/5">
+                        {loading ? (
+                          <tr><td colSpan={6} className="p-24 text-center"><div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full mx-auto"></div></td></tr>
+                        ) : filteredPatients.length === 0 ? (
+                          <tr><td colSpan={6} className="p-24 text-center opacity-20 text-xl font-black uppercase tracking-widest">Nenhum paciente encontrado</td></tr>
+                        ) : (
+                          filteredPatients.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((p) => (
+                            <tr key={p.sispn} className="hover:bg-primary/[0.02] transition-colors group">
+                              <td className="px-4 py-3">
+                                <div className="flex flex-col gap-0.5">
+                                  <span className="text-[10px] font-mono font-bold text-primary">{p.paciente_cpf !== 'NÃO INFORMADO' ? p.paciente_cpf : '---'}</span>
+                                  <p className="font-black text-xs text-on-surface uppercase leading-tight">{p.paciente_nome}</p>
+                                  <span className="text-[10px] font-mono font-bold text-primary">SISPN: {p.sispn}</span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex flex-col gap-0.5">
+                                  <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${p.status === 'ATIVA' ? 'bg-success/10 text-success' : 'bg-surface-container-high text-on-surface-variant/40'}`}>
+                                    {p.status}
+                                  </span>
+                                  <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${
+                                    p.currentTrimester === '1º TRIMESTRE' ? 'bg-purple-100 text-purple-600' :
+                                    p.currentTrimester === '2º TRIMESTRE' ? 'bg-amber-100 text-amber-600' :
+                                    p.currentTrimester === '3º TRIMESTRE' ? 'bg-orange-100 text-orange-600' :
+                                    'bg-surface-container-high text-on-surface-variant/40'
+                                  }`}>
+                                    {p.currentTrimester}
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex flex-col gap-0.5">
+                                  <span className="text-[10px] font-bold text-on-surface">{p.atendimentosCount} reg.</span>
+                                  <span className="text-[10px] text-on-surface-variant/50">{p.lastAtendimentoDate ? new Date(p.lastAtendimentoDate).toLocaleDateString('pt-BR') : '---'}</span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex flex-col gap-0.5">
+                                  <span className={`text-[10px] font-bold ${p.weeksToDpp !== null && p.weeksToDpp <= 4 ? 'text-error' : p.weeksToDpp !== null && p.weeksToDpp <= 12 ? 'text-warning' : 'text-on-surface'}`}>
+                                    {p.weeksToDpp !== null ? `${p.weeksToDpp} sem` : '---'}
+                                  </span>
+                                  <span className="text-[9px] text-on-surface-variant/50">{p.dpp ? new Date(p.dpp).toLocaleDateString('pt-BR') : '---'}</span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3">
+                                {p.hasAlert ? (
+                                  <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-error/10 text-error flex items-center gap-1 w-fit">
+                                    <span className="material-symbols-outlined text-[10px]">warning</span>
+                                    {p.alertMessage}
+                                  </span>
+                                ) : (
+                                  <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-success/10 text-success flex items-center gap-1 w-fit">
+                                    <span className="material-symbols-outlined text-[10px]">check_circle</span>
+                                    OK
+                                  </span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center justify-center gap-1">
+                                  <button onClick={() => handleViewPatient(p.sispn)} className="p-1.5 rounded-lg bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white transition-all" title="Visualizar"><span className="material-symbols-outlined text-sm">visibility</span></button>
+                                  <button onClick={() => { 
+                                    setFormData({ sispn: p.sispn }); 
+                                    setPatientSearch(p.paciente_nome); 
+                                    setIsViewingHistory(false);
+                                    setIsFormOpen(true); 
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                  }} className="p-1.5 rounded-lg bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white transition-all" title="Adicionar"><span className="material-symbols-outlined text-sm">add</span></button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
               </table>
             </div>
             <Pagination currentPage={currentPage} totalPages={Math.ceil(filteredPatients.length / itemsPerPage)} onPageChange={setCurrentPage} totalItems={filteredPatients.length} itemsPerPage={itemsPerPage} itemName="pacientes" />
@@ -1436,7 +1442,7 @@ export default function AtendimentosPage() {
                 </div>
                 <div className="flex gap-3">
                   <button onClick={() => setDeleteConfirmId(null)} className="flex-1 bg-surface-container-high text-on-surface font-black py-4 rounded-2xl uppercase tracking-widest text-[10px]">Cancelar</button>
-                  <button onClick={() => handleDelete(deleteConfirmId)} className="flex-1 bg-red-600 text-white font-black py-4 rounded-2xl uppercase tracking-widest text-[10px]">Excluir</button>
+                  <button onPointerDown={() => handleDelete(deleteConfirmId)} className="flex-1 bg-red-600 text-white font-black py-4 rounded-2xl uppercase tracking-widest text-[10px]">Excluir</button>
                 </div>
               </motion.div>
             </div>

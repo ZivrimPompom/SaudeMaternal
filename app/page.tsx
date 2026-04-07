@@ -31,7 +31,7 @@ export default function Page() {
         supabase.from('gestacoes').select('*', { count: 'exact', head: true }),
         supabase.from('atendimentos').select('*', { count: 'exact', head: true }),
         supabase.from('registro_rotinas').select('*', { count: 'exact', head: true }),
-        supabase.from('desfechos').select('*', { count: 'exact', head: true })
+        supabase.from('desfechos_e_rn').select('*', { count: 'exact', head: true })
       ]).then(([ops, cats, pros, rots, pacs, units, gests, cons, exams, outcomes]) => {
         if (cons.error) {
           console.error('Erro específico ao buscar atendimentos:', cons.error);

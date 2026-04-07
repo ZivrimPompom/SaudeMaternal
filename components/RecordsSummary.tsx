@@ -14,15 +14,15 @@ export default function RecordsSummary({ total, filtered, className = '' }: Reco
   const isFiltered = filtered < total;
 
   return (
-    <div className={`flex items-center gap-3 bg-surface-container-low p-1.5 rounded-[2rem] border border-outline-variant/5 shadow-inner ${className}`}>
+    <div className={`flex items-center gap-2 md:gap-3 bg-surface-container-low dark:bg-surface-container-low p-1.5 rounded-[2rem] border border-outline-variant/5 shadow-inner ${className}`}>
       {/* Total Badge */}
-      <div className="flex items-center gap-3 px-6 py-2.5 rounded-full bg-white shadow-sm border border-outline-variant/5 group transition-all hover:scale-105">
-        <div className="w-6 h-6 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary transition-colors">
-          <Database className="text-primary w-3.5 h-3.5 group-hover:text-white transition-colors" />
+      <div className="flex items-center gap-2 md:gap-3 px-3 md:px-6 py-2 rounded-full bg-white dark:bg-white shadow-sm border border-outline-variant/5 group transition-all hover:scale-105">
+        <div className="w-5 h-5 md:w-6 md:h-6 rounded-lg md:rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary transition-colors">
+          <Database className="text-primary w-3 h-3 md:w-3.5 md:h-3.5 group-hover:text-white transition-colors" />
         </div>
         <div className="flex flex-col">
-          <span className="text-[10px] font-black text-on-surface uppercase tracking-tight leading-none">{total}</span>
-          <span className="text-[8px] font-bold text-on-surface-variant/40 uppercase tracking-widest leading-none mt-0.5">Total</span>
+          <span className="text-[9px] md:text-[10px] font-black text-on-surface uppercase tracking-tight leading-none">{total}</span>
+          <span className="text-[7px] md:text-[8px] font-bold text-on-surface-variant/40 uppercase tracking-widest leading-none mt-0.5">Total</span>
         </div>
       </div>
 
@@ -31,14 +31,14 @@ export default function RecordsSummary({ total, filtered, className = '' }: Reco
         <motion.div 
           initial={{ opacity: 0, x: -10, scale: 0.9 }}
           animate={{ opacity: 1, x: 0, scale: 1 }}
-          className="flex items-center gap-3 px-6 py-2.5 rounded-full bg-primary/5 border border-primary/10 group transition-all hover:scale-105"
+          className="flex items-center gap-2 md:gap-3 px-3 md:px-6 py-2 rounded-full bg-primary/5 border border-primary/10 group transition-all hover:scale-105"
         >
-          <div className="w-6 h-6 rounded-xl bg-primary/20 flex items-center justify-center group-hover:bg-primary transition-colors">
-            <Filter className="text-primary w-3.5 h-3.5 group-hover:text-white transition-colors" />
+          <div className="w-5 h-5 md:w-6 md:h-6 rounded-lg md:rounded-xl bg-primary/20 flex items-center justify-center group-hover:bg-primary transition-colors">
+            <Filter className="text-primary w-3 h-3 md:w-3.5 md:h-3.5 group-hover:text-white transition-colors" />
           </div>
           <div className="flex flex-col">
-            <span className="text-[10px] font-black text-primary uppercase tracking-tight leading-none">{filtered}</span>
-            <span className="text-[8px] font-bold text-primary/40 uppercase tracking-widest leading-none mt-0.5">Filtrados</span>
+            <span className="text-[9px] md:text-[10px] font-black text-primary uppercase tracking-tight leading-none">{filtered}</span>
+            <span className="text-[7px] md:text-[8px] font-bold text-primary/40 uppercase tracking-widest leading-none mt-0.5">Filtrados</span>
           </div>
         </motion.div>
       )}

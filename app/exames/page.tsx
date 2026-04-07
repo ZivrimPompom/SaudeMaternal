@@ -215,13 +215,23 @@ export default function ExamesPage() {
     
     gestacoes.forEach(g => {
       const status = getGestacaoStatus(g.dpp);
+      const weeksToDpp = g.dpp ? Math.max(0, Math.ceil((new Date(g.dpp).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24 * 7))) : null;
+      let currentTrimester = '---';
+      if (g.dum) {
+        const weeks = Math.floor((new Date().getTime() - new Date(g.dum).getTime()) / (1000 * 60 * 60 * 24 * 7));
+        if (weeks <= 13) currentTrimester = '1º TRIMESTRE';
+        else if (weeks <= 27) currentTrimester = '2º TRIMESTRE';
+        else currentTrimester = '3º TRIMESTRE';
+      }
       if (!filters.status || status === filters.status) {
         patientMap.set(g.sispn, {
           ...g,
           resultsCount: 0,
           lastResultDate: null,
           hasPositive: false,
-          status: status
+          status: status,
+          weeksToDpp: weeksToDpp,
+          currentTrimester: currentTrimester
         });
       }
     });
@@ -924,79 +934,78 @@ export default function ExamesPage() {
                             <h4 className="text-sm font-black text-primary uppercase tracking-widest">Movimento de Rotinas Realizadas</h4>
                           </div>
                         </div>
-                        <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl overflow-x-auto border border-slate-200 dark:border-slate-700">
+                        <div className="bg-surface-container-low rounded-2xl overflow-x-auto border border-outline-variant/10">
                           <table className="w-full text-left border-separate border-spacing-0" style={{ tableLayout: 'fixed' }}>
                             <colgroup>
-                              <col style={{ width: '12%' }} />
                               <col style={{ width: '10%' }} />
-                              <col style={{ width: '15%' }} />
                               <col style={{ width: '8%' }} />
-                              <col style={{ width: '20%' }} />
-                              <col style={{ width: '20%' }} />
+                              <col style={{ width: '18%' }} />
+                              <col style={{ width: '8%' }} />
+                              <col style={{ width: '18%' }} />
+                              <col style={{ width: '18%' }} />
                               <col style={{ width: '8%' }} />
                             </colgroup>
-                            <thead className="bg-slate-100 dark:bg-slate-800">
+                            <thead className="bg-surface-container-low">
                               <tr>
-                                <th className="px-4 py-3 text-table-header">Data Realização</th>
-                                <th className="px-4 py-3 text-table-header">Trimestre</th>
-                                <th className="px-4 py-3 text-table-header">Rotina</th>
-                                <th className="px-4 py-3 text-table-header">Tipo</th>
-                                <th className="px-4 py-3 text-table-header">Profissional</th>
-                                <th className="px-4 py-3 text-table-header">Resultado</th>
-                                <th className="px-4 py-3 text-table-header text-center">Ações</th>
+                                <th className="px-2 py-2 text-[9px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Data</th>
+                                <th className="px-2 py-2 text-[9px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Trim.</th>
+                                <th className="px-2 py-2 text-[9px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Rotina</th>
+                                <th className="px-2 py-2 text-[9px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Tipo</th>
+                                <th className="px-2 py-2 text-[9px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Profissional</th>
+                                <th className="px-2 py-2 text-[9px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Resultado</th>
+                                <th className="px-2 py-2 text-[9px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-center">Ações</th>
                               </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+                            <tbody className="divide-y divide-outline-variant/5">
                               {selectedPatientHistory.map((h) => (
-                                <tr key={h.id_registro} className="hover:bg-orange-50 dark:hover:bg-slate-700/50 transition-colors group">
-                                  <td className="px-4 py-4">
-                                    <div className="text-xs font-bold text-black dark:text-slate-100">{new Date(h.data_realizacao).toLocaleDateString('pt-BR')}</div>
+                                <tr key={h.id_registro} className="hover:bg-primary/[0.02] transition-colors group">
+                                  <td className="px-2 py-1.5">
+                                    <div className="text-[10px] font-bold text-on-surface">{new Date(h.data_realizacao).toLocaleDateString('pt-BR')}</div>
                                   </td>
-                                  <td className="px-4 py-4">
-                                    <div className="text-xs font-bold text-black dark:text-slate-100 uppercase">{h.trimestre_realizacao}</div>
+                                  <td className="px-2 py-1.5">
+                                    <div className="text-[10px] font-bold text-on-surface uppercase">{h.trimestre_realizacao}</div>
                                   </td>
-                                  <td className="px-4 py-4">
-                                    <div className="text-xs font-black text-primary uppercase">{h.rotinas?.descricao}</div>
+                                  <td className="px-2 py-1.5">
+                                    <div className="text-[10px] font-black text-primary uppercase truncate">{h.rotinas?.descricao}</div>
                                   </td>
-                                  <td className="px-4 py-4">
-                                    <div className="text-xs font-medium text-slate-700 dark:text-slate-400 uppercase">{h.tipo || h.rotinas?.tipo || '---'}</div>
+                                  <td className="px-2 py-1.5">
+                                    <div className="text-[10px] font-medium text-on-surface-variant/60 uppercase">{h.tipo || h.rotinas?.tipo || '---'}</div>
                                   </td>
-                                  <td className="px-4 py-4">
-                                    <div className="text-xs">
-                                      <p className="font-black text-black dark:text-slate-100 uppercase">{allProfessionals.find(p => p.cpf === h.cpf_profissional)?.nome || '---'}</p>
-                                      <p className="font-medium text-slate-600 dark:text-slate-400 uppercase">{h.cpf_profissional || '---'}</p>
+                                  <td className="px-2 py-1.5">
+                                    <div className="text-[9px]">
+                                      <p className="font-black text-[10px] text-on-surface uppercase truncate">{allProfessionals.find(p => p.cpf === h.cpf_profissional)?.nome || '---'}</p>
                                     </div>
                                   </td>
-                                  <td className="px-4 py-4">
-                                    <div className={`text-xs font-bold uppercase ${
+                                  <td className="px-2 py-1.5">
+                                    <div className={`text-[10px] font-bold uppercase ${
                                       (() => {
                                         const res = h.resultado.toUpperCase();
                                         const isPositive = (res.includes('POSITIVO') || res.includes('REAGENTE')) && !res.includes('NEGATIVO') && !res.includes('NAO') && !res.includes('NÃO');
-                                        if (isPositive) return 'text-red-600 dark:text-red-400';
-                                        if (h.resultado === '-') return 'text-slate-500';
-                                        return 'text-green-600 dark:text-green-400';
+                                        if (isPositive) return 'text-error';
+                                        if (h.resultado === '-') return 'text-on-surface-variant/40';
+                                        return 'text-success';
                                       })()
                                     }`}>
                                       {h.resultado}
                                     </div>
                                   </td>
-                                  <td className="px-4 py-4">
-                                    <div className="flex items-center justify-center gap-2">
+                                  <td className="px-2 py-1.5">
+                                    <div className="flex items-center justify-center gap-1">
                                       <button 
                                         type="button"
                                         onClick={() => handleEdit(h)} 
-                                        className="p-2 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-primary hover:text-white transition-all"
+                                        className="p-1 rounded-lg bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white transition-all"
                                         title="Editar"
                                       >
-                                        <span className="material-symbols-outlined text-base">edit</span>
+                                        <span className="material-symbols-outlined text-sm">edit</span>
                                       </button>
                                       <button 
                                         type="button"
                                         onClick={() => setDeleteConfirmId(h.id_registro)} 
-                                        className="p-2 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-red-600 hover:text-white transition-all"
+                                        className="p-1 rounded-lg bg-error text-white hover:bg-error/80 transition-all"
                                         title="Excluir"
                                       >
-                                        <span className="material-symbols-outlined text-base">delete</span>
+                                        <span className="material-symbols-outlined text-sm">delete</span>
                                       </button>
                                     </div>
                                   </td>
@@ -1015,79 +1024,78 @@ export default function ExamesPage() {
                       <h4 className="text-sm font-black text-primary uppercase tracking-widest">Movimento de Rotinas Realizadas</h4>
                     </div>
                     {formData.sispn && selectedPatientHistory.length > 0 ? (
-                      <div id="history-table" className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl overflow-x-auto border border-slate-200 dark:border-slate-700">
+                      <div id="history-table" className="bg-surface-container-low rounded-2xl overflow-x-auto border border-outline-variant/10">
                         <table className="w-full text-left border-separate border-spacing-0" style={{ tableLayout: 'fixed' }}>
                           <colgroup>
-                            <col style={{ width: '12%' }} />
                             <col style={{ width: '10%' }} />
-                            <col style={{ width: '15%' }} />
                             <col style={{ width: '8%' }} />
-                            <col style={{ width: '20%' }} />
-                            <col style={{ width: '20%' }} />
+                            <col style={{ width: '18%' }} />
+                            <col style={{ width: '8%' }} />
+                            <col style={{ width: '18%' }} />
+                            <col style={{ width: '18%' }} />
                             <col style={{ width: '8%' }} />
                           </colgroup>
-                          <thead className="bg-slate-100 dark:bg-slate-800">
+                          <thead className="bg-surface-container-low">
                             <tr>
-                              <th className="px-4 py-3 text-table-header">Data Realização</th>
-                              <th className="px-4 py-3 text-table-header">Trimestre</th>
-                              <th className="px-4 py-3 text-table-header">Rotina</th>
-                              <th className="px-4 py-3 text-table-header">Tipo</th>
-                              <th className="px-4 py-3 text-table-header">Profissional</th>
-                              <th className="px-4 py-3 text-table-header">Resultado</th>
-                              <th className="px-4 py-3 text-table-header text-center">Ações</th>
+                              <th className="px-2 py-2 text-[9px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Data</th>
+                              <th className="px-2 py-2 text-[9px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Trim.</th>
+                              <th className="px-2 py-2 text-[9px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Rotina</th>
+                              <th className="px-2 py-2 text-[9px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Tipo</th>
+                              <th className="px-2 py-2 text-[9px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Profissional</th>
+                              <th className="px-2 py-2 text-[9px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Resultado</th>
+                              <th className="px-2 py-2 text-[9px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-center">Ações</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+                          <tbody className="divide-y divide-outline-variant/5">
                             {selectedPatientHistory.map((h) => (
-                              <tr key={h.id_registro} className="hover:bg-orange-50 dark:hover:bg-slate-700/50 transition-colors group">
-                                <td className="px-4 py-4">
-                                  <div className="text-xs font-bold text-black dark:text-slate-100">{new Date(h.data_realizacao).toLocaleDateString('pt-BR')}</div>
+                              <tr key={h.id_registro} className="hover:bg-primary/[0.02] transition-colors group">
+                                <td className="px-2 py-1.5">
+                                  <div className="text-[10px] font-bold text-on-surface">{new Date(h.data_realizacao).toLocaleDateString('pt-BR')}</div>
                                 </td>
-                                <td className="px-4 py-4">
-                                  <div className="text-xs font-bold text-black dark:text-slate-100 uppercase">{h.trimestre_realizacao}</div>
+                                <td className="px-2 py-1.5">
+                                  <div className="text-[10px] font-bold text-on-surface uppercase">{h.trimestre_realizacao}</div>
                                 </td>
-                                <td className="px-4 py-4">
-                                  <div className="text-xs font-black text-orange-600 uppercase">{h.rotinas?.descricao}</div>
+                                <td className="px-2 py-1.5">
+                                  <div className="text-[10px] font-black text-primary uppercase truncate">{h.rotinas?.descricao}</div>
                                 </td>
-                                <td className="px-4 py-4">
-                                  <div className="text-xs font-medium text-slate-700 dark:text-slate-400 uppercase">{h.tipo || h.rotinas?.tipo || '---'}</div>
+                                <td className="px-2 py-1.5">
+                                  <div className="text-[10px] font-medium text-on-surface-variant/60 uppercase">{h.tipo || h.rotinas?.tipo || '---'}</div>
                                 </td>
-                                <td className="px-4 py-4">
-                                  <div className="text-xs">
-                                    <p className="font-black text-black dark:text-slate-100 uppercase">{allProfessionals.find(p => p.cpf === h.cpf_profissional)?.nome || '---'}</p>
-                                    <p className="font-medium text-slate-600 dark:text-slate-400 uppercase">{h.cpf_profissional || '---'}</p>
+                                <td className="px-2 py-1.5">
+                                  <div className="text-[9px]">
+                                    <p className="font-black text-[10px] text-on-surface uppercase truncate">{allProfessionals.find(p => p.cpf === h.cpf_profissional)?.nome || '---'}</p>
                                   </div>
                                 </td>
-                                <td className="px-4 py-4">
-                                  <div className={`text-xs font-bold uppercase ${
+                                <td className="px-2 py-1.5">
+                                  <div className={`text-[10px] font-bold uppercase ${
                                     (() => {
                                       const res = h.resultado.toUpperCase();
                                       const isPositive = (res.includes('POSITIVO') || res.includes('REAGENTE')) && !res.includes('NEGATIVO') && !res.includes('NAO') && !res.includes('NÃO');
-                                      if (isPositive) return 'text-red-600 dark:text-red-400';
-                                      if (h.resultado === '-') return 'text-slate-500';
-                                      return 'text-green-600 dark:text-green-400';
+                                      if (isPositive) return 'text-error';
+                                      if (h.resultado === '-') return 'text-on-surface-variant/40';
+                                      return 'text-success';
                                     })()
                                   }`}>
                                     {h.resultado}
                                   </div>
                                 </td>
-                                <td className="px-4 py-4">
-                                  <div className="flex items-center justify-center gap-2">
+                                <td className="px-2 py-1.5">
+                                  <div className="flex items-center justify-center gap-1">
                                     <button 
                                       type="button"
                                       onClick={() => handleEdit(h)} 
-                                      className="p-2 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-orange-600 hover:text-white transition-all"
+                                      className="p-1 rounded-lg bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white transition-all"
                                       title="Editar"
                                     >
-                                      <span className="material-symbols-outlined text-base">edit</span>
+                                      <span className="material-symbols-outlined text-sm">edit</span>
                                     </button>
                                     <button 
                                       type="button"
                                       onClick={() => setDeleteConfirmId(h.id_registro)} 
-                                      className="p-2 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-red-600 hover:text-white transition-all"
+                                      className="p-1 rounded-lg bg-error text-white hover:bg-error/80 transition-all"
                                       title="Excluir"
                                     >
-                                      <span className="material-symbols-outlined text-base">delete</span>
+                                      <span className="material-symbols-outlined text-sm">delete</span>
                                     </button>
                                   </div>
                                 </td>
@@ -1097,7 +1105,7 @@ export default function ExamesPage() {
                         </table>
                       </div>
                     ) : (
-                      <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-6 text-sm text-slate-700 dark:text-slate-400 font-bold uppercase tracking-wide">
+                      <div className="rounded-2xl border border-outline-variant/10 bg-surface-container-low p-6 text-sm text-on-surface-variant font-bold uppercase tracking-wide">
                         Nenhum registro encontrado para essa gestante.
                       </div>
                     )}
@@ -1186,66 +1194,81 @@ export default function ExamesPage() {
               <table className="w-full text-left border-separate border-spacing-0">
                 <thead className="sticky top-0 z-30 bg-surface-container-low">
                   <tr>
-                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-table-header">Gestante</th>
-                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Status</th>
-                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Registros</th>
-                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Última Atividade</th>
-                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Alertas</th>
-                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-center">Ações</th>
+                    <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Gestante</th>
+                    <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Status</th>
+                    <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Registros</th>
+                    <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">DPP</th>
+                    <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Alertas</th>
+                    <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-center">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-outline-variant/5">
                   {loading ? (
-                    <tr><td colSpan={5} className="p-24 text-center"><div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full mx-auto"></div></td></tr>
+                    <tr><td colSpan={6} className="p-24 text-center"><div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full mx-auto"></div></td></tr>
                   ) : filteredPatients.length === 0 ? (
-                    <tr><td colSpan={5} className="p-24 text-center opacity-20 text-xl font-black uppercase tracking-widest">Nenhum paciente encontrado</td></tr>
+                    <tr><td colSpan={6} className="p-24 text-center opacity-20 text-xl font-black uppercase tracking-widest">Nenhum paciente encontrado</td></tr>
                   ) : (
                     filteredPatients.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((p) => (
                       <tr key={p.sispn} className="hover:bg-primary/[0.02] transition-colors group">
-                        <td className="px-6 py-4">
-                          <p className="text-[10px] font-bold text-primary/50 uppercase tracking-widest">{p.paciente_cpf}</p>
-                          <p className="font-black text-sm text-on-surface uppercase tracking-tight group-hover:text-primary transition-colors">
-                            {p.paciente_nome}
-                          </p>
-                          <span className="text-[10px] font-bold text-on-surface-variant/40 font-mono">{p.sispn}</span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${p.status === 'ATIVA' ? 'bg-blue-100 text-blue-600' : 'bg-surface-container-high text-on-surface-variant/40'}`}>
-                            {p.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            <span className="material-symbols-outlined text-sm text-primary/40">lab_research</span>
-                            <span className="text-xs font-bold text-on-surface">{p.resultsCount} registros</span>
+                        <td className="px-4 py-3">
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-[10px] font-mono font-bold text-primary">{p.paciente_cpf}</span>
+                            <p className="font-black text-xs text-on-surface uppercase leading-tight">{p.paciente_nome}</p>
+                            <span className="text-[10px] font-mono font-bold text-primary">SISPN: {p.sispn}</span>
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-xs font-bold text-on-surface">
-                          {p.lastResultDate ? new Date(p.lastResultDate).toLocaleDateString('pt-BR') : '---'}
+                        <td className="px-4 py-3">
+                          <div className="flex flex-col gap-0.5">
+                            <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${p.status === 'ATIVA' ? 'bg-success/10 text-success' : 'bg-surface-container-high text-on-surface-variant/40'}`}>
+                              {p.status}
+                            </span>
+                            <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${
+                              p.currentTrimester === '1º TRIMESTRE' ? 'bg-purple-100 text-purple-600' :
+                              p.currentTrimester === '2º TRIMESTRE' ? 'bg-amber-100 text-amber-600' :
+                              p.currentTrimester === '3º TRIMESTRE' ? 'bg-orange-100 text-orange-600' :
+                              'bg-surface-container-high text-on-surface-variant/40'
+                            }`}>
+                              {p.currentTrimester}
+                            </span>
+                          </div>
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-4 py-3">
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-[10px] font-bold text-on-surface">{p.resultsCount} reg.</span>
+                            <span className="text-[10px] text-on-surface-variant/50">{p.lastResultDate ? new Date(p.lastResultDate).toLocaleDateString('pt-BR') : '---'}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex flex-col gap-0.5">
+                            <span className={`text-[10px] font-bold ${p.weeksToDpp !== null && p.weeksToDpp <= 4 ? 'text-error' : p.weeksToDpp !== null && p.weeksToDpp <= 12 ? 'text-warning' : 'text-on-surface'}`}>
+                              {p.weeksToDpp !== null ? `${p.weeksToDpp} sem` : '---'}
+                            </span>
+                            <span className="text-[9px] text-on-surface-variant/50">{p.dpp ? new Date(p.dpp).toLocaleDateString('pt-BR') : '---'}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
                           {p.hasPositive ? (
-                            <span className="px-3 py-1 rounded-full bg-red-100 text-red-600 text-[9px] font-black uppercase tracking-widest flex items-center gap-1 w-fit">
+                            <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-error/10 text-error flex items-center gap-1 w-fit">
                               <span className="material-symbols-outlined text-[10px]">warning</span>
-                              POSITIVO / REAGENTE
+                              REAGENTE
                             </span>
                           ) : (
-                            <span className="px-3 py-1 rounded-full bg-green-100 text-green-600 text-[9px] font-black uppercase tracking-widest flex items-center gap-1 w-fit">
+                            <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-success/10 text-success flex items-center gap-1 w-fit">
                               <span className="material-symbols-outlined text-[10px]">check_circle</span>
-                              Sem alertas
+                              OK
                             </span>
                           )}
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center justify-center gap-3">
-                            <button onClick={() => handleViewPatient(p.sispn)} className="p-3 rounded-2xl bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white transition-all" title="Visualizar Detalhes"><span className="material-symbols-outlined text-lg">visibility</span></button>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center justify-center gap-1">
+                            <button onClick={() => handleViewPatient(p.sispn)} className="p-1.5 rounded-lg bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white transition-all" title="Visualizar"><span className="material-symbols-outlined text-sm">visibility</span></button>
                             <button onClick={() => { 
                               setFormData({ sispn: p.sispn }); 
                               setPatientSearch(p.paciente_nome); 
                               setIsViewingHistory(false);
                               setIsFormOpen(true); 
                               window.scrollTo({ top: 0, behavior: 'smooth' });
-                            }} className="p-3 rounded-2xl bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white transition-all" title="Adicionar Registro"><span className="material-symbols-outlined text-lg">add</span></button>
+                            }} className="p-1.5 rounded-lg bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white transition-all" title="Adicionar"><span className="material-symbols-outlined text-sm">add</span></button>
                           </div>
                         </td>
                       </tr>

@@ -25,9 +25,14 @@ interface Desfecho {
   sispn: string;
   tipo_desfecho: 'PARTO' | 'ABORTO' | 'MUDOU-SE' | 'ÓBITO' | 'CONVÊNIO MÉDICO' | 'OUTROS';
   data_desfecho: string;
+  nome_rn?: string;
+  cpf_rn?: string;
+  data_nascimento?: string;
+  data_consulta_rn?: string;
+  comparecimento?: boolean;
   unidade_cnes?: string;
+  operador?: string;
   created_at?: string;
-  // Joins
   gestacoes?: {
     sispn: string;
     dum: string;
@@ -41,7 +46,6 @@ interface Desfecho {
       cpf: string;
     }
   };
-  recem_nascidos?: RecemNascido[];
 }
 
 interface Gestacao {
@@ -87,8 +91,7 @@ export default function DesfechosPage() {
   const itemsPerPage = 8;
   
   const [filters, setFilters] = useState({
-    tipo_desfecho: '',
-    status_gestacao: '',
+    tipo_desfecho: 'PARTO',
     unidade: authUser?.unidade_cnes || ''
   });
 
@@ -118,6 +121,13 @@ export default function DesfechosPage() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [refreshTrigger]);
+
+  useEffect(() => {
+    if (!isFormOpen) {
+      setPatientSearch('');
+      setSelectedGestante(null);
+    }
+  }, [isFormOpen]);
 
   const fetchData = async () => {
     if (!isSupabaseConfigured) return;
@@ -153,14 +163,13 @@ export default function DesfechosPage() {
 
       // Fetch Desfechos with Joins
       const { data: desData, error: desError } = await supabase
-        .from('desfechos')
+        .from('desfechos_e_rn')
         .select(`
           *,
           gestacoes (
             sispn, dum, dpp, equipe, referencia_tecnica, acs, data_cadastro, classificacao_pn,
             pacientes (gestante, cpf, cns, data_nascimento)
-          ),
-          recem_nascidos (*)
+          )
         `)
         .order('data_desfecho', { ascending: false });
 
@@ -186,7 +195,7 @@ export default function DesfechosPage() {
   const handleSelectGestante = (g: Gestacao) => {
     setSelectedGestante(g);
     setFormData(prev => ({ ...prev, sispn: g.sispn }));
-    setPatientSearch(g.paciente_nome);
+    setPatientSearch(`${g.paciente_nome} (SISPN: ${g.sispn})`);
     setIsPatientDropdownOpen(false);
   };
 
@@ -216,11 +225,11 @@ export default function DesfechosPage() {
   useEffect(() => {
     if (formData.tipo_desfecho === 'PARTO' && selectedGestante) {
       setRecemNascidos(prev => {
-        const updated = [...prev];
-        if (updated.length > 0) {
-          if (!updated[0].nome_rn) updated[0].nome_rn = `RN ${selectedGestante.paciente_nome}`;
-          if (!updated[0].data_nascimento) updated[0].data_nascimento = formData.data_desfecho;
-        }
+        const updated = prev.map((rn, idx) => ({
+          ...rn,
+          nome_rn: !rn.nome_rn ? `RN ${selectedGestante.paciente_nome}` : rn.nome_rn,
+          data_nascimento: !rn.data_nascimento || rn.data_nascimento === '' ? formData.data_desfecho : rn.data_nascimento
+        }));
         return updated;
       });
     }
@@ -252,37 +261,24 @@ export default function DesfechosPage() {
     setSuccess(null);
 
     try {
-      // 1. Insert Desfecho
-      const { data: desfechoData, error: desfechoError } = await supabase
-        .from('desfechos')
+      const rnData = recemNascidos.length > 0 && formData.tipo_desfecho === 'PARTO' ? recemNascidos[0] : null;
+
+      const { error: desfechoError } = await supabase
+        .from('desfechos_e_rn')
         .insert([{
           sispn: formData.sispn,
           tipo_desfecho: formData.tipo_desfecho,
           data_desfecho: formData.data_desfecho,
-          unidade_cnes: authUser?.unidade_cnes
-        }])
-        .select()
-        .single();
+          nome_rn: rnData?.nome_rn || null,
+          cpf_rn: rnData?.cpf_rn || null,
+          data_nascimento: rnData?.data_nascimento || null,
+          data_consulta_rn: rnData?.data_consulta_rn || null,
+          comparecimento: rnData?.comparecimento || false,
+          unidade_cnes: authUser?.unidade_cnes,
+          cpf_operador: authUser?.cpf || null
+        }]);
 
       if (desfechoError) throw desfechoError;
-
-      // 2. Insert RNs if any
-      if (recemNascidos.length > 0 && formData.tipo_desfecho === 'PARTO') {
-        const rnsToInsert = recemNascidos.map(rn => ({
-          id_desfecho: desfechoData.id,
-          nome_rn: rn.nome_rn,
-          cpf_rn: rn.cpf_rn,
-          data_nascimento: rn.data_nascimento,
-          data_consulta_rn: rn.data_consulta_rn || null,
-          comparecimento: rn.comparecimento
-        }));
-
-        const { error: rnsError } = await supabase
-          .from('recem_nascidos')
-          .insert(rnsToInsert);
-
-        if (rnsError) throw rnsError;
-      }
 
       setSuccess('Desfecho registrado com sucesso!');
       setIsFormOpen(false);
@@ -310,7 +306,7 @@ export default function DesfechosPage() {
   const handleDelete = async (id: string) => {
     setLoading(true);
     try {
-      const { error } = await supabase.from('desfechos').delete().eq('id', id);
+      const { error } = await supabase.from('desfechos_e_rn').delete().eq('id', id);
       if (error) throw error;
       setSuccess('Desfecho excluído com sucesso!');
       fetchData();
@@ -322,6 +318,29 @@ export default function DesfechosPage() {
     }
   };
 
+  const handleEdit = (d: Desfecho) => {
+    setFormData({
+      sispn: d.sispn,
+      tipo_desfecho: d.tipo_desfecho,
+      data_desfecho: d.data_desfecho,
+    });
+    if (d.tipo_desfecho === 'PARTO' && d.nome_rn) {
+      setRecemNascidos([{
+        nome_rn: d.nome_rn || '',
+        cpf_rn: d.cpf_rn || '',
+        data_nascimento: d.data_nascimento || '',
+        data_consulta_rn: d.data_consulta_rn || '',
+        comparecimento: d.comparecimento || false
+      }]);
+    }
+    const gestacao = gestacoes.find(g => g.sispn === d.sispn);
+    if (gestacao) {
+      setSelectedGestante(gestacao);
+      setPatientSearch(gestacao.paciente_nome);
+    }
+    setIsFormOpen(true);
+  };
+
   const filteredDesfechos = useMemo(() => {
     return desfechos.filter(d => {
       const query = searchQuery.toLowerCase().trim();
@@ -331,20 +350,6 @@ export default function DesfechosPage() {
       if (!matchesSearch) return false;
 
       if (filters.tipo_desfecho && d.tipo_desfecho !== filters.tipo_desfecho) return false;
-
-      if (filters.status_gestacao) {
-        // Calculate status on the fly for filtering
-        const dpp = d.gestacoes?.dpp;
-        if (!dpp) return false;
-        
-        const now = new Date();
-        now.setHours(0, 0, 0, 0);
-        const end = new Date(dpp);
-        end.setHours(0, 0, 0, 0);
-        const status = now >= end ? 'VENCIDA' : 'ATIVA';
-        
-        if (status !== filters.status_gestacao) return false;
-      }
 
       // Filter by unidade (only for non-admin users)
       if (authUser?.nivel_acesso !== 'Administrador' && authUser?.unidade_cnes) {
@@ -361,30 +366,25 @@ export default function DesfechosPage() {
   }, [filteredDesfechos, currentPage]);
 
   const handleExportCSV = useCallback(() => {
-    const headers = ['SISPN', 'GESTANTE', 'DATA DESFECHO', 'DESFECHO', 'RN NOME', 'RN CPF', 'RN DATA NASC', 'RN CONSULTA', 'RN COMPARECEU'];
+    const headers = ['sispn', 'data_desfecho', 'tipo_desfecho', 'rn_nome', 'rn_cpf', 'rn_consulta'];
     const rows: any[] = [];
     
     filteredDesfechos.forEach(d => {
       const baseRow = [
         d.sispn,
-        d.gestacoes?.pacientes?.gestante || 'N/A',
-        new Date(d.data_desfecho).toLocaleDateString('pt-BR'),
+        d.data_desfecho ? new Date(d.data_desfecho).toISOString().split('T')[0] : '',
         d.tipo_desfecho
       ];
 
-      if (d.tipo_desfecho === 'PARTO' && d.recem_nascidos && d.recem_nascidos.length > 0) {
-        d.recem_nascidos.forEach(rn => {
-          rows.push([
-            ...baseRow,
-            rn.nome_rn,
-            rn.cpf_rn,
-            rn.data_nascimento ? new Date(rn.data_nascimento).toLocaleDateString('pt-BR') : '',
-            rn.data_consulta_rn ? new Date(rn.data_consulta_rn).toLocaleDateString('pt-BR') : '',
-            rn.comparecimento ? 'SIM' : 'NÃO'
-          ]);
-        });
+      if (d.tipo_desfecho === 'PARTO') {
+        rows.push([
+          ...baseRow,
+          d.nome_rn || '',
+          d.cpf_rn || '',
+          d.data_consulta_rn || ''
+        ]);
       } else {
-        rows.push([...baseRow, '', '', '', '', '']);
+        rows.push([...baseRow, '', '', '']);
       }
     });
 
@@ -441,6 +441,22 @@ export default function DesfechosPage() {
             >
               <form onSubmit={handleSubmit} className="p-8 space-y-8">
                 
+                {/* Gestante Selecionada Card - Above Search */}
+                {selectedGestante && (
+                  <PatientBanner 
+                    patient={{
+                      nome: selectedGestante.paciente_nome,
+                      data_nascimento: selectedGestante.paciente_nascimento || '',
+                      cpf: selectedGestante.paciente_cpf,
+                      cns: selectedGestante.paciente_cns || '',
+                      dum: selectedGestante.dum,
+                      dpp: selectedGestante.dpp,
+                      data_cadastro: selectedGestante.data_cadastro,
+                      risco: selectedGestante.classificacao_pn || 'HABITUAL'
+                    }}
+                  />
+                )}
+
                 {/* Localizar Gestante */}
                 <div className="space-y-4">
                   <label className="text-[10px] font-black text-on-surface-variant/60 uppercase tracking-[0.2em] px-1">Localizar Gestante</label>
@@ -492,22 +508,6 @@ export default function DesfechosPage() {
                     </AnimatePresence>
                   </div>
                 </div>
-
-                {/* Gestante Selecionada Card */}
-                {selectedGestante && (
-                  <PatientBanner 
-                    patient={{
-                      nome: selectedGestante.paciente_nome,
-                      data_nascimento: selectedGestante.paciente_nascimento || '',
-                      cpf: selectedGestante.paciente_cpf,
-                      cns: selectedGestante.paciente_cns || '',
-                      dum: selectedGestante.dum,
-                      dpp: selectedGestante.dpp,
-                      data_cadastro: selectedGestante.data_cadastro,
-                      risco: selectedGestante.classificacao_pn || 'HABITUAL'
-                    }}
-                  />
-                )}
 
                 {/* Dados do Desfecho */}
                 <div className="space-y-6">
@@ -595,19 +595,6 @@ export default function DesfechosPage() {
                               />
                             </div>
                             <div className="space-y-2">
-                              <label className="text-[10px] font-black text-on-surface-variant/60 uppercase tracking-widest px-1">Data de Nascimento</label>
-                              <input
-                                type="date"
-                                value={rn.data_nascimento}
-                                onChange={(e) => handleRNChange(idx, 'data_nascimento', e.target.value)}
-                                className="w-full px-4 py-3 bg-white border border-outline-variant/20 rounded-xl text-sm focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all outline-none"
-                                required
-                              />
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
-                            <div className="space-y-2">
                               <label className="text-[10px] font-black text-on-surface-variant/60 uppercase tracking-widest px-1">Data Limite RN (10 DIAS)</label>
                               <input
                                 type="date"
@@ -616,6 +603,9 @@ export default function DesfechosPage() {
                                 className="w-full px-4 py-3 bg-surface-container-highest/30 border border-outline-variant/10 rounded-xl text-sm text-on-surface-variant/60 outline-none cursor-not-allowed"
                               />
                             </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
                             <div className="space-y-2">
                               <label className="text-[10px] font-black text-on-surface-variant/60 uppercase tracking-widest px-1">Data Consulta RN</label>
                               <input
@@ -642,7 +632,7 @@ export default function DesfechosPage() {
                               </div>
                             </div>
                             <div className="space-y-2">
-                              <label className="text-[10px] font-black text-on-surface-variant/60 uppercase tracking-widest px-1 block mb-3">Comparecimento</label>
+                              <label className="text-[10px] font-black text-on-surface-variant/60 uppercase tracking-widest px-1">Comparecimento</label>
                               <div className="flex items-center gap-6 h-[46px]">
                                 <label className="flex items-center gap-2 cursor-pointer group">
                                   <input
@@ -716,16 +706,6 @@ export default function DesfechosPage() {
               
               <select 
                 className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
-                value={filters.status_gestacao}
-                onChange={(e) => setFilters({ ...filters, status_gestacao: e.target.value })}
-              >
-                <option value="">Status Gestação</option>
-                <option value="ATIVA">GESTAÇÃO ATIVA</option>
-                <option value="VENCIDA">GESTAÇÃO VENCIDA</option>
-              </select>
-
-              <select 
-                className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
                 value={filters.tipo_desfecho}
                 onChange={(e) => setFilters({ ...filters, tipo_desfecho: e.target.value })}
               >
@@ -735,9 +715,9 @@ export default function DesfechosPage() {
                 ))}
               </select>
 
-              {(filters.tipo_desfecho || filters.status_gestacao) && (
+              {filters.tipo_desfecho && (
                 <button 
-                  onClick={() => setFilters({ tipo_desfecho: '', status_gestacao: '', unidade: authUser?.unidade_cnes || '' })}
+                  onClick={() => setFilters({ tipo_desfecho: 'PARTO', unidade: authUser?.unidade_cnes || '' })}
                   className="w-full lg:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-error/10 text-error text-[9px] font-black uppercase tracking-widest hover:bg-error hover:text-white transition-all border border-error/20"
                 >
                   <span className="material-symbols-outlined text-sm">filter_alt_off</span>
@@ -760,59 +740,90 @@ export default function DesfechosPage() {
             </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-100 dark:bg-slate-800">
-                  <th className="px-6 py-4 text-table-header text-black dark:text-slate-200 uppercase tracking-wider">SISPN</th>
-                  <th className="px-6 py-4 text-table-header text-black dark:text-slate-200 uppercase tracking-wider">Gestante</th>
-                  <th className="px-6 py-4 text-table-header text-black dark:text-slate-200 uppercase tracking-wider">Data Desfecho</th>
-                  <th className="px-6 py-4 text-table-header text-black dark:text-slate-200 uppercase tracking-wider">Desfecho</th>
-                  <th className="px-6 py-4 text-table-header text-black dark:text-slate-200 uppercase tracking-wider text-right">Ações</th>
+            <table className="w-full text-left border-separate border-spacing-0">
+              <thead className="bg-surface-container-low">
+                <tr>
+                  <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">#</th>
+                  <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Gestante</th>
+                  <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Desfecho</th>
+                  <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Data do Desfecho</th>
+                  <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Recém-Nascido</th>
+                  <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-center">Ações</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+              <tbody className="divide-y divide-outline-variant/5">
                 {loading && desfechos.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center">
+                    <td colSpan={6} className="px-4 py-12 text-center">
                       <div className="flex flex-col items-center gap-3">
                         <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Carregando registros...</p>
+                        <p className="text-xs font-bold text-on-surface-variant/40 uppercase tracking-wider">Carregando registros...</p>
                       </div>
                     </td>
                   </tr>
                 ) : paginatedDesfechos.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center">
-                      <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Nenhum desfecho encontrado</p>
+                    <td colSpan={6} className="px-4 py-12 text-center">
+                      <p className="text-xs font-bold text-on-surface-variant/40 uppercase tracking-wider">Nenhum desfecho encontrado</p>
                     </td>
                   </tr>
                 ) : (
-                  paginatedDesfechos.map((d) => (
-                    <tr key={d.id} className="hover:bg-orange-50 dark:hover:bg-slate-800/50 transition-colors group">
-                      <td className="px-6 py-5">
-                        <span className="text-xs font-mono font-bold text-primary">{d.sispn}</span>
+                  paginatedDesfechos.map((d, index) => (
+                    <tr key={d.id} className="hover:bg-primary/[0.02] transition-colors group">
+                      <td className="px-4 py-3">
+                        <span className="text-[10px] font-mono text-on-surface-variant/40">{index + 1 + (currentPage - 1) * itemsPerPage}</span>
                       </td>
-                      <td className="px-6 py-5">
-                        <span className="text-xs font-bold text-black dark:text-slate-100 uppercase">{d.gestacoes?.pacientes?.gestante || 'N/A'}</span>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-[10px] font-mono font-bold text-primary">{d.gestacoes?.pacientes?.cpf || '---'}</span>
+                          <p className="font-black text-xs text-on-surface uppercase leading-tight">{d.gestacoes?.pacientes?.gestante || 'N/A'}</p>
+                          <span className="text-[10px] font-mono font-bold text-primary">SISPN: {d.sispn}</span>
+                        </div>
                       </td>
-                      <td className="px-6 py-5">
-                        <span className="text-xs font-medium text-slate-700 dark:text-slate-400">{new Date(d.data_desfecho).toLocaleDateString('pt-BR')}</span>
-                      </td>
-                      <td className="px-6 py-5">
-                        <span className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide border ${
-                          d.tipo_desfecho === 'PARTO' ? 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/50 dark:text-emerald-300 dark:border-emerald-800' : 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-800'
+                      <td className="px-4 py-3">
+                        <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${
+                          d.tipo_desfecho === 'PARTO' ? 'bg-success/10 text-success' : 'bg-error/10 text-error'
                         }`}>
                           {d.tipo_desfecho}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
+                      <td className="px-4 py-3">
+                        <span className="text-[10px] font-bold text-on-surface">{new Date(d.data_desfecho).toLocaleDateString('pt-BR')}</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        {d.tipo_desfecho === 'PARTO' ? (
+                          <div className="flex flex-col gap-0.5">
+                            <p className="font-black text-xs text-on-surface uppercase leading-tight">
+                              {d.nome_rn || `RN ${d.gestacoes?.pacientes?.gestante || 'N/A'}`}
+                            </p>
+                            <span className="text-[10px] font-mono text-on-surface-variant/60">{d.cpf_rn ? `CPF: ${d.cpf_rn}` : '---'}</span>
+                            {d.data_consulta_rn && (
+                              <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${
+                                d.comparecimento ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'
+                              }`}>
+                                {d.comparecimento ? 'ATENDIDO' : 'PENDENTE'}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-[10px] text-on-surface-variant/40">---</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-center gap-1">
+                          <button
+                            onClick={() => handleEdit(d)}
+                            className="p-1.5 rounded-lg bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white transition-all"
+                            title="Editar"
+                          >
+                            <span className="material-symbols-outlined text-sm">edit</span>
+                          </button>
                           <button
                             onClick={() => setDeleteConfirmId(d.id)}
-                            className="p-2 rounded-lg hover:bg-error/10 text-error transition-colors"
+                            className="p-1.5 rounded-lg bg-error text-white hover:bg-error/80 transition-all"
                             title="Excluir"
                           >
-                            <span className="material-symbols-outlined text-lg">more_vert</span>
+                            <span className="material-symbols-outlined text-sm">delete</span>
                           </button>
                         </div>
                       </td>
@@ -856,13 +867,25 @@ export default function DesfechosPage() {
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               className="relative bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl space-y-6"
             >
-              <div className="w-16 h-16 rounded-2xl bg-error/10 flex items-center justify-center text-error mx-auto">
+              <div className="w-16 h-16 rounded-2xl bg-error/10 flex items-center text-error mx-auto">
                 <span className="material-symbols-outlined text-3xl">delete_forever</span>
               </div>
-              <div className="text-center space-y-2">
+              <div className="text-center space-y-3">
                 <h3 className="text-xl font-bold text-on-surface tracking-tight">Excluir Desfecho?</h3>
-                <p className="text-sm text-on-surface-variant/70 leading-relaxed">
-                  Esta ação não pode ser desfeita. Todos os dados do desfecho e recém-nascidos associados serão removidos permanentemente.
+                {deleteConfirmId && (() => {
+                  const d = desfechos.find(x => x.id === deleteConfirmId);
+                  return d ? (
+                    <div className="bg-surface-container-low p-3 rounded-xl text-left space-y-1">
+                      <p className="text-xs font-bold text-on-surface"><span className="text-primary">Gestante:</span> {d.gestacoes?.pacientes?.gestante || 'N/A'}</p>
+                      <p className="text-xs font-bold text-on-surface"><span className="text-primary">SISPN:</span> {d.sispn}</p>
+                      <p className="text-xs font-bold text-on-surface"><span className="text-primary">Tipo:</span> {d.tipo_desfecho}</p>
+                      <p className="text-xs font-bold text-on-surface"><span className="text-primary">Data:</span> {new Date(d.data_desfecho).toLocaleDateString('pt-BR')}</p>
+                      {d.nome_rn && <p className="text-xs font-bold text-on-surface"><span className="text-primary">RN:</span> {d.nome_rn}</p>}
+                    </div>
+                  ) : null;
+                })()}
+                <p className="text-xs text-on-surface-variant/70 leading-relaxed">
+                  Esta ação removerá apenas os dados do desfecho. <strong className="text-error">A gestação e os dados da gestante serão mantidos.</strong>
                 </p>
               </div>
               <div className="flex gap-3">

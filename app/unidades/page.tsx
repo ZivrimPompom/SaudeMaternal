@@ -548,7 +548,7 @@ export default function UnidadesSaudePage() {
             <div className="bg-surface-container-lowest rounded-2xl overflow-hidden shadow-md border border-outline-variant/10 flex flex-col h-full">
               <div className="p-6 md:p-8 border-b border-surface-container-low flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-surface-container-lowest/50 backdrop-blur-sm sticky top-0 z-10">
                 <div>
-                  <h3 className="text-2xl font-bold font-headline text-on-surface">Unidades Cadastradas</h3>
+                  <h3 className="text-2xl font-bold font-headline text-on-surface">Unidades</h3>
                   <p className="text-xs text-on-surface-variant font-body opacity-60 mt-1">Listagem de estabelecimentos de saúde</p>
                 </div>
               </div>
@@ -573,57 +573,55 @@ export default function UnidadesSaudePage() {
                   </div>
                 ) : (
                   <>
-                    <table className="w-full text-left border-separate border-spacing-0 min-w-[1000px]">
+                    <table className="w-full text-left border-separate border-spacing-0 min-w-[900px]">
                       <thead className="sticky top-0 z-30 bg-surface-container-low">
                         <tr>
-                          <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5 w-[300px]">Unidade</th>
-                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5 w-[150px]">CNES</th>
-                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5">Localização</th>
-                          <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label text-center border-b border-outline-variant/5 w-[180px]">Ações</th>
+                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Unidade</th>
+                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">CNES</th>
+                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Localização</th>
+                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-center">Ações</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-surface-container-low/50">
+                      <tbody className="divide-y divide-outline-variant/5">
                         {filteredUnits
                           .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
                           .map((unit) => (
-                            <tr key={unit.cnes} className="hover:bg-surface-container-low/40 transition-all group">
-                              <td className="px-6 py-4">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-surface-container-high to-surface-container-highest flex items-center justify-center text-sm font-bold text-primary shadow-sm group-hover:scale-105 transition-transform">
-                                    <Building2 className="w-4 h-4" />
+                            <tr key={unit.cnes} className="hover:bg-primary/[0.02] transition-colors group">
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
+                                    <Building2 className="w-3.5 h-3.5" />
                                   </div>
                                   <div>
-                                    <p className="font-bold text-on-surface text-sm font-headline leading-tight uppercase line-clamp-1">{unit.nome_fantasia}</p>
-                                    <p className="text-[9px] text-on-surface-variant/60 font-body uppercase tracking-widest mt-0.5 line-clamp-1">{unit.telefone || 'Sem telefone'}</p>
+                                    <p className="font-black text-xs text-on-surface uppercase leading-tight">{unit.nome_fantasia}</p>
+                                    <p className="text-[9px] text-on-surface-variant/50 font-body">{unit.telefone || '---'}</p>
                                   </div>
                                 </div>
                               </td>
-                              <td className="px-4 py-4">
-                                <span className="text-xs font-mono text-on-surface-variant font-medium">{unit.cnes}</span>
+                              <td className="px-4 py-3">
+                                <span className="text-[10px] font-mono font-bold text-on-surface">{unit.cnes}</span>
                               </td>
-                              <td className="px-4 py-4">
-                                <div className="flex flex-col">
-                                  <span className="text-[11px] text-on-surface font-medium line-clamp-1">{unit.bairro}</span>
-                                  <span className="text-[9px] text-on-surface-variant/60 font-body line-clamp-1">{unit.municipio} - {unit.uf}</span>
+                              <td className="px-4 py-3">
+                                <div className="text-[9px]">
+                                  <p className="text-on-surface font-medium">{unit.logradouro}{unit.numero ? `, ${unit.numero}` : ''}{unit.complemento ? ` - ${unit.complemento}` : ''}</p>
+                                  <p className="text-on-surface-variant/50">{unit.bairro} - {unit.municipio}/{unit.uf}</p>
                                 </div>
                               </td>
-                              <td className="px-6 py-4 bg-surface-container-lowest group-hover:bg-surface-container-low transition-colors">
-                                <div className="flex items-center justify-center gap-2">
+                              <td className="px-4 py-3">
+                                <div className="flex items-center justify-center gap-1">
                                   <button 
                                     onClick={() => handleEdit(unit)}
-                                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary/5 text-primary hover:bg-primary hover:text-white transition-all shadow-sm group/btn"
-                                    title="Editar Unidade"
+                                    className="p-1.5 rounded-lg bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white transition-all"
+                                    title="Editar"
                                   >
                                     <Edit2 className="w-3.5 h-3.5" />
-                                    <span className="text-[9px] font-black uppercase tracking-widest hidden group-hover/btn:inline">Editar</span>
                                   </button>
                                   <button 
                                     onClick={() => setDeleteConfirmId(unit.cnes)}
-                                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all shadow-sm group/btn"
-                                    title="Excluir Unidade"
+                                    className="p-1.5 rounded-lg bg-error text-white hover:bg-error/80 transition-all"
+                                    title="Excluir"
                                   >
                                     <Trash2 className="w-3.5 h-3.5" />
-                                    <span className="text-[9px] font-black uppercase tracking-widest hidden group-hover/btn:inline">Excluir</span>
                                   </button>
                                 </div>
                               </td>
