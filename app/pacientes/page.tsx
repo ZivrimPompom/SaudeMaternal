@@ -679,8 +679,7 @@ export default function PacientesPage() {
                       <thead className="sticky top-0 z-30 bg-surface-container-low">
                         <tr>
                           <th className="px-6 py-4 text-table-header border-b border-slate-300 dark:border-slate-700">Gestante</th>
-                          <th className="px-4 py-4 text-table-header border-b border-slate-300 dark:border-slate-700 w-[160px]">Prontuário / Mãe</th>
-                          <th className="px-4 py-4 text-table-header border-b border-slate-300 dark:border-slate-700">Fase da Vida</th>
+                          <th className="px-4 py-4 text-table-header border-b border-slate-300 dark:border-slate-700 w-[160px]">Fase</th>
                           <th className="px-4 py-4 text-table-header border-b border-slate-300 dark:border-slate-700">Endereço</th>
                           <th className="px-6 py-4 text-table-header text-center border-b border-slate-300 dark:border-slate-700 w-[120px]">Ações</th>
                         </tr>
@@ -699,7 +698,7 @@ export default function PacientesPage() {
                                 <td className="px-6 py-5">
                                   <div className="flex items-start gap-4">
                                     <div className="min-w-0 flex-1">
-                                      <span className="text-xs font-mono font-bold text-orange-600">CPF: {formatCpf(pac.cpf || '')}</span>
+                                      <span className="text-xs font-mono font-bold text-orange-600">{formatCpf(pac.cpf || '')}</span>
                                       <p className="font-black text-on-surface font-headline text-base group-hover:text-orange-600 transition-colors uppercase truncate">{pac.gestante}</p>
                                       <span className="text-table-cell text-black dark:text-slate-300 uppercase">CNS: {formatCns(pac.cns || '') || '---'}</span>
                                     </div>
@@ -710,18 +709,15 @@ export default function PacientesPage() {
                                   </div>
                                 </td>
                                 <td className="px-4 py-5">
-                                  <div className="flex flex-col gap-1">
-                                    <span className="text-[9px] font-black text-primary/60 uppercase tracking-widest">Fase da Vida</span>
-                                    <span className={`text-table-cell px-3 py-1.5 rounded-lg uppercase tracking-wide border block w-fit ${
-                                      lifeStage === 'INFÂNCIA' ? 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/50 dark:text-blue-300 dark:border-blue-800' :
-                                      lifeStage === 'ADOLESCÊNCIA' ? 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/50 dark:text-purple-300 dark:border-purple-800' :
-                                      lifeStage === 'VELHICE' ? 'bg-error/10 text-error border-error/20 dark:bg-red-900/50 dark:text-red-300 dark:border-red-800' :
-                                      'bg-success/10 text-success border-success/20 dark:bg-green-900/50 dark:text-green-300 dark:border-green-800'
-                                    }`}>
-                                      {lifeStage}
-                                    </span>
-                                    <span className="text-table-cell text-black dark:text-slate-300 mt-1 block">{ageText}</span>
-                                  </div>
+                                  <span className={`text-table-cell px-3 py-1.5 rounded-lg uppercase tracking-wide border block w-fit ${
+                                    lifeStage === 'INFÂNCIA' ? 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/50 dark:text-blue-300 dark:border-blue-800' :
+                                    lifeStage === 'ADOLESCÊNCIA' ? 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/50 dark:text-purple-300 dark:border-purple-800' :
+                                    lifeStage === 'VELHICE' ? 'bg-error/10 text-error border-error/20 dark:bg-red-900/50 dark:text-red-300 dark:border-red-800' :
+                                    'bg-success/10 text-success border-success/20 dark:bg-green-900/50 dark:text-green-300 dark:border-green-800'
+                                  }`}>
+                                    {lifeStage}
+                                  </span>
+                                  <span className="text-table-cell text-black dark:text-slate-300 mt-2 block">{ageText}</span>
                                 </td>
                                 <td className="px-4 py-5">
                                   <div className="flex items-start gap-2">
