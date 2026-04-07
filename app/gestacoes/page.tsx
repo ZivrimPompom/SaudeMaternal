@@ -1430,9 +1430,9 @@ export default function GestacoesPage() {
                         <tr>
                           <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Gestante</th>
                           <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Status</th>
+                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Semanas</th>
                           <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Idade</th>
                           <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">DUM / DPP</th>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Semanas</th>
                           <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Equipe</th>
                           <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-center">Ações</th>
                         </tr>
@@ -1463,6 +1463,14 @@ export default function GestacoesPage() {
                                   </span>
                                 </td>
                                 <td className="px-4 py-3">
+                                  <span className="text-[10px] font-black text-on-surface">{weeks} SEM</span>
+                                  <span className={`text-[9px] font-black px-2 py-0.5 rounded-full block w-fit mt-1 ${
+                                    captacao === 'PRECOCE' ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'
+                                  }`}>
+                                    {captacao}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3">
                                   <div className="flex flex-col gap-0.5">
                                     <span className="text-[10px] font-bold text-on-surface">{ageInfo.ageText}</span>
                                     <span className={`text-[9px] font-black px-2 py-0.5 rounded-full w-fit ${
@@ -1480,14 +1488,6 @@ export default function GestacoesPage() {
                                     <span className="text-[10px] text-on-surface">DUM: {new Date(g.dum).toLocaleDateString('pt-BR')}</span>
                                     <span className="text-[10px] text-on-surface">DPP: {new Date(g.dpp).toLocaleDateString('pt-BR')}</span>
                                   </div>
-                                </td>
-                                <td className="px-4 py-3">
-                                  <span className="text-[10px] font-black text-on-surface">{weeks} SEM</span>
-                                  <span className={`text-[9px] font-black px-2 py-0.5 rounded-full block w-fit mt-1 ${
-                                    captacao === 'PRECOCE' ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'
-                                  }`}>
-                                    {captacao}
-                                  </span>
                                 </td>
                                 <td className="px-4 py-3">
                                   <div className="flex flex-col gap-0.5">
