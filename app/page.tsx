@@ -93,11 +93,15 @@ export default function Page() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
           <Link href="/operadores" className="bg-surface-container-lowest p-4 md:p-5 rounded-2xl shadow-xl shadow-black/5 border border-outline-variant/10 hover:border-primary/30 hover:shadow-primary/10 transition-all group relative overflow-hidden flex flex-col h-full min-h-[120px]">
             <div className="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-full -mr-8 -mt-8 group-hover:scale-150 transition-transform duration-700" />
-            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary group-hover:rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
-              <Shield className="text-primary group-hover:text-white w-6 h-6 transition-colors" />
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
+                <Shield className="text-primary group-hover:text-white w-6 h-6 transition-colors" />
+              </div>
+              <div>
+                <h3 className="text-lg md:text-xl font-black font-headline mb-1 text-on-surface tracking-tight leading-none">Operadores</h3>
+                <p className="text-xs md:text-sm text-on-surface-variant/60 font-body leading-tight line-clamp-1">Perfis e acessos.</p>
+              </div>
             </div>
-            <h3 className="text-lg md:text-xl font-black font-headline mb-2 text-on-surface tracking-tight leading-none">Operadores</h3>
-            <p className="text-xs md:text-sm text-on-surface-variant/60 font-body mb-3 leading-tight line-clamp-1">Perfis e acessos.</p>
             <div className="mt-auto flex items-center justify-between pt-4 border-t border-outline-variant/10">
               <div className="flex flex-col">
                 <span className="text-[11px] font-black uppercase tracking-[0.2em] text-on-surface-variant/40">Total</span>
@@ -111,11 +115,15 @@ export default function Page() {
 
           <Link href="/pacientes" className="bg-surface-container-lowest p-4 md:p-5 rounded-2xl shadow-xl shadow-black/5 border border-outline-variant/10 hover:border-primary/30 hover:shadow-primary/10 transition-all group relative overflow-hidden flex flex-col h-full min-h-[120px]">
             <div className="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-full -mr-8 -mt-8 group-hover:scale-150 transition-transform duration-700" />
-            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary group-hover:rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
-              <Users className="text-primary group-hover:text-white w-6 h-6 transition-colors" />
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
+                <Users className="text-primary group-hover:text-white w-6 h-6 transition-colors" />
+              </div>
+              <div>
+                <h3 className="text-lg md:text-xl font-black font-headline mb-1 text-on-surface tracking-tight leading-none">Pacientes</h3>
+                <p className="text-xs md:text-sm text-on-surface-variant/60 font-body leading-tight line-clamp-1">Cadastro de gestantes.</p>
+              </div>
             </div>
-            <h3 className="text-lg md:text-xl font-black font-headline mb-2 text-on-surface tracking-tight leading-none">Pacientes</h3>
-            <p className="text-xs md:text-sm text-on-surface-variant/60 font-body mb-3 leading-tight line-clamp-1">Cadastro de gestantes.</p>
             <div className="mt-auto flex items-center justify-between pt-4 border-t border-outline-variant/10">
               <div className="flex flex-col">
                 <span className="text-[11px] font-black uppercase tracking-[0.2em] text-on-surface-variant/40">Total</span>
@@ -129,11 +137,15 @@ export default function Page() {
 
           <Link href="/categorias" className="bg-surface-container-lowest p-4 md:p-5 rounded-2xl shadow-xl shadow-black/5 border border-outline-variant/10 hover:border-primary/30 hover:shadow-primary/10 transition-all group relative overflow-hidden flex flex-col h-full min-h-[120px]">
             <div className="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-full -mr-8 -mt-8 group-hover:scale-150 transition-transform duration-700" />
-            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary group-hover:-rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
-              <Briefcase className="text-primary group-hover:text-white w-6 h-6 transition-colors" />
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:-rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
+                <Briefcase className="text-primary group-hover:text-white w-6 h-6 transition-colors" />
+              </div>
+              <div>
+                <h3 className="text-lg md:text-xl font-black font-headline mb-1 text-on-surface tracking-tight leading-none">Categorias</h3>
+                <p className="text-xs md:text-sm text-on-surface-variant/60 font-body leading-tight line-clamp-1">Cargos e vínculos.</p>
+              </div>
             </div>
-            <h3 className="text-lg md:text-xl font-black font-headline mb-2 text-on-surface tracking-tight leading-none">Categorias</h3>
-            <p className="text-xs md:text-sm text-on-surface-variant/60 font-body mb-3 leading-tight line-clamp-1">Cargos e vínculos.</p>
             <div className="mt-auto flex items-center justify-between pt-4 border-t border-outline-variant/10">
               <div className="flex flex-col">
                 <span className="text-[11px] font-black uppercase tracking-[0.2em] text-on-surface-variant/40">Total</span>
@@ -147,11 +159,15 @@ export default function Page() {
 
           <Link href="/profissionais" className="bg-surface-container-lowest p-4 md:p-5 rounded-2xl shadow-xl shadow-black/5 border border-outline-variant/10 hover:border-primary/30 hover:shadow-primary/10 transition-all group relative overflow-hidden flex flex-col h-full min-h-[120px]">
             <div className="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-full -mr-8 -mt-8 group-hover:scale-150 transition-transform duration-700" />
-            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary group-hover:rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
-              <UserCheck className="text-primary group-hover:text-white w-6 h-6 transition-colors" />
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
+                <UserCheck className="text-primary group-hover:text-white w-6 h-6 transition-colors" />
+              </div>
+              <div>
+                <h3 className="text-lg md:text-xl font-black font-headline mb-1 text-on-surface tracking-tight leading-none">Profissionais</h3>
+                <p className="text-xs md:text-sm text-on-surface-variant/60 font-body leading-tight line-clamp-1">Cadastro clínico.</p>
+              </div>
             </div>
-            <h3 className="text-lg md:text-xl font-black font-headline mb-2 text-on-surface tracking-tight leading-none">Profissionais</h3>
-            <p className="text-xs md:text-sm text-on-surface-variant/60 font-body mb-3 leading-tight line-clamp-1">Cadastro clínico.</p>
             <div className="mt-auto flex items-center justify-between pt-4 border-t border-outline-variant/10">
               <div className="flex flex-col">
                 <span className="text-[11px] font-black uppercase tracking-[0.2em] text-on-surface-variant/40">Total</span>
@@ -165,11 +181,15 @@ export default function Page() {
 
           <Link href="/rotinas" className="bg-surface-container-lowest p-4 md:p-5 rounded-2xl shadow-xl shadow-black/5 border border-outline-variant/10 hover:border-primary/30 hover:shadow-primary/10 transition-all group relative overflow-hidden flex flex-col h-full min-h-[120px]">
             <div className="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-full -mr-8 -mt-8 group-hover:scale-150 transition-transform duration-700" />
-            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary group-hover:-rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
-              <ClipboardList className="text-primary group-hover:text-white w-6 h-6 transition-colors" />
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:-rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
+                <ClipboardList className="text-primary group-hover:text-white w-6 h-6 transition-colors" />
+              </div>
+              <div>
+                <h3 className="text-lg md:text-xl font-black font-headline mb-1 text-on-surface tracking-tight leading-none">Rotinas</h3>
+                <p className="text-xs md:text-sm text-on-surface-variant/60 font-body leading-tight line-clamp-1">Protocolos PN.</p>
+              </div>
             </div>
-            <h3 className="text-lg md:text-xl font-black font-headline mb-2 text-on-surface tracking-tight leading-none">Rotinas</h3>
-            <p className="text-xs md:text-sm text-on-surface-variant/60 font-body mb-3 leading-tight line-clamp-1">Protocolos PN.</p>
             <div className="mt-auto flex items-center justify-between pt-4 border-t border-outline-variant/10">
               <div className="flex flex-col">
                 <span className="text-[11px] font-black uppercase tracking-[0.2em] text-on-surface-variant/40">Total</span>
@@ -183,11 +203,15 @@ export default function Page() {
 
           <Link href="/unidades" className="bg-surface-container-lowest p-4 md:p-5 rounded-2xl shadow-xl shadow-black/5 border border-outline-variant/10 hover:border-primary/30 hover:shadow-primary/10 transition-all group relative overflow-hidden flex flex-col h-full min-h-[120px]">
             <div className="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-full -mr-8 -mt-8 group-hover:scale-150 transition-transform duration-700" />
-            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary group-hover:rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
-              <Building2 className="text-primary group-hover:text-white w-6 h-6 transition-colors" />
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
+                <Building2 className="text-primary group-hover:text-white w-6 h-6 transition-colors" />
+              </div>
+              <div>
+                <h3 className="text-lg md:text-xl font-black font-headline mb-1 text-on-surface tracking-tight leading-none">Unidades</h3>
+                <p className="text-xs md:text-sm text-on-surface-variant/60 font-body leading-tight line-clamp-1">Estabelecimentos.</p>
+              </div>
             </div>
-            <h3 className="text-lg md:text-xl font-black font-headline mb-2 text-on-surface tracking-tight leading-none">Unidades</h3>
-            <p className="text-xs md:text-sm text-on-surface-variant/60 font-body mb-3 leading-tight line-clamp-1">Estabelecimentos.</p>
             <div className="mt-auto flex items-center justify-between pt-4 border-t border-outline-variant/10">
               <div className="flex flex-col">
                 <span className="text-[11px] font-black uppercase tracking-[0.2em] text-on-surface-variant/40">Total</span>
@@ -201,11 +225,15 @@ export default function Page() {
 
           <Link href="/gestacoes" className="bg-surface-container-lowest p-4 md:p-5 rounded-2xl shadow-xl shadow-black/5 border border-outline-variant/10 hover:border-primary/30 hover:shadow-primary/10 transition-all group relative overflow-hidden flex flex-col h-full min-h-[120px]">
             <div className="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-full -mr-8 -mt-8 group-hover:scale-150 transition-transform duration-700" />
-            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary group-hover:-rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
-              <HeartPulse className="text-primary group-hover:text-white w-6 h-6 transition-colors" />
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:-rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
+                <HeartPulse className="text-primary group-hover:text-white w-6 h-6 transition-colors" />
+              </div>
+              <div>
+                <h3 className="text-lg md:text-xl font-black font-headline mb-1 text-on-surface tracking-tight leading-none">Gestações</h3>
+                <p className="text-xs md:text-sm text-on-surface-variant/60 font-body leading-tight line-clamp-1">Acompanhamento.</p>
+              </div>
             </div>
-            <h3 className="text-lg md:text-xl font-black font-headline mb-2 text-on-surface tracking-tight leading-none">Gestações</h3>
-            <p className="text-xs md:text-sm text-on-surface-variant/60 font-body mb-3 leading-tight line-clamp-1">Acompanhamento.</p>
             <div className="mt-auto flex items-center justify-between pt-4 border-t border-outline-variant/10">
               <div className="flex flex-col">
                 <span className="text-[11px] font-black uppercase tracking-[0.2em] text-on-surface-variant/40">Total</span>
@@ -219,11 +247,15 @@ export default function Page() {
 
           <Link href="/atendimentos" className="bg-surface-container-lowest p-4 md:p-5 rounded-2xl shadow-xl shadow-black/5 border border-outline-variant/10 hover:border-primary/30 hover:shadow-primary/10 transition-all group relative overflow-hidden flex flex-col h-full min-h-[120px]">
             <div className="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-full -mr-8 -mt-8 group-hover:scale-150 transition-transform duration-700" />
-            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary group-hover:rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
-              <Stethoscope className="text-primary group-hover:text-white w-6 h-6 transition-colors" />
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
+                <Stethoscope className="text-primary group-hover:text-white w-6 h-6 transition-colors" />
+              </div>
+              <div>
+                <h3 className="text-lg md:text-xl font-black font-headline mb-1 text-on-surface tracking-tight leading-none">Atendimentos</h3>
+                <p className="text-xs md:text-sm text-on-surface-variant/60 font-body leading-tight line-clamp-1">Consultas.</p>
+              </div>
             </div>
-            <h3 className="text-lg md:text-xl font-black font-headline mb-2 text-on-surface tracking-tight leading-none">Atendimentos</h3>
-            <p className="text-xs md:text-sm text-on-surface-variant/60 font-body mb-3 leading-tight line-clamp-1">Consultas.</p>
             <div className="mt-auto flex items-center justify-between pt-4 border-t border-outline-variant/10">
               <div className="flex flex-col">
                 <span className="text-[11px] font-black uppercase tracking-[0.2em] text-on-surface-variant/40">Total</span>
@@ -237,11 +269,15 @@ export default function Page() {
 
           <Link href="/exames" className="bg-surface-container-lowest p-4 md:p-5 rounded-2xl shadow-xl shadow-black/5 border border-outline-variant/10 hover:border-primary/30 hover:shadow-primary/10 transition-all group relative overflow-hidden flex flex-col h-full min-h-[120px]">
             <div className="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-full -mr-8 -mt-8 group-hover:scale-150 transition-transform duration-700" />
-            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary group-hover:rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
-              <FlaskConical className="text-primary group-hover:text-white w-6 h-6 transition-colors" />
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
+                <FlaskConical className="text-primary group-hover:text-white w-6 h-6 transition-colors" />
+              </div>
+              <div>
+                <h3 className="text-lg md:text-xl font-black font-headline mb-1 text-on-surface tracking-tight leading-tight">Exames</h3>
+                <p className="text-xs md:text-sm text-on-surface-variant/60 font-body leading-tight line-clamp-1">Resultados.</p>
+              </div>
             </div>
-            <h3 className="text-lg md:text-xl font-black font-headline mb-2 text-on-surface tracking-tight leading-tight">Exames</h3>
-            <p className="text-xs md:text-sm text-on-surface-variant/60 font-body mb-3 leading-tight line-clamp-1">Resultados.</p>
             <div className="mt-auto flex items-center justify-between pt-4 border-t border-outline-variant/10">
               <div className="flex flex-col">
                 <span className="text-[11px] font-black uppercase tracking-[0.2em] text-on-surface-variant/40">Total</span>
@@ -255,11 +291,15 @@ export default function Page() {
 
           <Link href="/desfechos" className="bg-surface-container-lowest p-4 md:p-5 rounded-2xl shadow-xl shadow-black/5 border border-outline-variant/10 hover:border-primary/30 hover:shadow-primary/10 transition-all group relative overflow-hidden flex flex-col h-full min-h-[120px]">
             <div className="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-full -mr-8 -mt-8 group-hover:scale-150 transition-transform duration-700" />
-            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary group-hover:rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
-              <ClipboardList className="text-primary group-hover:text-white w-6 h-6 transition-colors" />
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
+                <ClipboardList className="text-primary group-hover:text-white w-6 h-6 transition-colors" />
+              </div>
+              <div>
+                <h3 className="text-lg md:text-xl font-black font-headline mb-1 text-on-surface tracking-tight leading-tight">Desfechos</h3>
+                <p className="text-xs md:text-sm text-on-surface-variant/60 font-body leading-tight line-clamp-1">Encerramentos.</p>
+              </div>
             </div>
-            <h3 className="text-lg md:text-xl font-black font-headline mb-2 text-on-surface tracking-tight leading-tight">Desfechos</h3>
-            <p className="text-xs md:text-sm text-on-surface-variant/60 font-body mb-3 leading-tight line-clamp-1">Encerramentos.</p>
             <div className="mt-auto flex items-center justify-between pt-4 border-t border-outline-variant/10">
               <div className="flex flex-col">
                 <span className="text-[11px] font-black uppercase tracking-[0.2em] text-on-surface-variant/40">Total</span>
@@ -273,11 +313,15 @@ export default function Page() {
 
           <Link href="/dashboard/overview" className="bg-surface-container-lowest p-4 md:p-5 rounded-2xl shadow-xl shadow-black/5 border border-outline-variant/10 hover:border-primary/30 hover:shadow-primary/10 transition-all group relative overflow-hidden flex flex-col h-full min-h-[120px]">
             <div className="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-full -mr-8 -mt-8 group-hover:scale-150 transition-transform duration-700" />
-            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary group-hover:rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
-              <Activity className="text-primary group-hover:text-white w-6 h-6 transition-colors" />
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
+                <Activity className="text-primary group-hover:text-white w-6 h-6 transition-colors" />
+              </div>
+              <div>
+                <h3 className="text-lg md:text-xl font-black font-headline mb-1 text-on-surface tracking-tight leading-none">Dashboard</h3>
+                <p className="text-xs md:text-sm text-on-surface-variant/60 font-body leading-tight line-clamp-1">Visão analítica.</p>
+              </div>
             </div>
-            <h3 className="text-lg md:text-xl font-black font-headline mb-2 text-on-surface tracking-tight leading-none">Dashboard</h3>
-            <p className="text-xs md:text-sm text-on-surface-variant/60 font-body mb-3 leading-tight line-clamp-1">Visão analítica.</p>
             <div className="mt-auto flex items-center justify-between pt-4 border-t border-outline-variant/10">
               <div className="flex flex-col">
                 <span className="text-[11px] font-black uppercase tracking-[0.2em] text-on-surface-variant/40">Status</span>

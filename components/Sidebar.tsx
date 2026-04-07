@@ -77,10 +77,14 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
       ]
     },
     { 
+      name: 'Relatórios', 
+      icon: 'analytics', 
+      href: '#' 
+    },
+    { 
       name: 'Manutenção', 
       icon: 'settings', 
       subItems: [
-        { name: 'Manual do Sistema', href: '/MANUAL.txt', target: '_blank' },
         { 
           name: 'Exportar Layout', 
           href: '#',
@@ -100,9 +104,12 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
       ]
     },
     { 
-      name: 'Relatórios', 
-      icon: 'analytics', 
-      href: '#' 
+      name: 'Sobre', 
+      icon: 'info', 
+      subItems: [
+        { name: 'Manual 1', href: '/manual 1.html', target: '_blank' },
+        { name: 'Manual 2', href: '/manual 2.html', target: '_blank' },
+      ]
     }
   ];
 
@@ -213,36 +220,49 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
                     const hasNestedSubItems = sub.subItems && sub.subItems.length > 0;
                     
                     if (hasNestedSubItems) {
+                      const isNestedExpanded = openMenus.includes(sub.name);
                       return (
                         <div key={idx} className="space-y-1">
-                          <div className="px-4 py-2 text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
-                            {sub.name}
-                          </div>
-                          {sub.subItems?.map((nestedSub, nestedIdx) => {
-                            const isExport = nestedSub.href.startsWith('export:');
-                            if (isExport) {
-                              return (
-                                <button
-                                  key={nestedIdx}
-                                  onClick={() => handleExportLayout(nestedSub.href.split(':')[1])}
-                                  className="w-full flex items-center gap-3 px-4 py-2 rounded-r-lg transition-all duration-200 font-headline text-sm font-medium tracking-tight text-slate-500 dark:text-slate-400 hover:text-primary hover:bg-primary/5 text-left"
-                                >
-                                  <span className="material-symbols-outlined">download</span>
-                                  <span>{nestedSub.name}</span>
-                                </button>
-                              );
-                            }
-                            return (
-                              <Link
-                                key={nestedIdx}
-                                href={nestedSub.href}
-                                target={nestedSub.target || undefined}
-                                className="flex items-center gap-3 px-4 py-2 rounded-r-lg transition-all duration-200 font-headline text-sm font-medium tracking-tight text-slate-500 dark:text-slate-400 hover:text-primary hover:bg-primary/5"
-                              >
-                                <span>{nestedSub.name}</span>
-                              </Link>
-                            );
-                          })}
+                          <button
+                            onClick={() => toggleMenu(sub.name)}
+                            className="w-full flex items-center justify-between px-4 py-2 rounded-r-lg transition-all duration-200 font-headline text-sm font-medium tracking-tight text-slate-500 dark:text-slate-400 hover:text-primary hover:bg-primary/5"
+                          >
+                            <span className="flex items-center gap-3">
+                              <span>{sub.name}</span>
+                            </span>
+                            <span className={`material-symbols-outlined transition-transform duration-200 ${isNestedExpanded ? 'rotate-180' : ''}`}>
+                              expand_more
+                            </span>
+                          </button>
+                          {isNestedExpanded && (
+                            <div className="ml-6 space-y-1 border-l border-slate-200 dark:border-slate-700">
+                              {sub.subItems?.map((nestedSub, nestedIdx) => {
+                                const isExport = nestedSub.href.startsWith('export:');
+                                if (isExport) {
+                                  return (
+                                    <button
+                                      key={nestedIdx}
+                                      onClick={() => handleExportLayout(nestedSub.href.split(':')[1])}
+                                      className="w-full flex items-center gap-3 px-4 py-2 rounded-r-lg transition-all duration-200 font-headline text-sm font-medium tracking-tight text-slate-500 dark:text-slate-400 hover:text-primary hover:bg-primary/5 text-left"
+                                    >
+                                      <span className="material-symbols-outlined">download</span>
+                                      <span>{nestedSub.name}</span>
+                                    </button>
+                                  );
+                                }
+                                return (
+                                  <Link
+                                    key={nestedIdx}
+                                    href={nestedSub.href}
+                                    target={nestedSub.target || undefined}
+                                    className="flex items-center gap-3 px-4 py-2 rounded-r-lg transition-all duration-200 font-headline text-sm font-medium tracking-tight text-slate-500 dark:text-slate-400 hover:text-primary hover:bg-primary/5"
+                                  >
+                                    <span>{nestedSub.name}</span>
+                                  </Link>
+                                );
+                              })}
+                            </div>
+                          )}
                         </div>
                       );
                     }
@@ -285,10 +305,6 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
         })}
       </nav>
       <div className="mt-auto pt-8 border-t border-slate-200 dark:border-slate-700 space-y-1">
-        <Link href="#" className="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-500 dark:text-slate-400 hover:text-primary hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors duration-200 font-headline text-base font-semibold tracking-tight">
-          <span className="material-symbols-outlined">help_outline</span>
-          <span>Support</span>
-        </Link>
         <button 
           onClick={onClose}
           className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-slate-500 dark:text-slate-400 hover:text-primary hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors duration-200 font-headline text-base font-semibold tracking-tight mt-4"
