@@ -8,6 +8,7 @@ import { useAuth } from '@/context/AuthContext';
 interface SubItem {
   name: string;
   href: string;
+  target?: string;
 }
 
 interface MenuItem {
@@ -78,6 +79,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
       name: 'Manutenção', 
       icon: 'settings', 
       subItems: [
+        { name: 'Manual do Sistema', href: '/MANUAL.md', target: '_blank' },
         { name: 'Backup Dados', href: '/manutencao/backup' },
         { name: 'Histórico', href: '/manutencao/historico' },
         { name: 'Exportar Layout Pacientes', href: 'export:pacientes' },
@@ -223,6 +225,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
                       <Link
                         key={sub.name}
                         href={sub.href}
+                        target={sub.target || undefined}
                         className={`flex items-center gap-3 px-4 py-2 rounded-r-lg transition-all duration-200 font-headline text-sm font-medium tracking-tight ${
                           isSubActive
                             ? 'text-primary bg-primary/5'
