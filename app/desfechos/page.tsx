@@ -746,7 +746,6 @@ export default function DesfechosPage() {
                   <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">#</th>
                   <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Gestante</th>
                   <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Desfecho</th>
-                  <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Data do Desfecho</th>
                   <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Recém-Nascido</th>
                   <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-center">Ações</th>
                 </tr>
@@ -781,14 +780,14 @@ export default function DesfechosPage() {
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${
-                          d.tipo_desfecho === 'PARTO' ? 'bg-success/10 text-success' : 'bg-error/10 text-error'
-                        }`}>
-                          {d.tipo_desfecho}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="text-[10px] font-bold text-on-surface">{new Date(d.data_desfecho).toLocaleDateString('pt-BR')}</span>
+                        <div className="flex flex-col gap-0.5">
+                          <span className={`text-[9px] font-black px-2 py-0.5 rounded-full w-fit ${
+                            d.tipo_desfecho === 'PARTO' ? 'bg-success/10 text-success' : 'bg-error/10 text-error'
+                          }`}>
+                            {d.tipo_desfecho}
+                          </span>
+                          <span className="text-[10px] font-bold text-on-surface">{new Date(d.data_desfecho).toLocaleDateString('pt-BR')}</span>
+                        </div>
                       </td>
                       <td className="px-4 py-3">
                         {d.tipo_desfecho === 'PARTO' ? (
