@@ -739,7 +739,7 @@ export default function PacientesPage() {
                                   <div className="flex flex-col gap-1 text-justify">
                                     <span className="text-[10px] font-mono font-bold text-orange-600">CPF: {formatCpf(pac.cpf || '')}</span>
                                     <p className="font-black text-on-surface font-headline text-base group-hover:text-orange-600 transition-colors uppercase">{pac.gestante}</p>
-                                    <span className="text-table-cell text-black dark:text-slate-300 uppercase">CNS: {formatCns(pac.cns || '') || '---'}</span>
+                                    <span className="text-[10px] font-mono font-bold text-orange-600">CNS: {formatCns(pac.cns || '') || '---'}</span>
                                   </div>
                                 </td>
                                 <td className="px-4 py-5">
