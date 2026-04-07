@@ -1362,9 +1362,9 @@ export default function AtendimentosPage() {
                             <tr key={p.sispn} className="hover:bg-primary/[0.02] transition-colors group">
                               <td className="px-4 py-3">
                                 <div className="flex flex-col gap-0.5">
-                                  <span className="text-[10px] font-mono font-bold text-primary">{p.paciente_cpf !== 'NÃO INFORMADO' ? p.paciente_cpf : '---'}</span>
+                                  <span className="text-[10px] font-mono font-bold text-primary">CPF: {p.paciente_cpf !== 'NÃO INFORMADO' ? formatCpf(p.paciente_cpf) : '---'}</span>
                                   <p className="font-black text-xs text-on-surface uppercase leading-tight">{p.paciente_nome}</p>
-                                  <span className="text-[10px] font-mono font-bold text-primary">SISPN: {p.sispn}</span>
+                                  <span className="text-[10px] font-mono font-bold text-primary">SISPN: {formatSispn(p.sispn)}</span>
                                 </div>
                               </td>
                               <td className="px-4 py-3">
