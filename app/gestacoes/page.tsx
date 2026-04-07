@@ -1429,10 +1429,10 @@ export default function GestacoesPage() {
                       <thead className="sticky top-0 z-30 bg-surface-container-low">
                         <tr>
                           <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Gestante</th>
+                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Status</th>
                           <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Idade</th>
                           <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">DUM / DPP</th>
                           <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Semanas</th>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Status</th>
                           <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Equipe</th>
                           <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-center">Ações</th>
                         </tr>
@@ -1454,6 +1454,13 @@ export default function GestacoesPage() {
                                     <p className="font-black text-xs text-on-surface uppercase leading-tight">{g.paciente_nome}</p>
                                     <span className="text-[10px] font-mono font-bold text-primary">SISPN: {formatSispn(g.sispn)}</span>
                                   </div>
+                                </td>
+                                <td className="px-4 py-3">
+                                  <span className={`text-[9px] font-black px-2 py-1 rounded-full ${
+                                    status === 'ATIVA' ? 'bg-success/10 text-success' : 'bg-error/10 text-error'
+                                  }`}>
+                                    {status}
+                                  </span>
                                 </td>
                                 <td className="px-4 py-3">
                                   <div className="flex flex-col gap-0.5">
@@ -1480,13 +1487,6 @@ export default function GestacoesPage() {
                                     captacao === 'PRECOCE' ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'
                                   }`}>
                                     {captacao}
-                                  </span>
-                                </td>
-                                <td className="px-4 py-3">
-                                  <span className={`text-[9px] font-black px-2 py-1 rounded-full ${
-                                    status === 'ATIVA' ? 'bg-success/10 text-success' : 'bg-error/10 text-error'
-                                  }`}>
-                                    {status}
                                   </span>
                                 </td>
                                 <td className="px-4 py-3">
