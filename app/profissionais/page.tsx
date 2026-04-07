@@ -56,11 +56,17 @@ export default function ProfissionaisPage() {
 
   const [editingCpf, setEditingCpf] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [unidadeFilter, setUnidadeFilter] = useState('');
   const itemsPerPage = 8;
 
   const filteredProfessionals = useMemo(() => {
     return professionals.filter(pro => {
       const query = searchQuery.toLowerCase().trim();
+      
+      if (unidadeFilter && pro.unidade_cnes !== unidadeFilter) {
+        return false;
+      }
+
       if (!query) return true;
 
       const normalize = (str: string) => 
@@ -81,7 +87,7 @@ export default function ProfissionaisPage() {
 
       return matchesNome || matchesCpf || matchesCns || matchesCategoria;
     });
-  }, [professionals, searchQuery]);
+  }, [professionals, searchQuery, unidadeFilter]);
 
   const handleExportCSV = useCallback(() => {
     const headers = ['NOME', 'CPF', 'CNS', 'CBO', 'UNIDADE', 'EQUIPE', 'SITUAÇÃO', 'VÍNCULO', 'TIPO VÍNCULO', 'CHS'];
@@ -338,8 +344,18 @@ export default function ProfissionaisPage() {
         
         {/* Topbar Pattern - Figura 1 */}
         <div className="bg-white p-4 rounded-2xl border border-outline-variant/10 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col lg:flex-row items-center gap-4">
             <h1 className="text-xl font-black text-primary uppercase tracking-tight">Profissionais</h1>
+            <select 
+              className="bg-surface-container text-on-surface-variant text-xs font-bold uppercase tracking-widest border border-primary/30 rounded-full px-4 py-2 outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
+              value={unidadeFilter}
+              onChange={(e) => { setUnidadeFilter(e.target.value); setCurrentPage(1); }}
+            >
+              <option value="">Todas as Unidades</option>
+              {units.map(u => (
+                <option key={u.cnes} value={u.cnes}>{u.nome_fantasia}</option>
+              ))}
+            </select>
           </div>
 
           <SearchInput 

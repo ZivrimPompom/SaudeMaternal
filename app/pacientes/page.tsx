@@ -47,6 +47,8 @@ export default function PacientesPage() {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [lifeStageFilter, setLifeStageFilter] = useState('');
+  const [unidadeFilter, setUnidadeFilter] = useState('');
+  const [unidades, setUnidades] = useState<any[]>([]);
   const itemsPerPage = 8;
 
   const [formData, setFormData] = useState<Partial<Paciente>>({
@@ -79,6 +81,12 @@ export default function PacientesPage() {
       return;
     }
     setLoading(true);
+    
+    const { data: unitsData } = await supabase
+      .from('unidades_saude')
+      .select('cnes, nome_fantasia')
+      .order('nome_fantasia');
+    if (unitsData) setUnidades(unitsData);
     
     let allData: Paciente[] = [];
     let from = 0;
@@ -196,6 +204,10 @@ export default function PacientesPage() {
         if (lifeStage !== lifeStageFilter) return false;
       }
 
+      if (unidadeFilter && (pac as any).unidade_cnes !== unidadeFilter) {
+        return false;
+      }
+
       if (!query) return true;
 
       const normalize = (str: string) => 
@@ -212,7 +224,7 @@ export default function PacientesPage() {
              (queryDigits !== '' && cpf.includes(queryDigits)) ||
              prontuario.includes(queryNormalizada);
     });
-  }, [pacientes, searchQuery, lifeStageFilter]);
+  }, [pacientes, searchQuery, lifeStageFilter, unidadeFilter]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -674,6 +686,27 @@ export default function PacientesPage() {
                     <span className="material-symbols-outlined text-primary text-sm">filter_alt</span>
                     <span className="text-[9px] font-black uppercase tracking-widest text-primary">Filtros Ativos</span>
                   </div>
+
+                  <select 
+                    className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
+                    value={unidadeFilter}
+                    onChange={(e) => { setUnidadeFilter(e.target.value); setCurrentPage(1); }}
+                  >
+                    <option value="">Unidade de Saúde</option>
+                    {unidades.map(u => (
+                      <option key={u.cnes} value={u.cnes}>{u.nome_fantasia}</option>
+                    ))}
+                  </select>
+
+                  {unidadeFilter && (
+                    <button 
+                      onClick={() => setUnidadeFilter('')}
+                      className="w-full lg:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-error/10 text-error text-[9px] font-black uppercase tracking-widest hover:bg-error hover:text-white transition-all border border-error/20"
+                    >
+                      <span className="material-symbols-outlined text-sm">filter_alt_off</span>
+                      Limpar
+                    </button>
+                  )}
 
                   <select 
                     className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"

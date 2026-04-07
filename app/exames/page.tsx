@@ -153,7 +153,13 @@ export default function ExamesPage() {
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [allProfessionals, setAllProfessionals] = useState<any[]>([]);
+  const [unidades, setUnidades] = useState<{cnes: string; nome_fantasia: string}[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const uniqueUnidades = useMemo(() => {
+    return unidades.sort((a, b) => a.nome_fantasia.localeCompare(b.nome_fantasia));
+  }, [unidades]);
+
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState('MEDICO');
@@ -280,6 +286,8 @@ export default function ExamesPage() {
 
       if (filters.equipe && p.equipe !== filters.equipe) return false;
 
+      if (filters.unidade && p.unidade_cnes !== filters.unidade) return false;
+
       return true;
     });
   }, [patientsWithResults, results, searchQuery, filters]);
@@ -349,6 +357,10 @@ export default function ExamesPage() {
     setLoading(true);
     setError(null);
     try {
+      // Fetch unidades
+      const unitsRes = await supabase.from('unidades_saude').select('cnes, nome_fantasia').order('nome_fantasia');
+      if (unitsRes.data) setUnidades(unitsRes.data);
+
       // Fetch routines, categories and professionals (usually < 1000)
       const [routinesRes, catsRes, prosRes] = await Promise.all([
         supabase.from('rotinas').select('*').in('tipo', ['EXAME', 'VACINA']).order('descricao').limit(1000),
@@ -1126,6 +1138,15 @@ export default function ExamesPage() {
                 <span className="text-[9px] font-black uppercase tracking-widest text-primary">Filtros Ativos</span>
               </div>
               
+              <select 
+                className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
+                value={filters.unidade}
+                onChange={(e) => setFilters({ ...filters, unidade: e.target.value })}
+              >
+                <option value="">Unidade</option>
+                {uniqueUnidades.map(u => <option key={u.cnes} value={u.cnes}>{u.nome_fantasia}</option>)}
+              </select>
+
               <select 
                 className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
                 value={filters.status}

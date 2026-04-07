@@ -161,6 +161,7 @@ export default function GestacoesPage() {
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
   const [operadores, setOperadores] = useState<Operador[]>([]);
   const [profissionais, setProfissionais] = useState<Profissional[]>([]);
+  const [unidades, setUnidades] = useState<{cnes: string; nome_fantasia: string}[]>([]);
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -298,6 +299,10 @@ export default function GestacoesPage() {
     return Array.from(months).sort().reverse();
   }, [gestacoes]);
 
+  const uniqueUnidades = useMemo(() => {
+    return unidades.sort((a, b) => a.nome_fantasia.localeCompare(b.nome_fantasia));
+  }, [unidades]);
+
   const uniqueEquipes = useMemo(() => {
     const equipes = gestacoes.map(g => g.equipe).filter(Boolean);
     return Array.from(new Set(equipes)).sort();
@@ -382,6 +387,13 @@ export default function GestacoesPage() {
         };
       }) || [];
       setProfissionais(formattedProf);
+
+      // Fetch Unidades
+      const { data: unitsData } = await supabase
+        .from('unidades_saude')
+        .select('cnes, nome_fantasia')
+        .order('nome_fantasia');
+      if (unitsData) setUnidades(unitsData);
 
       // Fetch Gestacoes in chunks
       let gestacoesData: any[] = [];
@@ -575,8 +587,10 @@ export default function GestacoesPage() {
       if (getGestacaoStatus(g.dpp) !== filters.status) return false;
     }
 
-    // Filter by unidade (only for non-admin users)
-    if (authUser?.nivel_acesso !== 'Administrador' && authUser?.unidade_cnes) {
+    // Filter by unidade
+    if (filters.unidade) {
+      if (g.unidade_cnes !== filters.unidade) return false;
+    } else if (authUser?.nivel_acesso !== 'Administrador' && authUser?.unidade_cnes) {
       if (g.unidade_cnes !== authUser.unidade_cnes) return false;
     }
 
@@ -1344,6 +1358,15 @@ export default function GestacoesPage() {
 
                   <select 
                     className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
+                    value={filters.unidade}
+                    onChange={(e) => { setFilters({ ...filters, unidade: e.target.value }); setCurrentPage(1); }}
+                  >
+                    <option value="">Unidade</option>
+                    {uniqueUnidades.map(u => <option key={u.cnes} value={u.cnes}>{u.nome_fantasia}</option>)}
+                  </select>
+
+                  <select 
+                    className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
                     value={filters.status}
                     onChange={(e) => { setFilters({ ...filters, status: e.target.value }); setCurrentPage(1); }}
                   >
@@ -1398,7 +1421,7 @@ export default function GestacoesPage() {
                     {uniqueACS.map(acs => <option key={acs} value={acs}>{acs}</option>)}
                   </select>
 
-                  {(filters.dpp || filters.captacao || filters.equipe || filters.referencia || filters.acs || filters.status !== 'ATIVA') && (
+                  {(filters.dpp || filters.captacao || filters.equipe || filters.referencia || filters.acs || filters.status !== 'ATIVA' || filters.unidade) && (
                     <button 
                       onClick={() => setFilters({ dpp: '', captacao: '', equipe: '', referencia: '', acs: '', status: 'ATIVA', unidade: authUser?.unidade_cnes || '' })}
                       className="w-full lg:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-error/10 text-error text-[9px] font-black uppercase tracking-widest hover:bg-error hover:text-white transition-all border border-error/20"
