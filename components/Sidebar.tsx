@@ -9,6 +9,7 @@ interface SubItem {
   name: string;
   href: string;
   target?: string;
+  subItems?: SubItem[];
 }
 
 interface MenuItem {
@@ -82,16 +83,22 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
         { name: 'Manual do Sistema', href: '/MANUAL.md', target: '_blank' },
         { name: 'Backup Dados', href: '/manutencao/backup' },
         { name: 'Histórico', href: '/manutencao/historico' },
-        { name: 'Exportar Layout Pacientes', href: 'export:pacientes' },
-        { name: 'Exportar Layout Gestações', href: 'export:gestacoes' },
-        { name: 'Exportar Layout Unidades', href: 'export:unidades' },
-        { name: 'Exportar Layout Operadores', href: 'export:operadores' },
-        { name: 'Exportar Layout Categorias', href: 'export:categorias' },
-        { name: 'Exportar Layout Profissionais', href: 'export:profissionais' },
-        { name: 'Exportar Layout Rotinas', href: 'export:rotinas' },
-        { name: 'Exportar Layout Atendimentos', href: 'export:atendimentos' },
-        { name: 'Exportar Layout Exames', href: 'export:exames' },
-        { name: 'Exportar Layout Desfechos', href: 'export:desfechos' },
+        { 
+          name: 'Exportar Layout', 
+          href: '#',
+          subItems: [
+            { name: 'Pacientes', href: 'export:pacientes' },
+            { name: 'Gestações', href: 'export:gestacoes' },
+            { name: 'Unidades', href: 'export:unidades' },
+            { name: 'Operadores', href: 'export:operadores' },
+            { name: 'Categorias', href: 'export:categorias' },
+            { name: 'Profissionais', href: 'export:profissionais' },
+            { name: 'Rotinas', href: 'export:rotinas' },
+            { name: 'Atendimentos', href: 'export:atendimentos' },
+            { name: 'Exames', href: 'export:exames' },
+            { name: 'Desfechos', href: 'export:desfechos' },
+          ]
+        },
       ]
     },
     { 
@@ -204,7 +211,44 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
 
               {hasSubItems && isExpanded && (
                 <div className="ml-9 space-y-1 border-l border-slate-200 dark:border-slate-700">
-                  {item.subItems?.map((sub) => {
+                  {item.subItems?.map((sub, idx) => {
+                    const hasNestedSubItems = sub.subItems && sub.subItems.length > 0;
+                    
+                    if (hasNestedSubItems) {
+                      return (
+                        <div key={idx} className="space-y-1">
+                          <div className="px-4 py-2 text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                            {sub.name}
+                          </div>
+                          {sub.subItems?.map((nestedSub, nestedIdx) => {
+                            const isExport = nestedSub.href.startsWith('export:');
+                            if (isExport) {
+                              return (
+                                <button
+                                  key={nestedIdx}
+                                  onClick={() => handleExportLayout(nestedSub.href.split(':')[1])}
+                                  className="w-full flex items-center gap-3 px-4 py-2 rounded-r-lg transition-all duration-200 font-headline text-sm font-medium tracking-tight text-slate-500 dark:text-slate-400 hover:text-primary hover:bg-primary/5 text-left"
+                                >
+                                  <span className="material-symbols-outlined">download</span>
+                                  <span>{nestedSub.name}</span>
+                                </button>
+                              );
+                            }
+                            return (
+                              <Link
+                                key={nestedIdx}
+                                href={nestedSub.href}
+                                target={nestedSub.target || undefined}
+                                className="flex items-center gap-3 px-4 py-2 rounded-r-lg transition-all duration-200 font-headline text-sm font-medium tracking-tight text-slate-500 dark:text-slate-400 hover:text-primary hover:bg-primary/5"
+                              >
+                                <span>{nestedSub.name}</span>
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      );
+                    }
+
                     const isSubActive = pathname === sub.href;
                     const isExport = sub.href.startsWith('export:');
                     
