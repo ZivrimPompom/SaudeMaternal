@@ -776,7 +776,7 @@ export default function DesfechosPage() {
                         <div className="flex flex-col gap-0.5">
                           <span className="text-[10px] font-mono font-bold text-primary">CPF: {d.gestacoes?.pacientes?.cpf ? d.gestacoes.pacientes.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : '---'}</span>
                           <p className="font-black text-xs text-on-surface uppercase leading-tight">{d.gestacoes?.pacientes?.gestante || 'N/A'}</p>
-                          <span className="text-[10px] font-mono font-bold text-primary">SISPN: {d.sispn}</span>
+                          <span className="text-[10px] font-mono font-bold text-primary">SISPN: {d.sispn ? d.sispn.replace(/(\d{3})(\d{4})(\d{4})/, '$1.$2.$3') : '---'}</span>
                         </div>
                       </td>
                       <td className="px-4 py-3">
