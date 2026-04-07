@@ -1450,7 +1450,7 @@ export default function GestacoesPage() {
                               <motion.tr layout key={g.sispn} className="hover:bg-primary/[0.02] transition-colors group">
                                 <td className="px-4 py-3">
                                   <div className="flex flex-col gap-0.5">
-                                    <span className="text-[10px] font-mono font-bold text-primary">{formatCpf(g.cpf_paciente)}</span>
+                                    <span className="text-[10px] font-mono font-bold text-primary">CPF: {formatCpf(g.cpf_paciente)}</span>
                                     <p className="font-black text-xs text-on-surface uppercase leading-tight">{g.paciente_nome}</p>
                                     <span className="text-[10px] font-mono font-bold text-primary">SISPN: {formatSispn(g.sispn)}</span>
                                   </div>
