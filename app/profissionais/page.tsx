@@ -346,16 +346,6 @@ export default function ProfissionaisPage() {
         <div className="bg-white p-4 rounded-2xl border border-outline-variant/10 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex flex-col lg:flex-row items-center gap-4">
             <h1 className="text-xl font-black text-primary uppercase tracking-tight">Profissionais</h1>
-            <select 
-              className="bg-surface-container text-on-surface-variant text-xs font-bold uppercase tracking-widest border border-primary/30 rounded-full px-4 py-2 outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
-              value={unidadeFilter}
-              onChange={(e) => { setUnidadeFilter(e.target.value); setCurrentPage(1); }}
-            >
-              <option value="">Todas as Unidades</option>
-              {units.map(u => (
-                <option key={u.cnes} value={u.cnes}>{u.nome_fantasia}</option>
-              ))}
-            </select>
           </div>
 
           <SearchInput 
@@ -611,6 +601,28 @@ export default function ProfissionaisPage() {
                     <p className="text-xs text-on-surface-variant/60 font-body uppercase tracking-widest font-bold">Listagem Geral</p>
                   </div>
                 </div>
+              </div>
+
+              <div className="px-6 md:px-10 pt-6 pb-4 flex flex-wrap items-center gap-3 border-b border-outline-variant/5">
+                <select 
+                  className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
+                  value={unidadeFilter}
+                  onChange={(e) => { setUnidadeFilter(e.target.value); setCurrentPage(1); }}
+                >
+                  <option value="">Todas</option>
+                  {units.map(u => (
+                    <option key={u.cnes} value={u.cnes}>{u.nome_fantasia}</option>
+                  ))}
+                </select>
+                {unidadeFilter && (
+                  <button 
+                    onClick={() => { setUnidadeFilter(''); setCurrentPage(1); }}
+                    className="w-full lg:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-error/10 text-error text-[9px] font-black uppercase tracking-widest hover:bg-error hover:text-white transition-all border border-error/20"
+                  >
+                    <span className="material-symbols-outlined text-sm">filter_alt_off</span>
+                    Limpar
+                  </button>
+                )}
               </div>
 
               <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent">

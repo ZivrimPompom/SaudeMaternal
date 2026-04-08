@@ -15,12 +15,21 @@ export default function Page() {
   const [stats, setStats] = useState({ operators: 0, categories: 0, professionals: 0, routines: 0, patients: 0, units: 0, gestations: 0, consultations: 0, examResults: 0, outcomes: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [unidadeFilter, setUnidadeFilter] = useState('');
+  const [unidades, setUnidades] = useState<any[]>([]);
 
   useEffect(() => {
     if (!mounted) return;
     if (isSupabaseConfigured) {
       setLoading(true);
       setError(null);
+      
+      // Fetch unidades first
+      supabase.from('unidades_saude').select('cnes, nome_fantasia').order('nome_fantasia')
+        .then(res => {
+          if (res.data) setUnidades(res.data);
+        });
+
       Promise.all([
         supabase.from('operadores').select('*', { count: 'exact', head: true }),
         supabase.from('categorias_profissionais').select('*', { count: 'exact', head: true }),
@@ -82,6 +91,27 @@ export default function Page() {
           </div>
           <h2 className="text-xl md:text-3xl font-black tracking-tight font-headline text-primary uppercase leading-tight">Painel de Controle</h2>
           <p className="text-xs md:text-sm text-on-surface-variant/60 font-body max-w-xl">Gerencie as operações clínicas e administrativas com precisão e segurança.</p>
+          <div className="flex items-center gap-3 mt-4">
+            <select 
+              className="bg-white text-primary border-2 border-primary/30 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
+              value={unidadeFilter}
+              onChange={(e) => setUnidadeFilter(e.target.value)}
+            >
+              <option value="">Todas as Unidades</option>
+              {unidades.map(u => (
+                <option key={u.cnes} value={u.cnes}>{u.nome_fantasia}</option>
+              ))}
+            </select>
+            {unidadeFilter && (
+              <button 
+                onClick={() => setUnidadeFilter('')}
+                className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-error/10 text-error text-[9px] font-black uppercase tracking-widest hover:bg-error hover:text-white transition-all border border-error/20"
+              >
+                <span className="material-symbols-outlined text-sm">filter_alt_off</span>
+                Limpar
+              </button>
+            )}
+          </div>
           {error && (
             <div className="mt-4 p-3 bg-error/10 border border-error/20 rounded-xl flex items-center gap-3 text-error">
               <span className="material-symbols-outlined text-sm">error</span>

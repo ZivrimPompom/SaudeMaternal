@@ -264,11 +264,10 @@ export default function GestacoesPage() {
   const [filters, setFilters] = useState({
     dpp: '',
     captacao: '',
-    equipe: '',
     referencia: '',
     acs: '',
     status: 'ATIVA',
-    unidade: authUser?.unidade_cnes || ''
+    unidade: ''
   });
 
   const enfermeiros = useMemo(() => {
@@ -276,15 +275,6 @@ export default function GestacoesPage() {
       .filter(p => p.categoria_nome?.toUpperCase().startsWith('ENFERMEIRO'))
       .sort((a, b) => a.nome.localeCompare(b.nome));
   }, [profissionais]);
-
-  useEffect(() => {
-    if (filters.referencia) {
-      const match = enfermeiros.find(p => p.nome === filters.referencia);
-      if (match && match.equipe && filters.equipe !== match.equipe) {
-        setFilters(prev => ({ ...prev, equipe: match.equipe }));
-      }
-    }
-  }, [filters.referencia, enfermeiros, filters.equipe]);
 
   const uniqueDppMonths = useMemo(() => {
     const months = new Set<string>();
@@ -579,7 +569,6 @@ export default function GestacoesPage() {
       if (getStatusCaptacao(g.dum, g.data_cadastro) !== filters.captacao) return false;
     }
 
-    if (filters.equipe && g.equipe !== filters.equipe) return false;
     if (filters.referencia && g.referencia_tecnica_nome !== filters.referencia) return false;
     if (filters.acs && g.acs_nome !== filters.acs) return false;
 
@@ -1351,17 +1340,12 @@ export default function GestacoesPage() {
               {/* Filtros Avançados */}
               <div className="px-6 md:px-10 pb-6 flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-outline-variant/5">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap items-center gap-3 w-full md:w-auto">
-                  <div className="flex items-center gap-2 bg-primary/10 px-5 py-2.5 rounded-full border border-primary/20 shrink-0">
-                    <span className="material-symbols-outlined text-primary text-sm">filter_alt</span>
-                    <span className="text-[9px] font-black uppercase tracking-widest text-primary">Filtros Ativos</span>
-                  </div>
-
                   <select 
                     className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
                     value={filters.unidade}
                     onChange={(e) => { setFilters({ ...filters, unidade: e.target.value }); setCurrentPage(1); }}
                   >
-                    <option value="">Unidade</option>
+                    <option value="">Todas</option>
                     {uniqueUnidades.map(u => <option key={u.cnes} value={u.cnes}>{u.nome_fantasia}</option>)}
                   </select>
 
@@ -1396,15 +1380,6 @@ export default function GestacoesPage() {
 
                   <select 
                     className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
-                    value={filters.equipe}
-                    onChange={(e) => { setFilters({ ...filters, equipe: e.target.value }); setCurrentPage(1); }}
-                  >
-                    <option value="">Equipe</option>
-                    {uniqueEquipes.map(eq => <option key={eq} value={eq}>{eq}</option>)}
-                  </select>
-
-                  <select 
-                    className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
                     value={filters.referencia}
                     onChange={(e) => { setFilters({ ...filters, referencia: e.target.value }); setCurrentPage(1); }}
                   >
@@ -1421,9 +1396,9 @@ export default function GestacoesPage() {
                     {uniqueACS.map(acs => <option key={acs} value={acs}>{acs}</option>)}
                   </select>
 
-                  {(filters.dpp || filters.captacao || filters.equipe || filters.referencia || filters.acs || filters.status !== 'ATIVA' || filters.unidade) && (
+                  {(filters.dpp || filters.captacao || filters.referencia || filters.acs || filters.status !== 'ATIVA' || filters.unidade) && (
                     <button 
-                      onClick={() => setFilters({ dpp: '', captacao: '', equipe: '', referencia: '', acs: '', status: 'ATIVA', unidade: authUser?.unidade_cnes || '' })}
+                      onClick={() => setFilters({ dpp: '', captacao: '', referencia: '', acs: '', status: 'ATIVA', unidade: '' })}
                       className="w-full lg:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-error/10 text-error text-[9px] font-black uppercase tracking-widest hover:bg-error hover:text-white transition-all border border-error/20"
                     >
                       <span className="material-symbols-outlined text-sm">filter_alt_off</span>

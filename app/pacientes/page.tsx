@@ -682,31 +682,16 @@ export default function PacientesPage() {
               {/* Filtros */}
               <div className="px-6 md:px-10 py-4 border-b border-outline-variant/5">
                 <div className="flex flex-col sm:flex-row flex-wrap items-start gap-3">
-                  <div className="flex items-center gap-2 bg-primary/10 px-5 py-2.5 rounded-full border border-primary/20 shrink-0">
-                    <span className="material-symbols-outlined text-primary text-sm">filter_alt</span>
-                    <span className="text-[9px] font-black uppercase tracking-widest text-primary">Filtros Ativos</span>
-                  </div>
-
                   <select 
                     className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
                     value={unidadeFilter}
                     onChange={(e) => { setUnidadeFilter(e.target.value); setCurrentPage(1); }}
                   >
-                    <option value="">Unidade de Saúde</option>
+                    <option value="">Todas</option>
                     {unidades.map(u => (
                       <option key={u.cnes} value={u.cnes}>{u.nome_fantasia}</option>
                     ))}
                   </select>
-
-                  {unidadeFilter && (
-                    <button 
-                      onClick={() => setUnidadeFilter('')}
-                      className="w-full lg:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-error/10 text-error text-[9px] font-black uppercase tracking-widest hover:bg-error hover:text-white transition-all border border-error/20"
-                    >
-                      <span className="material-symbols-outlined text-sm">filter_alt_off</span>
-                      Limpar
-                    </button>
-                  )}
 
                   <select 
                     className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
@@ -720,9 +705,9 @@ export default function PacientesPage() {
                     <option value="VELHICE">VELHICE</option>
                   </select>
 
-                  {lifeStageFilter && (
+                  {(unidadeFilter || lifeStageFilter) && (
                     <button 
-                      onClick={() => setLifeStageFilter('')}
+                      onClick={() => { setUnidadeFilter(''); setLifeStageFilter(''); setCurrentPage(1); }}
                       className="w-full lg:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-error/10 text-error text-[9px] font-black uppercase tracking-widest hover:bg-error hover:text-white transition-all border border-error/20"
                     >
                       <span className="material-symbols-outlined text-sm">filter_alt_off</span>
