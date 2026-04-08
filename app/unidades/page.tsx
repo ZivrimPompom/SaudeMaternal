@@ -169,6 +169,15 @@ export default function UnidadesSaudePage() {
     }
 
     try {
+      // Valida CNES duplicado apenas para novo cadastro
+      if (!editingId) {
+        const existingUnit = units.find(u => u.cnes === formData.cnes.trim());
+        if (existingUnit) {
+          setError('CNES já cadastrado. Utilize outro CNES ou edite o registro existente.');
+          return;
+        }
+      }
+
       const payload = {
         ...formData,
         cpf_operador: authUser?.cpf || null
