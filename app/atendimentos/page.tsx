@@ -10,6 +10,7 @@ import Pagination from '@/components/Pagination';
 import RecordsSummary from '@/components/RecordsSummary';
 import SearchInput from '@/components/SearchInput';
 import PatientBanner from '@/components/PatientBanner';
+import Link from 'next/link';
 
 interface Categoria {
   cbo: string;
@@ -1434,6 +1435,9 @@ export default function AtendimentosPage() {
                                     setIsFormOpen(true); 
                                     window.scrollTo({ top: 0, behavior: 'smooth' });
                                   }} className="p-1.5 rounded-lg bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white transition-all" title="Adicionar"><span className="material-symbols-outlined text-sm">add</span></button>
+                                  <Link href={`/dashboard/acompanhamento/${p.sispn}`} className="p-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all" title="Acompanhamento">
+                                    <span className="material-symbols-outlined text-sm">monitoring</span>
+                                  </Link>
                                 </div>
                               </td>
                             </tr>

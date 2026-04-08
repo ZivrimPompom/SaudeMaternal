@@ -304,7 +304,7 @@ export default function Page() {
                 <FlaskConical className="text-primary group-hover:text-white w-6 h-6 transition-colors" />
               </div>
               <div>
-                <h3 className="text-lg md:text-xl font-black font-headline mb-1 text-on-surface tracking-tight leading-tight">Exames</h3>
+                <h3 className="text-lg md:text-xl font-black font-headline mb-1 text-on-surface tracking-tight leading-tight">Rotinas</h3>
                 <p className="text-xs md:text-sm text-on-surface-variant/60 font-body leading-tight line-clamp-1">Resultados.</p>
               </div>
             </div>

@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Pagination from '@/components/Pagination';
 import RecordsSummary from '@/components/RecordsSummary';
 import SearchInput from '@/components/SearchInput';
+import Link from 'next/link';
 
 interface Gestacao {
   sispn: string;
@@ -1502,6 +1503,9 @@ export default function GestacoesPage() {
                                     <button onClick={() => setDeleteConfirmId(g.sispn)} className="p-1.5 rounded-lg bg-error text-white hover:bg-error/80 transition-all" title="Excluir">
                                       <span className="material-symbols-outlined text-sm">delete</span>
                                     </button>
+                                    <Link href={`/dashboard/acompanhamento/${g.sispn}`} className="p-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all" title="Acompanhamento">
+                                      <span className="material-symbols-outlined text-sm">monitoring</span>
+                                    </Link>
                                   </div>
                                 </td>
                               </motion.tr>
