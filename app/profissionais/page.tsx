@@ -30,7 +30,7 @@ interface Profissional {
   cpf_operador?: string;
   operador_nome?: string;
   categorias_profissionais?: Categoria;
-  unidades_saude?: { nome_fantasia: string };
+  unidades_saude?: { cnes: string; nome_fantasia: string };
 }
 
 interface HealthUnit {
