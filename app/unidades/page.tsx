@@ -169,6 +169,7 @@ export default function UnidadesSaudePage() {
     }
 
     const cnesValue = formData.cnes.trim();
+    console.log('CNES digitado:', cnesValue, 'tipo:', typeof cnesValue);
 
     try {
       // Valida CNES duplicado - busca no banco para garantir
@@ -179,9 +180,12 @@ export default function UnidadesSaudePage() {
           .eq('cnes', cnesValue)
           .limit(1);
 
+        console.log('Resultado busca CNES:', existingData, 'erro:', checkError);
+
         if (checkError) {
           console.error('Erro ao verificar CNES:', checkError);
         } else if (existingData && existingData.length > 0) {
+          console.log('CNES DUPLICADO ENCONTRADO!');
           setError('CNES já cadastrado no banco de dados.');
           return;
         }
