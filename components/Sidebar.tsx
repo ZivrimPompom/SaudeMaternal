@@ -73,7 +73,8 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
       name: 'Dashboards', 
       icon: 'dashboard', 
       subItems: [
-        { name: 'Visão Geral', href: '/dashboard/overview' },
+        { name: 'Gestações Ativas', href: '/dashboard/overview' },
+        { name: 'Acompanhamento', href: '/dashboard/acompanhamento' },
       ]
     },
     { 

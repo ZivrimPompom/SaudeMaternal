@@ -1,0 +1,525 @@
+'use client';
+
+import React, { useEffect, useState, useMemo } from 'react';
+import DashboardLayout from '@/components/DashboardLayout';
+import Link from 'next/link';
+import { 
+  Users, 
+  CalendarCheck, 
+  AlertTriangle, 
+  CheckCircle2, 
+  Clock,
+  Activity,
+  Search,
+  Filter,
+  ChevronRight
+} from 'lucide-react';
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend
+} from 'recharts';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { useAuth, Operator } from '@/context/AuthContext';
+
+interface Gestacao {
+  sispn: string;
+  cpf_paciente: string;
+  dum: string;
+  dpp: string;
+  data_cadastro: string;
+  unidade_cnes?: string;
+}
+
+interface Paciente {
+  cpf: string;
+  gestante: string;
+  nome_mae?: string;
+}
+
+interface Rotina {
+  id: string;
+  tipo: string;
+  descricao: string;
+  trimestre: string;
+  categoria: string;
+}
+
+interface RegistroRotina {
+  sispn: string;
+  id_rotina: string;
+  data_realizacao: string;
+  trimestre_realizacao: string;
+}
+
+interface Atendimento {
+  sispn: string;
+  data_consulta: string;
+  trimestre_consulta: string;
+}
+
+const COLORS = {
+  primary: '#0D9488',
+  success: '#10B981',
+  warning: '#F59E0B',
+  error: '#EF4444',
+  gray: '#6B7280'
+};
+
+const TRIMESTRE_MAP: Record<string, number> = {
+  'PRIMEIRO': 1,
+  'SEGUNDO': 2,
+  'TERCEIRO': 3,
+  '1º TRIMESTRE': 1,
+  '2º TRIMESTRE': 2,
+  '3º TRIMESTRE': 3
+};
+
+const getGestacaoStatus = (dum: string): 'ATIVA' | 'VENCIDA' => {
+  if (!dum) return 'ATIVA';
+  const dumDate = new Date(dum);
+  const today = new Date();
+  const limitDate = new Date(dumDate);
+  limitDate.setDate(limitDate.getDate() + 280);
+  return today >= limitDate ? 'VENCIDA' : 'ATIVA';
+};
+
+const getWeeksFromDum = (dum: string): number => {
+  if (!dum) return 0;
+  const start = new Date(dum);
+  const now = new Date();
+  const diffTime = now.getTime() - start.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return Math.floor(diffDays / 7);
+};
+
+const getTrimestreAtual = (dum: string): number => {
+  const weeks = getWeeksFromDum(dum);
+  if (weeks <= 12) return 1;
+  if (weeks <= 24) return 2;
+  return 3;
+};
+
+const formatSispn = (value: string) => {
+  if (!value) return '';
+  const v = value.replace(/\D/g, '');
+  if (v.length <= 5) return v;
+  return `${v.slice(0, 5)}-${v.slice(5, 9)}`;
+};
+
+export default function AcompanhamentoDashboard() {
+  const auth = useAuth();
+  const user = auth.user as Operator | null;
+  const [mounted, setMounted] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  const [gestacoes, setGestacoes] = useState<Gestacao[]>([]);
+  const [pacientes, setPacientes] = useState<Paciente[]>([]);
+  const [rotinas, setRotinas] = useState<Rotina[]>([]);
+  const [registrosRotinas, setRegistrosRotinas] = useState<RegistroRotina[]>([]);
+  const [atendimentos, setAtendimentos] = useState<Atendimento[]>([]);
+  const [unidades, setUnidades] = useState<{cnes: string; nome_fantasia: string}[]>([]);
+
+  const [filterStatus, setFilterStatus] = useState<'ATIVA' | 'VENCIDA' | 'TODAS'>('ATIVA');
+  const [filterTrimestre, setFilterTrimestre] = useState<number | 'TODOS'>(0);
+  const [filterUnidade, setFilterUnidade] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const isAdmin = user?.nivel_acesso === 'Administrador';
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+    if (!isSupabaseConfigured) {
+      setLoading(false);
+      return;
+    }
+
+    const fetchData = async () => {
+      try {
+        const [g, p, r, rr, a, u] = await Promise.all([
+          supabase.from('gestacoes').select('*'),
+          supabase.from('pacientes').select('cpf, gestante, nome_mae'),
+          supabase.from('rotinas').select('*').eq('categoria', 'OBRIGATORIO'),
+          supabase.from('registro_rotinas').select('*'),
+          supabase.from('atendimentos').select('sispn, data_consulta, trimestre_consulta'),
+          supabase.from('unidades_saude').select('cnes, nome_fantasia')
+        ]);
+
+        if (g.data) setGestacoes(g.data);
+        if (p.data) setPacientes(p.data);
+        if (r.data) setRotinas(r.data);
+        if (rr.data) setRegistrosRotinas(rr.data);
+        if (a.data) setAtendimentos(a.data);
+        if (u.data) setUnidades(u.data);
+      } catch (err) {
+        console.error('Erro ao buscar dados:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [mounted]);
+
+  useEffect(() => {
+    if (user?.unidade_cnes && !isAdmin) {
+      setFilterUnidade(user.unidade_cnes);
+    }
+  }, [user, isAdmin]);
+
+  const gestacoesFiltradas = useMemo(() => {
+    let filtered = gestacoes.filter(g => {
+      if (filterUnidade !== 'all') {
+        const gUnidade = g.unidade_cnes ? String(g.unidade_cnes).trim() : '';
+        const fUnidade = String(filterUnidade).trim();
+        if (gUnidade !== fUnidade) return false;
+      }
+      if (filterStatus !== 'TODAS' && getGestacaoStatus(g.dum) !== filterStatus) return false;
+      if (filterTrimestre !== 0 && getTrimestreAtual(g.dum) !== filterTrimestre) return false;
+      return true;
+    });
+
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter(g => {
+        const paciente = pacientes.find(p => p.cpf === g.cpf_paciente);
+        const nome = paciente?.gestante?.toLowerCase() || '';
+        const nomeMae = paciente?.nome_mae?.toLowerCase() || '';
+        return g.sispn.toLowerCase().includes(q) || nome.includes(q) || nomeMae.includes(q);
+      });
+    }
+
+    return filtered;
+  }, [gestacoes, pacientes, filterUnidade, filterStatus, filterTrimestre, searchQuery]);
+
+  const stats = useMemo(() => {
+    const total = gestacoesFiltradas.length;
+    const ativas = gestacoesFiltradas.filter(g => getGestacaoStatus(g.dum) === 'ATIVA').length;
+    const vencidas = gestacoesFiltradas.filter(g => getGestacaoStatus(g.dum) === 'VENCIDA').length;
+
+    const consultasPorTrimestre = [0, 0, 0];
+    const consultasEsperadas = [0, 0, 0];
+
+    gestacoesFiltradas.forEach(g => {
+      const tri = getTrimestreAtual(g.dum);
+      const consultas = atendimentos.filter(a => a.sispn === g.sispn);
+      const porTri = consultas.filter(a => {
+        const triCons = TRIMESTRE_MAP[a.trimestre_consulta];
+        return triCons === tri;
+      });
+      
+      if (tri >= 1) consultasEsperadas[tri - 1] += 3;
+      consultasPorTrimestre[tri - 1] += porTri.length;
+    });
+
+    const totalConsultas = consultasPorTrimestre.reduce((a, b) => a + b, 0);
+    const totalEsperadas = consultasEsperadas.reduce((a, b) => a + b, 0);
+    const pctConsultas = totalEsperadas > 0 ? Math.round((totalConsultas / totalEsperadas) * 100) : 0;
+
+    const examesPorTrimestre = [0, 0, 0];
+    const examesEsperados = [0, 0, 0];
+
+    rotinas.forEach(r => {
+      const tri = TRIMESTRE_MAP[r.trimestre];
+      if (tri) {
+        examesEsperados[tri - 1] += gestacoesFiltradas.filter(g => getTrimestreAtual(g.dum) >= tri).length;
+      }
+    });
+
+    registrosRotinas.forEach(rr => {
+      const g = gestacoesFiltradas.find(g => g.sispn === rr.sispn);
+      if (g) {
+        const triReal = TRIMESTRE_MAP[rr.trimestre_realizacao];
+        if (triReal) examesPorTrimestre[triReal - 1]++;
+      }
+    });
+
+    const totalExames = examesPorTrimestre.reduce((a, b) => a + b, 0);
+    const totalExamesEsp = examesEsperados.reduce((a, b) => a + b, 0);
+    const pctExames = totalExamesEsp > 0 ? Math.round((totalExames / totalExamesEsp) * 100) : 0;
+
+    return {
+      total,
+      ativas,
+      vencidas,
+      pctConsultas,
+      pctExames,
+      consultasPorTrimestre,
+      examesPorTrimestre
+    };
+  }, [gestacoesFiltradas, atendimentos, registrosRotinas, rotinas]);
+
+  const chartData = useMemo(() => {
+    return [
+      { name: '1º Trimestre', consultas: stats.consultasPorTrimestre[0], esperada: stats.ativas > 0 ? Math.floor(stats.ativas / 3) : 0 },
+      { name: '2º Trimestre', consultas: stats.consultasPorTrimestre[1], esperada: stats.ativas > 0 ? Math.floor(stats.ativas / 3) : 0 },
+      { name: '3º Trimestre', consultas: stats.consultasPorTrimestre[2], esperada: stats.ativas > 0 ? Math.floor(stats.ativas / 3) : 0 }
+    ];
+  }, [stats]);
+
+  const pieData = useMemo(() => {
+    const ativas = stats.ativas;
+    const vencidas = stats.vencidas;
+    return [
+      { name: 'Ativas', value: ativas, color: COLORS.success },
+      { name: 'Vencidas', value: vencidas, color: COLORS.error }
+    ];
+  }, [stats]);
+
+  if (!mounted) return null;
+
+  return (
+    <DashboardLayout>
+      <div className="p-4 md:p-6 max-w-full mx-auto space-y-6">
+        <header className="space-y-2">
+          <div className="flex items-center gap-2">
+            <span className="w-4 h-1 bg-primary rounded-full"></span>
+            <span className="text-[6px] font-black text-primary uppercase tracking-[0.4em]">Dashboard</span>
+          </div>
+          <h2 className="text-xl md:text-3xl font-black tracking-tight font-headline text-primary uppercase leading-tight">
+            Acompanhamento Gestacional
+          </h2>
+          <p className="text-xs md:text-sm text-on-surface-variant/60 font-body max-w-xl">
+            Monitoramento do cumprimento do plano terapêutico das gestantes.
+          </p>
+        </header>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+              <Search className="w-4 h-4 text-on-surface-variant/40" />
+            </div>
+            <input
+              type="text"
+              placeholder="Buscar gestante..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
+            />
+          </div>
+
+          {isAdmin && (
+            <select
+              value={filterUnidade}
+              onChange={(e) => setFilterUnidade(e.target.value)}
+              className="px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
+            >
+              <option value="all">Todas as Unidades</option>
+              {unidades.map(u => (
+                <option key={u.cnes} value={u.cnes}>{u.nome_fantasia}</option>
+              ))}
+            </select>
+          )}
+
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value as any)}
+            className="px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
+          >
+            <option value="ATIVA">Ativas</option>
+            <option value="VENCIDA">Vencidas</option>
+            <option value="TODAS">Todas</option>
+          </select>
+
+          <select
+            value={filterTrimestre}
+            onChange={(e) => setFilterTrimestre(e.target.value === '0' ? 0 : parseInt(e.target.value))}
+            className="px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
+          >
+            <option value="0">Todos os Trimestres</option>
+            <option value="1">1º Trimestre</option>
+            <option value="2">2º Trimestre</option>
+            <option value="3">3º Trimestre</option>
+          </select>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          <div className="bg-surface-container-lowest p-4 rounded-2xl border border-outline-variant/10">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Users className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-wider text-on-surface-variant/60">Total</p>
+                <p className="text-2xl font-black text-primary">{loading ? '...' : stats.total}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-surface-container-lowest p-4 rounded-2xl border border-outline-variant/10">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center">
+                <CheckCircle2 className="w-5 h-5 text-green-500" />
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-wider text-on-surface-variant/60">Ativas</p>
+                <p className="text-2xl font-black text-green-500">{loading ? '...' : stats.ativas}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-surface-container-lowest p-4 rounded-2xl border border-outline-variant/10">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5 text-red-500" />
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-wider text-on-surface-variant/60">Vencidas</p>
+                <p className="text-2xl font-black text-red-500">{loading ? '...' : stats.vencidas}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-surface-container-lowest p-4 rounded-2xl border border-outline-variant/10">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                <CalendarCheck className="w-5 h-5 text-amber-500" />
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-wider text-on-surface-variant/60">Consultas</p>
+                <p className="text-2xl font-black text-amber-500">{loading ? '...' : `${stats.pctConsultas}%`}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-surface-container-lowest p-4 rounded-2xl border border-outline-variant/10">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                <Activity className="w-5 h-5 text-blue-500" />
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-wider text-on-surface-variant/60">Exames</p>
+                <p className="text-2xl font-black text-blue-500">{loading ? '...' : `${stats.pctExames}%`}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-surface-container-lowest p-5 rounded-2xl border border-outline-variant/10">
+            <h3 className="text-sm font-black uppercase tracking-wider text-on-surface-variant/60 mb-4">Consultas por Trimestre</h3>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                  <YAxis tick={{ fontSize: 12 }} />
+                  <Tooltip 
+                    contentStyle={{ borderRadius: 8, border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  />
+                  <Bar dataKey="consultas" name="Realizadas" fill={COLORS.primary} radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="esperada" name="Esperadas (3x)" fill={COLORS.gray} radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="bg-surface-container-lowest p-5 rounded-2xl border border-outline-variant/10">
+            <h3 className="text-sm font-black uppercase tracking-wider text-on-surface-variant/60 mb-4">Status das Gestações</h3>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={pieData.filter(d => d.value > 0)}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="value"
+                    label={({ name, value }) => `${name}: ${value}`}
+                  >
+                    {pieData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/10 overflow-hidden">
+          <div className="p-4 border-b border-outline-variant/10 flex items-center justify-between">
+            <h3 className="text-sm font-black uppercase tracking-wider text-on-surface-variant/60">Lista de Gestantes</h3>
+            <span className="text-xs text-on-surface-variant/40">{gestacoesFiltradas.length} registros</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-surface-container-low border-b border-outline-variant/10 text-xs font-black uppercase tracking-wider text-on-surface-variant/40">
+                  <th className="px-4 py-3">SISPN</th>
+                  <th className="px-4 py-3">Paciente</th>
+                  <th className="px-4 py-3">DUM</th>
+                  <th className="px-4 py-3">DPP</th>
+                  <th className="px-4 py-3">Semanas</th>
+                  <th className="px-4 py-3">Trim</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3 text-right">Ações</th>
+                </tr>
+              </thead>
+              <tbody className="text-sm divide-y divide-outline-variant/10">
+                {loading ? (
+                  <tr>
+                    <td colSpan={8} className="px-4 py-8 text-center text-on-surface-variant/60">Carregando...</td>
+                  </tr>
+                ) : gestacoesFiltradas.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="px-4 py-8 text-center text-on-surface-variant/60">Nenhuma gestação encontrada</td>
+                  </tr>
+                ) : (
+                  gestacoesFiltradas.map(g => {
+                    const paciente = pacientes.find(p => p.cpf === g.cpf_paciente);
+                    const status = getGestacaoStatus(g.dum);
+                    const weeks = getWeeksFromDum(g.dum);
+                    const tri = getTrimestreAtual(g.dum);
+                    
+                    return (
+                      <tr key={g.sispn} className="hover:bg-primary/5 transition-colors">
+                        <td className="px-4 py-3 font-medium">{formatSispn(g.sispn)}</td>
+                        <td className="px-4 py-3">{paciente?.gestante || '---'}</td>
+                        <td className="px-4 py-3">{g.dum ? new Date(g.dum).toLocaleDateString('pt-BR') : '---'}</td>
+                        <td className="px-4 py-3">{g.dpp ? new Date(g.dpp).toLocaleDateString('pt-BR') : '---'}</td>
+                        <td className="px-4 py-3">{weeks} sem</td>
+                        <td className="px-4 py-3">{tri}º</td>
+                        <td className="px-4 py-3">
+                          <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${
+                            status === 'ATIVA' ? 'bg-green-500/10 text-green-600' : 'bg-red-500/10 text-red-600'
+                          }`}>
+                            {status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <Link 
+                            href={`/dashboard/acompanhamento/${g.sispn}`}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors"
+                          >
+                            Ver <ChevronRight className="w-3 h-3" />
+                          </Link>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </DashboardLayout>
+  );
+}
