@@ -172,7 +172,12 @@ export default function UnidadesSaudePage() {
       // Valida CNES duplicado apenas para novo cadastro
       if (!editingId) {
         const cnesInput = formData.cnes.trim();
+        console.log('Checking CNES:', cnesInput);
+        console.log('Existing units:', units.map(u => ({ cnes: u.cnes, nome: u.nome_fantasia })));
+        
         const existingUnit = units.find(u => String(u.cnes) === cnesInput);
+        console.log('Found duplicate:', existingUnit);
+        
         if (existingUnit) {
           setError('CNES já cadastrado. Utilize outro CNES ou edite o registro existente.');
           return;
