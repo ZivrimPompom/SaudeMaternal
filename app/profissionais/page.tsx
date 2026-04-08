@@ -644,9 +644,10 @@ export default function ProfissionaisPage() {
                       <thead className="sticky top-0 z-30 bg-surface-container-low">
                         <tr>
                           <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Nome</th>
+                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Unidade</th>
+                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Categoria</th>
                           <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">CPF</th>
                           <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">CNS</th>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Categoria</th>
                           <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Equipe</th>
                           <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Situação</th>
                           <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-center">Ações</th>
@@ -665,16 +666,22 @@ export default function ProfissionaisPage() {
                                 <p className="font-black text-xs text-on-surface uppercase leading-tight">{pro.nome}</p>
                               </td>
                               <td className="px-4 py-3">
-                                <span className="text-[10px] font-mono font-bold text-primary">{formatCpf(pro.cpf)}</span>
-                              </td>
-                              <td className="px-4 py-3">
-                                <span className="text-[10px] font-mono text-on-surface">{formatCns(pro.cns) || '---'}</span>
+                                <div className="text-[10px]">
+                                  <p className="font-black text-primary uppercase">{pro.unidades_saude?.nome_fantasia || pro.unidade_cnes || '---'}</p>
+                                  <p className="text-[9px] text-on-surface-variant/50">CNES: {pro.unidades_saude?.cnes || pro.unidade_cnes || '---'}</p>
+                                </div>
                               </td>
                               <td className="px-4 py-3">
                                 <div className="text-[10px]">
                                   <p className="font-black text-primary uppercase">{pro.categorias_profissionais?.categoria || '---'}</p>
-                                  <p className="text-[9px] text-on-surface-variant/50">{(pro.unidades_saude?.cnes || pro.unidade_cnes || '---')} - {(pro.unidades_saude?.nome_fantasia || '---')}</p>
+                                  <p className="text-[9px] text-on-surface-variant/50">CBO: {pro.categorias_profissionais?.cbo || '---'}</p>
                                 </div>
+                              </td>
+                              <td className="px-4 py-3">
+                                <span className="text-[10px] font-mono font-bold text-primary">{formatCpf(pro.cpf)}</span>
+                              </td>
+                              <td className="px-4 py-3">
+                                <span className="text-[10px] font-mono text-on-surface">{formatCns(pro.cns) || '---'}</span>
                               </td>
                               <td className="px-4 py-3">
                                 <span className="text-[9px] font-black text-on-surface uppercase tracking-widest bg-primary/5 px-2 py-0.5 rounded-full">

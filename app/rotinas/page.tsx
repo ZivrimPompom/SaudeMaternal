@@ -282,7 +282,18 @@ export default function RotinasPage() {
                       )}
                     </AnimatePresence>
 
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-[2fr_1fr_1fr_1fr] gap-4 items-start">
+                      <div className="space-y-2">
+                        <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Descrição</label>
+                        <input 
+                          type="text"
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none uppercase"
+                          placeholder="DESCREVA O EXAME, VACINA OU MEDICAÇÃO"
+                          value={formData.descricao || ''}
+                          onChange={(e) => setFormData({ ...formData, descricao: e.target.value.toUpperCase() })}
+                        />
+                      </div>
+
                       <div className="space-y-2">
                         <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Tipo</label>
                         <select 
@@ -321,16 +332,6 @@ export default function RotinasPage() {
                           <option value="EVENTUAL">EVENTUAL</option>
                         </select>
                       </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Descrição</label>
-                      <textarea 
-                        className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none uppercase min-h-[80px]"
-                        placeholder="DESCREVA O EXAME, VACINA OU MEDICAÇÃO"
-                        value={formData.descricao || ''}
-                        onChange={(e) => setFormData({ ...formData, descricao: e.target.value.toUpperCase() })}
-                      />
                     </div>
 
                     <div className="pt-4 flex flex-col gap-3">
