@@ -169,23 +169,23 @@ export default function UnidadesSaudePage() {
     }
 
     const cnesValue = formData.cnes.trim();
-    console.log('CNES digitado:', cnesValue, 'tipo:', typeof cnesValue);
 
     try {
       // Valida CNES duplicado - busca no banco para garantir
       if (!editingId) {
-        const { data: existingData, error: checkError } = await supabase
+        console.log('Buscando CNES:', cnesValue);
+        
+        // Busca todos os CNES para verificar
+        const { data: allUnits, error: fetchError } = await supabase
           .from('unidades_saude')
-          .select('cnes')
-          .eq('cnes', cnesValue)
-          .limit(1);
-
-        console.log('Resultado busca CNES:', existingData, 'erro:', checkError);
-
-        if (checkError) {
-          console.error('Erro ao verificar CNES:', checkError);
-        } else if (existingData && existingData.length > 0) {
-          console.log('CNES DUPLICADO ENCONTRADO!');
+          .select('cnes');
+        
+        console.log('Todos os CNES:', allUnits);
+        
+        const cnesExists = allUnits?.some(u => String(u.cnes).trim() === cnesValue);
+        console.log('CNES existe?', cnesExists);
+        
+        if (cnesExists) {
           setError('CNES já cadastrado no banco de dados.');
           return;
         }
