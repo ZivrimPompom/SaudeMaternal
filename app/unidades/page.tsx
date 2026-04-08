@@ -173,17 +173,11 @@ export default function UnidadesSaudePage() {
     try {
       // Valida CNES duplicado - busca no banco para garantir
       if (!editingId) {
-        console.log('Buscando CNES:', cnesValue);
-        
-        // Busca todos os CNES para verificar
-        const { data: allUnits, error: fetchError } = await supabase
+        const { data: allUnits } = await supabase
           .from('unidades_saude')
           .select('cnes');
         
-        console.log('Todos os CNES:', allUnits);
-        
         const cnesExists = allUnits?.some(u => String(u.cnes).trim() === cnesValue);
-        console.log('CNES existe?', cnesExists);
         
         if (cnesExists) {
           setError('CNES já cadastrado no banco de dados.');
