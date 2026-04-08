@@ -349,7 +349,7 @@ export default function AtendimentosPage() {
 
       if (!matchesSearch) return false;
       
-      if (filters.unidade && p.unidade_cnes !== filters.unidade) return false;
+      if (filters.unidade && String(p.unidade_cnes).trim() !== String(filters.unidade).trim()) return false;
 
       if (filters.trimestre && p.currentTrimester !== filters.trimestre) return false;
 
@@ -367,7 +367,7 @@ export default function AtendimentosPage() {
 
       // Filter by unidade (only for non-admin users)
       if (authUser?.nivel_acesso !== 'Administrador' && authUser?.unidade_cnes) {
-        if (p.unidade_cnes !== authUser.unidade_cnes) return false;
+        if (String(p.unidade_cnes).trim() !== String(authUser.unidade_cnes).trim()) return false;
       }
 
       return true;
@@ -499,6 +499,7 @@ export default function AtendimentosPage() {
             hiv,
             hepatite_b,
             hepatite_c,
+            unidade_cnes,
             pacientes (gestante, cpf, cns, data_nascimento)
           `)
           .range(gestFrom, gestFrom + 999);
@@ -540,6 +541,7 @@ export default function AtendimentosPage() {
           rt_nome: rtNome,
           acs_nome: acsNome,
           data_cadastro: g.data_cadastro,
+          unidade_cnes: g.unidade_cnes,
           classificacao_pn: g.classificacao_pn || 'HABITUAL',
           alto_risco_compartilhado: g.alto_risco_compartilhado || 'NÃO',
           sifilis: g.sifilis || 'NÃO',
@@ -1282,7 +1284,7 @@ export default function AtendimentosPage() {
               >
                 <option value="">Todas</option>
                 {unidades.map(u => (
-                  <option key={u.cnes} value={u.cnes}>{u.nome_fantasia}</option>
+                  <option key={u.cnes} value={u.cnes}>{u.cnes} - {u.nome_fantasia}</option>
                 ))}
               </select>
               

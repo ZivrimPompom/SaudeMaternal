@@ -99,7 +99,7 @@ export default function Page() {
             >
               <option value="">Todas as Unidades</option>
               {unidades.map(u => (
-                <option key={u.cnes} value={u.cnes}>{u.nome_fantasia}</option>
+                <option key={u.cnes} value={u.cnes}>{u.cnes} - {u.nome_fantasia}</option>
               ))}
             </select>
             {unidadeFilter && (

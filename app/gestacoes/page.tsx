@@ -578,7 +578,7 @@ export default function GestacoesPage() {
 
     // Filter by unidade
     if (filters.unidade) {
-      if (g.unidade_cnes !== filters.unidade) return false;
+      if (String(g.unidade_cnes).trim() !== String(filters.unidade).trim()) return false;
     } else if (authUser?.nivel_acesso !== 'Administrador' && authUser?.unidade_cnes) {
       if (g.unidade_cnes !== authUser.unidade_cnes) return false;
     }
@@ -1346,7 +1346,7 @@ export default function GestacoesPage() {
                     onChange={(e) => { setFilters({ ...filters, unidade: e.target.value }); setCurrentPage(1); }}
                   >
                     <option value="">Todas</option>
-                    {uniqueUnidades.map(u => <option key={u.cnes} value={u.cnes}>{u.nome_fantasia}</option>)}
+                    {uniqueUnidades.map(u => <option key={u.cnes} value={u.cnes}>{u.cnes} - {u.nome_fantasia}</option>)}
                   </select>
 
                   <select 

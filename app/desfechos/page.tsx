@@ -143,7 +143,7 @@ export default function DesfechosPage() {
       const { data: gestData, error: gestError } = await supabase
         .from('gestacoes')
         .select(`
-          sispn, dum, dpp, equipe, referencia_tecnica, acs, data_cadastro, classificacao_pn,
+          sispn, dum, dpp, equipe, referencia_tecnica, acs, data_cadastro, classificacao_pn, unidade_cnes,
           pacientes (gestante, cpf, cns, data_nascimento)
         `)
         .order('created_at', { ascending: false });
@@ -172,7 +172,7 @@ export default function DesfechosPage() {
         .select(`
           *,
           gestacoes (
-            sispn, dum, dpp, equipe, referencia_tecnica, acs, data_cadastro, classificacao_pn,
+            sispn, dum, dpp, equipe, referencia_tecnica, acs, data_cadastro, classificacao_pn, unidade_cnes,
             pacientes (gestante, cpf, cns, data_nascimento)
           )
         `)
@@ -356,11 +356,11 @@ export default function DesfechosPage() {
 
       if (filters.tipo_desfecho && d.tipo_desfecho !== filters.tipo_desfecho) return false;
 
-      if (filters.unidade && (d as any).gestacoes?.unidade_cnes !== filters.unidade) return false;
+      if (filters.unidade && String((d as any).gestacoes?.unidade_cnes).trim() !== String(filters.unidade).trim()) return false;
 
       // Filter by unidade (only for non-admin users)
       if (authUser?.nivel_acesso !== 'Administrador' && authUser?.unidade_cnes) {
-        if ((d.gestacoes as any)?.unidade_cnes !== authUser.unidade_cnes) return false;
+        if (String((d.gestacoes as any)?.unidade_cnes).trim() !== String(authUser.unidade_cnes).trim()) return false;
       }
 
       return true;
@@ -713,7 +713,7 @@ export default function DesfechosPage() {
               >
                 <option value="">Todas</option>
                 {unidades.map(u => (
-                  <option key={u.cnes} value={u.cnes}>{u.nome_fantasia}</option>
+                  <option key={u.cnes} value={u.cnes}>{u.cnes} - {u.nome_fantasia}</option>
                 ))}
               </select>
               
@@ -728,7 +728,7 @@ export default function DesfechosPage() {
                 ))}
               </select>
 
-              {(filters.unidade || filters.tipo_desfecho) && (
+              {(filters.unidade || filters.tipo_desfecho !== 'PARTO') && (
                 <button 
                   onClick={() => setFilters({ tipo_desfecho: 'PARTO', unidade: '' })}
                   className="w-full lg:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-error/10 text-error text-[9px] font-black uppercase tracking-widest hover:bg-error hover:text-white transition-all border border-error/20"

@@ -63,7 +63,7 @@ export default function ProfissionaisPage() {
     return professionals.filter(pro => {
       const query = searchQuery.toLowerCase().trim();
       
-      if (unidadeFilter && pro.unidade_cnes !== unidadeFilter) {
+      if (unidadeFilter && String(pro.unidade_cnes).trim() !== String(unidadeFilter).trim()) {
         return false;
       }
 
@@ -134,7 +134,7 @@ export default function ProfissionaisPage() {
     
     let prosResponse = await supabase
       .from('profissionais')
-      .select('*, categorias_profissionais(cbo, categoria)')
+      .select('*, categorias_profissionais(cbo, categoria), unidades_saude(cnes, nome_fantasia)')
       .order('nome')
       .limit(5000);
     
@@ -467,7 +467,7 @@ export default function ProfissionaisPage() {
                             >
                               <option value="">Selecione a unidade...</option>
                               {units.map(unit => (
-                                <option key={unit.cnes} value={unit.cnes}>{unit.nome_fantasia}</option>
+                                <option key={unit.cnes} value={unit.cnes}>{unit.cnes} - {unit.nome_fantasia}</option>
                               ))}
                             </select>
                           </div>
@@ -611,7 +611,7 @@ export default function ProfissionaisPage() {
                 >
                   <option value="">Todas</option>
                   {units.map(u => (
-                    <option key={u.cnes} value={u.cnes}>{u.nome_fantasia}</option>
+                    <option key={u.cnes} value={u.cnes}>{u.cnes} - {u.nome_fantasia}</option>
                   ))}
                 </select>
                 {unidadeFilter && (
@@ -673,7 +673,7 @@ export default function ProfissionaisPage() {
                               <td className="px-4 py-3">
                                 <div className="text-[10px]">
                                   <p className="font-black text-primary uppercase">{pro.categorias_profissionais?.categoria || '---'}</p>
-                                  <p className="text-[9px] text-on-surface-variant/50">{pro.unidades_saude?.nome_fantasia || '---'}</p>
+                                  <p className="text-[9px] text-on-surface-variant/50">{(pro.unidades_saude?.cnes || pro.unidade_cnes || '---')} - {(pro.unidades_saude?.nome_fantasia || '---')}</p>
                                 </div>
                               </td>
                               <td className="px-4 py-3">

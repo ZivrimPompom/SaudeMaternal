@@ -204,7 +204,7 @@ export default function PacientesPage() {
         if (lifeStage !== lifeStageFilter) return false;
       }
 
-      if (unidadeFilter && (pac as any).unidade_cnes !== unidadeFilter) {
+      if (unidadeFilter && String((pac as any).unidade_cnes).trim() !== String(unidadeFilter).trim()) {
         return false;
       }
 
@@ -689,7 +689,7 @@ export default function PacientesPage() {
                   >
                     <option value="">Todas</option>
                     {unidades.map(u => (
-                      <option key={u.cnes} value={u.cnes}>{u.nome_fantasia}</option>
+                      <option key={u.cnes} value={u.cnes}>{u.cnes} - {u.nome_fantasia}</option>
                     ))}
                   </select>
 

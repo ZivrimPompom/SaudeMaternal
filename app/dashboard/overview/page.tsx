@@ -391,7 +391,7 @@ export default function DashboardOverview() {
                   <option key="unit-all" value="all">Todas as Unidades</option>
                 )}
                 {units.map((u) => (
-                  <option key={`unit-opt-${u.cnes}`} value={u.cnes}>{u.nome_fantasia || u.nome}</option>
+                  <option key={`unit-opt-${u.cnes}`} value={u.cnes}>{u.cnes} - {u.nome_fantasia || u.nome}</option>
                 ))}
               </select>
 

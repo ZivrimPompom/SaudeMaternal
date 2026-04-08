@@ -622,7 +622,7 @@ export default function OperadoresPage() {
                           >
                             <option value="">Selecione...</option>
                             {units.map(unit => (
-                              <option key={unit.cnes} value={unit.cnes}>{unit.nome_fantasia}</option>
+                              <option key={unit.cnes} value={unit.cnes}>{unit.cnes} - {unit.nome_fantasia}</option>
                             ))}
                           </select>
                         </div>

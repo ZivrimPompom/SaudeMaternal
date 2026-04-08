@@ -286,7 +286,7 @@ export default function ExamesPage() {
 
       if (filters.equipe && p.equipe !== filters.equipe) return false;
 
-      if (filters.unidade && p.unidade_cnes !== filters.unidade) return false;
+      if (filters.unidade && String(p.unidade_cnes).trim() !== String(filters.unidade).trim()) return false;
 
       return true;
     });
@@ -397,7 +397,7 @@ export default function ExamesPage() {
       let gestHasMore = true;
       while (gestHasMore) {
         const { data, error } = await supabase.from('gestacoes').select(`
-          sispn, dum, dpp, equipe, data_cadastro, classificacao_pn,
+          sispn, dum, dpp, equipe, data_cadastro, classificacao_pn, unidade_cnes,
           pacientes (gestante, cpf, cns, data_nascimento)
         `).range(gestFrom, gestFrom + 999);
         if (error) throw error;
@@ -418,6 +418,7 @@ export default function ExamesPage() {
           dpp: g.dpp,
           equipe: g.equipe,
           data_cadastro: g.data_cadastro,
+          unidade_cnes: g.unidade_cnes,
           paciente_nome: (pac as any)?.gestante || 'NÃO INFORMADO',
           paciente_cpf: String((pac as any)?.cpf || 'NÃO INFORMADO'),
           paciente_cns: (pac as any)?.cns || '---',
@@ -626,7 +627,7 @@ export default function ExamesPage() {
       
       // Filter by unidade (only for non-admin users)
       if (authUser?.nivel_acesso !== 'Administrador' && authUser?.unidade_cnes) {
-        if ((gest as any)?.unidade_cnes !== authUser.unidade_cnes) return false;
+        if (String((gest as any)?.unidade_cnes).trim() !== String(authUser.unidade_cnes).trim()) return false;
       }
 
       return true;
@@ -1139,7 +1140,7 @@ export default function ExamesPage() {
                 onChange={(e) => setFilters({ ...filters, unidade: e.target.value })}
               >
                 <option value="">Todas</option>
-                {uniqueUnidades.map(u => <option key={u.cnes} value={u.cnes}>{u.nome_fantasia}</option>)}
+                {uniqueUnidades.map(u => <option key={u.cnes} value={u.cnes}>{u.cnes} - {u.nome_fantasia}</option>)}
               </select>
 
               <select 
@@ -1193,7 +1194,7 @@ export default function ExamesPage() {
                 {uniqueEquipes.map(eq => <option key={eq} value={eq}>{eq}</option>)}
               </select>
 
-              {(filters.status !== 'ATIVA' || filters.trimestre || filters.tipo || filters.rotina || filters.equipe) && (
+              {(filters.status !== 'ATIVA' || filters.trimestre || filters.tipo || filters.rotina || filters.equipe || filters.unidade) && (
                 <button 
                   onClick={() => setFilters({ status: 'ATIVA', trimestre: '', tipo: '', rotina: '', equipe: '', dpp: '', unidade: '' })}
                   className="w-full lg:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-error/10 text-error text-[9px] font-black uppercase tracking-widest hover:bg-error hover:text-white transition-all border border-error/20"
