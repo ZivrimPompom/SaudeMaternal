@@ -46,7 +46,7 @@ interface Operator {
   unidade_cnes?: string;
   cpf_operador?: string;
   operador_nome?: string;
-  unidades_saude?: { nome_fantasia: string };
+  unidades_saude?: { cnes: string; nome_fantasia: string };
 }
 
 interface HealthUnit {
@@ -74,6 +74,23 @@ export default function OperadoresPage() {
   const [units, setUnits] = useState<HealthUnit[]>([]);
   const [loading, setLoading] = useState(isSupabaseConfigured);
 
+  const [formData, setFormData] = useState({
+    name: '',
+    cpf: '',
+    password: '',
+    status: 'Ativo' as 'Ativo' | 'Bloqueado',
+    nivel_acesso: 'Usuário' as 'Administrador' | 'Usuário',
+    unidade_cnes: ''
+  });
+
+  const [editingId, setEditingId] = useState<string | null>(null); // Now stores the CPF
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [unidadeFilter, setUnidadeFilter] = useState('');
+  const itemsPerPage = 8;
+
   useEffect(() => {
     setIsFormOpen(false);
   }, [setIsFormOpen]);
@@ -99,7 +116,7 @@ export default function OperadoresPage() {
         // Tenta buscar com join
         let result = await supabase
           .from('operadores')
-          .select('*, unidades_saude(nome_fantasia)')
+          .select('*, unidades_saude(cnes, nome_fantasia)')
           .order('name', { ascending: true });
         
         if (result.error && result.error.message.includes('relationship')) {
@@ -114,7 +131,7 @@ export default function OperadoresPage() {
           // Se falhar por causa da coluna 'name', tenta 'nome'
           result = await supabase
             .from('operadores')
-            .select('*, unidades_saude(nome_fantasia)')
+            .select('*, unidades_saude(cnes, nome_fantasia)')
             .order('nome', { ascending: true });
             
           if (result.error && result.error.message.includes('relationship')) {
@@ -130,8 +147,17 @@ export default function OperadoresPage() {
             console.error('Erro ao buscar operadores:', result.error);
             setError(`Erro ao carregar dados: ${result.error.message}`);
           } else if (result.data) {
+            // Se a relação unidades_saude não retornou dados, busca manualmente
+            let enrichedData = result.data;
+            if (!result.data[0]?.unidades_saude && units.length > 0) {
+              enrichedData = result.data.map((item: any) => ({
+                ...item,
+                unidades_saude: units.find(u => u.cnes === item.unidade_cnes) || null
+              }));
+            }
+            
             // Mapeia os dados para garantir que usem as chaves esperadas pela interface Operator
-            const mappedData = result.data.map((item: any) => ({
+            const mappedData = enrichedData.map((item: any) => ({
               id: item.id,
               name: item.name || item.nome || 'Sem Nome',
               cpf: item.cpf,
@@ -161,7 +187,7 @@ export default function OperadoresPage() {
       // Tenta buscar com join
       let result = await supabase
         .from('operadores')
-        .select('*, unidades_saude(nome_fantasia)')
+        .select('*, unidades_saude(cnes, nome_fantasia)')
         .order('name', { ascending: true });
       
       if (result.error && result.error.message.includes('relationship')) {
@@ -176,7 +202,7 @@ export default function OperadoresPage() {
         // Se falhar por causa da coluna 'name', tenta 'nome'
         result = await supabase
           .from('operadores')
-          .select('*, unidades_saude(nome_fantasia)')
+          .select('*, unidades_saude(cnes, nome_fantasia)')
           .order('nome', { ascending: true });
           
         if (result.error && result.error.message.includes('relationship')) {
@@ -191,7 +217,16 @@ export default function OperadoresPage() {
         console.error('Erro ao buscar operadores:', result.error);
         setError(`Erro ao carregar dados: ${result.error.message}`);
       } else if (result.data) {
-        const mappedData = result.data.map((item: any) => ({
+        // Se a relação unidades_saude não retornou dados, busca manualmente
+        let enrichedData = result.data;
+        if (!result.data[0]?.unidades_saude && units.length > 0) {
+          enrichedData = result.data.map((item: any) => ({
+            ...item,
+            unidades_saude: units.find(u => u.cnes === item.unidade_cnes) || null
+          }));
+        }
+        
+        const mappedData = enrichedData.map((item: any) => ({
           id: item.id,
           name: item.name || item.nome || 'Sem Nome',
           cpf: item.cpf,
@@ -210,15 +245,29 @@ export default function OperadoresPage() {
     }
   };
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, unidadeFilter]);
+
   const filteredOperators = useMemo(() => {
-    return operators.filter(op => {
-      const query = searchQuery.toLowerCase().trim();
-      if (!query) return true;
+    let filtered = operators;
 
-      // Normaliza para remover acentos (ex: 'João' vira 'Joao')
-      const normalize = (str: string) => 
-        str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    if (unidadeFilter) {
+      filtered = filtered.filter(op => {
+        if (String(op.unidade_cnes).trim() !== String(unidadeFilter).trim()) {
+          return false;
+        }
+        return true;
+      });
+    }
 
+    const query = (searchQuery || '').toLowerCase().trim();
+    if (!query) return filtered;
+
+    const normalize = (str: string) => 
+      str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+    return filtered.filter(op => {
       const name = normalize(op.name);
       const cpf = op.cpf.replace(/\D/g, '');
       const initials = normalize(op.initials);
@@ -232,27 +281,7 @@ export default function OperadoresPage() {
         (queryNumeros !== '' && cpf.includes(queryNumeros))
       );
     });
-  }, [operators, searchQuery]);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery]);
-
-  const [formData, setFormData] = useState({
-    name: '',
-    cpf: '',
-    password: '',
-    status: 'Ativo' as 'Ativo' | 'Bloqueado',
-    nivel_acesso: 'Usuário' as 'Administrador' | 'Usuário',
-    unidade_cnes: ''
-  });
-
-  const [editingId, setEditingId] = useState<string | null>(null); // Now stores the CPF
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 8;
+  }, [operators, searchQuery, unidadeFilter]);
 
   const formatCPF = (value: string) => {
     const digits = value.replace(/\D/g, '');
@@ -431,7 +460,7 @@ export default function OperadoresPage() {
       password: '', // Password usually not shown
       status: op.status,
       nivel_acesso: op.nivel_acesso || 'Usuário',
-      unidade_cnes: op.unidade_cnes || ''
+      unidade_cnes: op.unidade_cnes ? String(op.unidade_cnes) : ''
     });
     setIsFormOpen(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -737,6 +766,27 @@ export default function OperadoresPage() {
                   <p className="text-xs text-on-surface-variant font-body opacity-60 mt-1">Listagem completa de profissionais autorizados</p>
                 </div>
               </div>
+              <div className="px-6 md:px-8 pt-6 pb-4 flex flex-wrap items-center gap-3 border-b border-surface-container-low">
+                <select 
+                  className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
+                  value={unidadeFilter}
+                  onChange={(e) => { setUnidadeFilter(e.target.value); setCurrentPage(1); }}
+                >
+                  <option value="">Todas</option>
+                  {units.map(u => (
+                    <option key={u.cnes} value={u.cnes}>{u.cnes} - {u.nome_fantasia}</option>
+                  ))}
+                </select>
+                {unidadeFilter && (
+                  <button 
+                    onClick={() => { setUnidadeFilter(''); setCurrentPage(1); }}
+                    className="w-full lg:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-error/10 text-error text-[9px] font-black uppercase tracking-widest hover:bg-error hover:text-white transition-all border border-error/20"
+                  >
+                    <span className="material-symbols-outlined text-sm">filter_alt_off</span>
+                    Limpar
+                  </button>
+                )}
+              </div>
               <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent">
                 {loading ? (
                   <div className="p-8 space-y-6">
@@ -783,7 +833,7 @@ export default function OperadoresPage() {
                                   <div>
                                     <p className="font-bold text-on-surface text-sm font-headline leading-tight uppercase line-clamp-1">{op.name}</p>
                                     <p className="text-[9px] text-on-surface-variant/60 font-body uppercase tracking-widest mt-0.5 line-clamp-1">
-                                      {op.unidades_saude?.nome_fantasia || 'Sem Unidade'}
+                                      {op.unidades_saude ? `CNES: ${op.unidades_saude.cnes} - ${op.unidades_saude.nome_fantasia}` : op.unidade_cnes ? `CNES: ${op.unidade_cnes}` : 'Sem Unidade'}
                                     </p>
                                   </div>
                                 </div>
