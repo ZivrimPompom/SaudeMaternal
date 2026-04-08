@@ -30,8 +30,7 @@ import {
   Pie,
   Cell,
   Legend,
-  AreaChart,
-  Area
+  LabelList
 } from 'recharts';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { useAuth, Operator } from '@/context/AuthContext';
@@ -111,6 +110,7 @@ export default function GestacoesAtivasDashboard() {
   const [unidades, setUnidades] = useState<{cnes: string; nome_fantasia: string}[]>([]);
 
   const [filterUnidade, setFilterUnidade] = useState('all');
+  const [filterStatus, setFilterStatus] = useState<'ATIVA' | 'VENCIDA' | 'TODAS'>('ATIVA');
   const [filterRisk, setFilterRisk] = useState('all');
   const [filterTrimestre, setFilterTrimestre] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -154,6 +154,36 @@ export default function GestacoesAtivasDashboard() {
   }, [mounted]);
 
   useEffect(() => {
+    if (!mounted || loading) return;
+    
+    const interval = setInterval(() => {
+      const fetchData = async () => {
+        try {
+          const [g, p, a, rr, u] = await Promise.all([
+            supabase.from('gestacoes').select('*'),
+            supabase.from('pacientes').select('cpf, gestante, nome_mae'),
+            supabase.from('atendimentos').select('sispn, data_consulta, trimestre_consulta'),
+            supabase.from('registro_rotinas').select('sispn, data_realizacao, trimestre_realizacao'),
+            supabase.from('unidades_saude').select('cnes, nome_fantasia')
+          ]);
+
+          if (g.data) setGestacoes(g.data);
+          if (p.data) setPacientes(p.data);
+          if (a.data) setAtendimentos(a.data);
+          if (rr.data) setRegistrosRotinas(rr.data);
+          if (u.data) setUnidades(u.data);
+        } catch (err) {
+          console.error('Erro ao buscar dados:', err);
+        }
+      };
+
+      fetchData();
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [mounted, loading]);
+
+  useEffect(() => {
     if (user?.unidade_cnes && !isAdmin) {
       setFilterUnidade(user.unidade_cnes);
     }
@@ -172,6 +202,7 @@ export default function GestacoesAtivasDashboard() {
         const fUnidade = String(filterUnidade).trim();
         if (gUnidade !== fUnidade) return false;
       }
+      if (filterStatus !== 'TODAS' && getGestacaoStatus(g.dum) !== filterStatus) return false;
       if (filterRisk !== 'all' && g.classificacao_pn !== filterRisk) return false;
       if (filterTrimestre !== 'all') {
         const tri = getTrimestreAtual(g.dum);
@@ -192,7 +223,7 @@ export default function GestacoesAtivasDashboard() {
     }
 
     return filtered;
-  }, [gestacoes, pacientes, filterUnidade, filterRisk, filterTrimestre, searchQuery]);
+  }, [gestacoes, pacientes, filterUnidade, filterStatus, filterRisk, filterTrimestre, searchQuery]);
 
   const stats = useMemo(() => {
     const ativas = gestacoesFiltradas.filter(g => getGestacaoStatus(g.dum) === 'ATIVA').length;
@@ -201,35 +232,37 @@ export default function GestacoesAtivasDashboard() {
     const risco = gestacoesFiltradas.filter(g => g.classificacao_pn === 'RISCO').length;
 
     const consultasPorTri = [0, 0, 0];
-    const consultasEsperadas = [0, 0, 0];
     
     gestacoesFiltradas.forEach(g => {
       const tri = getTrimestreAtual(g.dum);
       const consultas = atendimentos.filter(a => a.sispn === g.sispn);
       
-      [1, 2, 3].forEach(t => {
-        const porTri = consultas.filter(a => TRIMESTRE_MAP[a.trimestre_consulta] === t);
-        consultasPorTri[t - 1] += porTri.length;
-        if (t <= tri) consultasEsperadas[t - 1] += 3;
+      consultas.forEach(a => {
+        const triCons = TRIMESTRE_MAP[a.trimestre_consulta];
+        if (triCons >= 1 && triCons <= 3) {
+          consultasPorTri[triCons - 1]++;
+        }
       });
     });
 
     const totalConsultas = consultasPorTri.reduce((a, b) => a + b, 0);
-    const totalEsperadas = consultasEsperadas.reduce((a, b) => a + b, 0);
-    const pctConsultas = totalEsperadas > 0 ? Math.round((totalConsultas / totalEsperadas) * 100) : 0;
 
     const examesPorTri = [0, 0, 0];
     gestacoesFiltradas.forEach(g => {
-      const triAtual = getTrimestreAtual(g.dum);
       const exams = registrosRotinas.filter(r => r.sispn === g.sispn);
       
-      [1, 2, 3].forEach(t => {
-        const porTri = exams.filter(r => TRIMESTRE_MAP[r.trimestre_realizacao] === t);
-        examesPorTri[t - 1] += porTri.length;
+      exams.forEach(r => {
+        const triExam = TRIMESTRE_MAP[r.trimestre_realizacao];
+        if (triExam >= 1 && triExam <= 3) {
+          examesPorTri[triExam - 1]++;
+        }
       });
     });
 
     const totalExames = examesPorTri.reduce((a, b) => a + b, 0);
+
+    const consultasEsperadas = ativas * 3;
+    const pctConsultas = consultasEsperadas > 0 ? Math.round((totalConsultas / consultasEsperadas) * 100) : 0;
 
     return {
       total: gestacoesFiltradas.length,
@@ -285,8 +318,8 @@ export default function GestacoesAtivasDashboard() {
           </p>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="relative md:col-span-2">
+        <div className="flex flex-wrap gap-3 items-center">
+          <div className="relative flex-1 min-w-[200px]">
             <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
               <Search className="w-4 h-4 text-on-surface-variant/40" />
             </div>
@@ -313,6 +346,16 @@ export default function GestacoesAtivasDashboard() {
           )}
 
           <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value as any)}
+            className="px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
+          >
+            <option value="TODAS">Todos os Status</option>
+            <option value="ATIVA">Ativas</option>
+            <option value="VENCIDA">Vencidas</option>
+          </select>
+
+          <select
             value={filterRisk}
             onChange={(e) => setFilterRisk(e.target.value)}
             className="px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
@@ -320,6 +363,17 @@ export default function GestacoesAtivasDashboard() {
             <option value="all">Todos os Riscos</option>
             <option value="HABITUAL">Habitual</option>
             <option value="RISCO">Alto Risco</option>
+          </select>
+
+          <select
+            value={filterTrimestre}
+            onChange={(e) => setFilterTrimestre(e.target.value)}
+            className="px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
+          >
+            <option value="all">Todos os Trimestres</option>
+            <option value="1º TRIMESTRE">1º Trimestre</option>
+            <option value="2º TRIMESTRE">2º Trimestre</option>
+            <option value="3º TRIMESTRE">3º Trimestre</option>
           </select>
         </div>
 
@@ -388,7 +442,7 @@ export default function GestacoesAtivasDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 bg-surface-container-lowest p-5 rounded-2xl border border-outline-variant/10">
             <h3 className="text-sm font-black uppercase tracking-wider text-on-surface-variant/60 mb-4">Atividades por Trimestre</h3>
-            <div className="h-64">
+            <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -397,8 +451,13 @@ export default function GestacoesAtivasDashboard() {
                   <Tooltip 
                     contentStyle={{ borderRadius: 8, border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                   />
-                  <Bar dataKey="consultas" name="Consultas" fill={COLORS[0]} radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="exames" name="Exames" fill={COLORS[1]} radius={[4, 4, 0, 0]} />
+                  <Legend />
+                  <Bar dataKey="consultas" name="Consultas" fill={COLORS[0]} radius={[4, 4, 0, 0]}>
+                    <LabelList dataKey="consultas" position="top" style={{ fontSize: 10, fill: '#666' }} />
+                  </Bar>
+                  <Bar dataKey="exames" name="Exames" fill={COLORS[1]} radius={[4, 4, 0, 0]}>
+                    <LabelList dataKey="exames" position="top" style={{ fontSize: 10, fill: '#666' }} />
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -406,7 +465,7 @@ export default function GestacoesAtivasDashboard() {
 
           <div className="bg-surface-container-lowest p-5 rounded-2xl border border-outline-variant/10">
             <h3 className="text-sm font-black uppercase tracking-wider text-on-surface-variant/60 mb-4">Classificação de Risco</h3>
-            <div className="h-48">
+            <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -417,6 +476,8 @@ export default function GestacoesAtivasDashboard() {
                     outerRadius={70}
                     paddingAngle={5}
                     dataKey="value"
+                    label={({ name, value }) => `${name}: ${value}`}
+                    labelLine={true}
                   >
                     {pieData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
@@ -433,7 +494,7 @@ export default function GestacoesAtivasDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-surface-container-lowest p-5 rounded-2xl border border-outline-variant/10">
             <h3 className="text-sm font-black uppercase tracking-wider text-on-surface-variant/60 mb-4">Status das Gestações</h3>
-            <div className="h-48">
+            <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -444,6 +505,8 @@ export default function GestacoesAtivasDashboard() {
                     outerRadius={70}
                     paddingAngle={5}
                     dataKey="value"
+                    label={({ name, value }) => `${name}: ${value}`}
+                    labelLine={true}
                   >
                     {pieStatusData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />

@@ -25,7 +25,8 @@ import {
   PieChart,
   Pie,
   Cell,
-  Legend
+  Legend,
+  LabelList
 } from 'recharts';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { useAuth, Operator } from '@/context/AuthContext';
@@ -174,6 +175,38 @@ export default function AcompanhamentoDashboard() {
   }, [mounted]);
 
   useEffect(() => {
+    if (!mounted || loading) return;
+    
+    const interval = setInterval(() => {
+      const fetchData = async () => {
+        try {
+          const [g, p, r, rr, a, u] = await Promise.all([
+            supabase.from('gestacoes').select('*'),
+            supabase.from('pacientes').select('cpf, gestante, nome_mae'),
+            supabase.from('rotinas').select('*').eq('categoria', 'OBRIGATORIO'),
+            supabase.from('registro_rotinas').select('*'),
+            supabase.from('atendimentos').select('sispn, data_consulta, trimestre_consulta'),
+            supabase.from('unidades_saude').select('cnes, nome_fantasia')
+          ]);
+
+          if (g.data) setGestacoes(g.data);
+          if (p.data) setPacientes(p.data);
+          if (r.data) setRotinas(r.data);
+          if (rr.data) setRegistrosRotinas(rr.data);
+          if (a.data) setAtendimentos(a.data);
+          if (u.data) setUnidades(u.data);
+        } catch (err) {
+          console.error('Erro ao buscar dados:', err);
+        }
+      };
+
+      fetchData();
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [mounted, loading]);
+
+  useEffect(() => {
     if (user?.unidade_cnes && !isAdmin) {
       setFilterUnidade(user.unidade_cnes);
     }
@@ -296,8 +329,8 @@ export default function AcompanhamentoDashboard() {
           </p>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="relative">
+        <div className="flex flex-wrap gap-3 items-center">
+          <div className="relative flex-1 min-w-[200px]">
             <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
               <Search className="w-4 h-4 text-on-surface-variant/40" />
             </div>
@@ -410,7 +443,7 @@ export default function AcompanhamentoDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-surface-container-lowest p-5 rounded-2xl border border-outline-variant/10">
             <h3 className="text-sm font-black uppercase tracking-wider text-on-surface-variant/60 mb-4">Consultas por Trimestre</h3>
-            <div className="h-64">
+            <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -419,8 +452,13 @@ export default function AcompanhamentoDashboard() {
                   <Tooltip 
                     contentStyle={{ borderRadius: 8, border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                   />
-                  <Bar dataKey="consultas" name="Realizadas" fill={COLORS.primary} radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="esperada" name="Esperadas (3x)" fill={COLORS.gray} radius={[4, 4, 0, 0]} />
+                  <Legend />
+                  <Bar dataKey="consultas" name="Realizadas" fill={COLORS.primary} radius={[4, 4, 0, 0]}>
+                    <LabelList dataKey="consultas" position="top" style={{ fontSize: 10, fill: '#666' }} />
+                  </Bar>
+                  <Bar dataKey="esperada" name="Esperadas (3x)" fill={COLORS.gray} radius={[4, 4, 0, 0]}>
+                    <LabelList dataKey="esperada" position="top" style={{ fontSize: 10, fill: '#666' }} />
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -428,7 +466,7 @@ export default function AcompanhamentoDashboard() {
 
           <div className="bg-surface-container-lowest p-5 rounded-2xl border border-outline-variant/10">
             <h3 className="text-sm font-black uppercase tracking-wider text-on-surface-variant/60 mb-4">Status das Gestações</h3>
-            <div className="h-64">
+            <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie

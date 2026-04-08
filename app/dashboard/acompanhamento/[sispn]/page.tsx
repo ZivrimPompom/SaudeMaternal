@@ -213,6 +213,42 @@ export default function AcompanhamentoIndividual() {
     fetchData();
   }, [mounted, sispn]);
 
+  useEffect(() => {
+    if (!mounted || loading || !sispn) return;
+    
+    const interval = setInterval(() => {
+      const fetchData = async () => {
+        try {
+          const [g, p, r, rr, a, tg, tp, cat] = await Promise.all([
+            sispn ? supabase.from('gestacoes').select('*').eq('sispn', sispn).single() : Promise.resolve({ data: null }),
+            sispn ? supabase.from('pacientes').select('*').eq('cpf', '').single() : Promise.resolve({ data: null }),
+            supabase.from('rotinas').select('*').eq('categoria', 'OBRIGATORIO'),
+            sispn ? supabase.from('registro_rotinas').select('*').eq('sispn', sispn) : Promise.resolve({ data: [] }),
+            sispn ? supabase.from('atendimentos').select('*').eq('sispn', sispn).order('data_consulta') : Promise.resolve({ data: [] }),
+            supabase.from('gestacoes').select('*'),
+            supabase.from('pacientes').select('cpf, gestante, nome_mae'),
+            supabase.from('categorias_profissionais').select('cbo, categoria')
+          ]);
+
+          if (g.data) setGestacao(g.data);
+          if (p.data) setPaciente(p.data);
+          if (r.data) setRotinas(r.data);
+          if (rr.data) setRegistrosRotinas(rr.data);
+          if (a.data) setAtendimentos(a.data);
+          if (tg.data) setTodasGestacoes(tg.data);
+          if (tp.data) setTodosPacientes(tp.data);
+          if (cat.data) setCategorias(cat.data);
+        } catch (err) {
+          console.error('Erro ao buscar dados:', err);
+        }
+      };
+
+      fetchData();
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [mounted, loading, sispn]);
+
   const gestacoesFiltradas = useMemo(() => {
     if (!searchQuery) return todasGestacoes.slice(0, 10);
     const q = searchQuery.toLowerCase();
