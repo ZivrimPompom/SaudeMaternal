@@ -111,6 +111,7 @@ export default function OperadoresPage() {
         
         if (unitsResult.data) {
           setUnits(unitsResult.data as HealthUnit[]);
+          console.log('Units loaded:', unitsResult.data);
         }
 
         // Tenta buscar com join
@@ -147,14 +148,23 @@ export default function OperadoresPage() {
             console.error('Erro ao buscar operadores:', result.error);
             setError(`Erro ao carregar dados: ${result.error.message}`);
           } else if (result.data) {
+            console.log('Operators raw data:', result.data);
+            console.log('Units available:', units);
+            
             // Se a relação unidades_saude não retornou dados, busca manualmente
             let enrichedData = result.data;
             if (!result.data[0]?.unidades_saude && units.length > 0) {
-              enrichedData = result.data.map((item: any) => ({
-                ...item,
-                unidades_saude: units.find(u => u.cnes === item.unidade_cnes) || null
-              }));
+              enrichedData = result.data.map((item: any) => {
+                const matchingUnit = units.find(u => String(u.cnes) === String(item.unidade_cnes));
+                console.log(`Operator ${item.name}: unidade_cnes=${item.unidade_cnes}, matchedUnit=`, matchingUnit);
+                return {
+                  ...item,
+                  unidades_saude: matchingUnit || null
+                };
+              });
             }
+            
+            console.log('Enriched data:', enrichedData);
             
             // Mapeia os dados para garantir que usem as chaves esperadas pela interface Operator
             const mappedData = enrichedData.map((item: any) => ({
@@ -217,14 +227,21 @@ export default function OperadoresPage() {
         console.error('Erro ao buscar operadores:', result.error);
         setError(`Erro ao carregar dados: ${result.error.message}`);
       } else if (result.data) {
+        console.log('fetchOperators raw data:', result.data);
+        
         // Se a relação unidades_saude não retornou dados, busca manualmente
         let enrichedData = result.data;
         if (!result.data[0]?.unidades_saude && units.length > 0) {
-          enrichedData = result.data.map((item: any) => ({
-            ...item,
-            unidades_saude: units.find(u => u.cnes === item.unidade_cnes) || null
-          }));
+          enrichedData = result.data.map((item: any) => {
+            const matchingUnit = units.find(u => String(u.cnes) === String(item.unidade_cnes));
+            return {
+              ...item,
+              unidades_saude: matchingUnit || null
+            };
+          });
         }
+        
+        console.log('fetchOperators enriched:', enrichedData);
         
         const mappedData = enrichedData.map((item: any) => ({
           id: item.id,
