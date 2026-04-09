@@ -15,12 +15,19 @@ import Link from 'next/link';
 interface Categoria {
   cbo: string;
   categoria: string;
+  grupo?: string;
+  grau_instrucao?: string;
 }
 
 interface Profissional {
   cpf: string;
   nome: string;
   cbo: string;
+  categorias_profissionais?: {
+    cbo: string;
+    categoria: string;
+    grupo?: string;
+  };
 }
 
 interface Atendimento {
@@ -36,6 +43,7 @@ interface Atendimento {
   cpf_operador?: string;
   operador_nome?: string;
   created_at?: string;
+  grupo?: string;
   // Joins
   gestacoes?: {
     dum: string;
@@ -136,9 +144,9 @@ export default function AtendimentosPage() {
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
     if (diffDays < 0 || diffDays > 280) return 'FORA DO PERÍODO';
-    if (diffDays <= 91) return '1º TRIMESTRE';
-    if (diffDays <= 189) return '2º TRIMESTRE';
-    return '3º TRIMESTRE';
+    if (diffDays <= 91) return 'PRIMEIRO';
+    if (diffDays <= 189) return 'SEGUNDO';
+    return 'TERCEIRO';
   };
 
   const getStatusCaptacao = (dum: string, dataCadastro: string) => {
@@ -198,10 +206,11 @@ export default function AtendimentosPage() {
 
   useEffect(() => {
     if (mounted && formEntries.length === 0) {
+      const today = new Date().toISOString().split('T')[0];
       setFormEntries([
         {
           id: Math.random().toString(36).substr(2, 9),
-          data_consulta: '',
+          data_consulta: today,
           trimestre_consulta: '---',
           cpf_profissional: '',
           data_proxima_consulta: '',
@@ -457,12 +466,16 @@ export default function AtendimentosPage() {
       // Fetch Categories and Professionals
       const [catsRes, prosRes] = await Promise.all([
         supabase.from('categorias_profissionais').select('*').order('categoria').limit(1000),
-        supabase.from('profissionais').select('cpf, nome, cbo, situacao, equipe').order('nome').limit(1000)
+        supabase.from('profissionais').select('cpf, nome, cbo, situacao, equipe, categorias_profissionais(cbo, categoria, grupo)').order('nome').limit(1000)
       ]);
 
       const professionalsData = prosRes.data || [];
-      if (catsRes.data) setCategories(catsRes.data);
-      if (prosRes.data) setAllProfessionals(professionalsData);
+      if (catsRes.data) {
+        setCategories(catsRes.data);
+      }
+      if (prosRes.data) {
+        setAllProfessionals(professionalsData);
+      }
 
       // Fetch Patients in chunks
       let patientsList: any[] = [];
@@ -569,7 +582,9 @@ export default function AtendimentosPage() {
           .range(atendFrom, atendFrom + 999);
         
         if (error) throw error;
-        if (atendFrom === 0) setTotalAtendimentosCount(count || 0);
+        if (atendFrom === 0) {
+          setTotalAtendimentosCount(count || 0);
+        }
 
         if (data && data.length > 0) {
           atendimentosData = [...atendimentosData, ...data];
@@ -583,8 +598,28 @@ export default function AtendimentosPage() {
       const enrichedAtendimentos = atendimentosData.map(c => {
         const gest = formattedGest.find(g => g.sispn === c.sispn);
         const prof = professionalsData.find(p => p.cpf === c.cpf);
+        
+        // Extract grupo - prefer from profissional, fallback to CBO
+        let grupo = '---';
+        
+        // Try to get from profissional first
+        if (prof) {
+          const catFromJoin = Array.isArray(prof.categorias_profissionais) 
+            ? prof.categorias_profissionais[0] 
+            : prof.categorias_profissionais;
+          grupo = catFromJoin?.grupo || '---';
+        }
+        
+        // If not found, search by CBO (use first 4 digits)
+        if (grupo === '---' && c.cbo) {
+          const cboPrefixo = String(c.cbo).substring(0, 4);
+          const catBackup = categories.find(cat => cat.cbo === cboPrefixo);
+          grupo = catBackup?.grupo || '---';
+        }
+        
         return {
           ...c,
+          grupo,
           gestacoes: gest ? {
             dum: gest.dum,
             dpp: gest.dpp,
@@ -951,7 +986,7 @@ export default function AtendimentosPage() {
                             className="flex items-center gap-2 text-primary hover:text-primary/70 transition-colors"
                           >
                             <span className="material-symbols-outlined text-lg">add_circle</span>
-                            <span className="text-[10px] font-black uppercase tracking-widest">Adicionar Linha</span>
+                            <span className="text-[11px] font-black uppercase tracking-widest">Adicionar Linha</span>
                           </button>
                         )}
                       </div>
@@ -968,12 +1003,13 @@ export default function AtendimentosPage() {
                           </colgroup>
                             <thead className="bg-slate-100 dark:bg-slate-800">
                               <tr>
-                                <th className="px-4 py-3 text-table-header">Data Consulta</th>
-                                <th className="px-4 py-3 text-table-header">Trimestre</th>
-                                <th className="px-4 py-3 text-table-header">Profissional</th>
-                                <th className="px-4 py-3 text-table-header">Próxima Consulta</th>
-                                <th className="px-4 py-3 text-table-header">Observações</th>
-                                {!editingId && <th className="px-4 py-3 text-table-header text-center">Ações</th>}
+                                <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Data Consulta</th>
+                                <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Trimestre</th>
+                                <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Profissional</th>
+                                <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Grupo</th>
+                                <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Próxima Consulta</th>
+                                <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Observações</th>
+                                {!editingId && <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5 text-center">Ações</th>}
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
@@ -983,7 +1019,7 @@ export default function AtendimentosPage() {
                                     <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-3 py-2">
                                       <input 
                                         type="date" 
-                                        className="bg-transparent border-none p-0 text-table-header outline-none focus:ring-0 w-full text-black dark:text-slate-100"
+                                        className="bg-transparent border-none p-0 text-[11px] font-bold text-on-surface outline-none focus:ring-0 w-full"
                                         value={entry.data_consulta}
                                         onChange={(e) => {
                                           const newEntries = [...formEntries];
@@ -996,8 +1032,8 @@ export default function AtendimentosPage() {
                                     </div>
                                   </td>
                                   <td className="px-4 py-4">
-                                    <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-3 py-2">
-                                      <span className={`text-table-header ${selectedGestante && calculateTrimestre(selectedGestante.dum, entry.data_consulta) === 'FORA DO PERÍODO' ? 'text-red-600' : 'text-black dark:text-slate-100'}`}>
+                                    <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-3 py-2 min-h-[40px] flex items-center">
+                                      <span className={`text-[11px] font-bold text-on-surface ${selectedGestante && calculateTrimestre(selectedGestante.dum, entry.data_consulta) === 'FORA DO PERÍODO' ? 'text-red-600' : ''}`}>
                                         {selectedGestante ? calculateTrimestre(selectedGestante.dum, entry.data_consulta) : '---'}
                                       </span>
                                     </div>
@@ -1019,30 +1055,29 @@ export default function AtendimentosPage() {
                                         }}
                                       >
                                         <option value="">SELECIONE PROFISSIONAL</option>
-                                        {allProfessionals.map((p) => {
-                                          const cat = categories.find(c => p.cbo.startsWith(c.cbo));
-                                          return (
-                                            <option key={p.cpf} value={p.cpf}>{p.nome} - {cat?.categoria || 'OUTROS'}</option>
-                                          );
-                                        })}
+                                        {allProfessionals
+                                          .filter(p => p.categorias_profissionais?.grupo !== 'ADMINISTRATIVO')
+                                          .map((p) => (
+                                          <option key={p.cpf} value={p.cpf}>{p.nome}</option>
+                                        ))}
                                       </select>
-                                      <div className="text-table-header uppercase text-black dark:text-slate-100 break-words whitespace-normal pointer-events-none">
-                                        {entry.nome_profissional ? (
-                                          <>
-                                            <p className="font-black text-primary">{entry.nome_profissional}</p>
-                                            <p className="text-[10px] text-slate-500">{getCboCategory(allProfessionals.find(p => p.cpf === entry.cpf_profissional)?.cbo)}</p>
-                                          </>
-                                        ) : (
-                                          <p className="text-slate-400">SELECIONE PROFISSIONAL</p>
-                                        )}
+                                      <div className="text-[11px] font-bold text-on-surface uppercase break-words whitespace-normal pointer-events-none">
+                                        {entry.nome_profissional || entry.cpf_profissional ? allProfessionals.find(p => p.cpf === entry.cpf_profissional)?.nome || 'Selecione' : 'Selecione'}
                                       </div>
+                                    </div>
+                                  </td>
+                                  <td className="px-4 py-4">
+                                    <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-3 py-2">
+                                      <span className="text-[10px] font-bold text-on-surface bg-secondary/10 px-2 py-0.5 rounded-full">
+                                        {allProfessionals.find(p => p.cpf === entry.cpf_profissional)?.categorias_profissionais?.grupo || '---'}
+                                      </span>
                                     </div>
                                   </td>
                                   <td className="px-4 py-4">
                                     <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-3 py-2">
                                       <input 
                                         type="date" 
-                                        className="bg-transparent border-none p-0 text-table-header outline-none focus:ring-0 w-full text-black dark:text-slate-100"
+                                        className="bg-transparent border-none p-0 text-[11px] font-bold text-on-surface outline-none focus:ring-0 w-full"
                                         value={entry.data_proxima_consulta || ''}
                                         onChange={(e) => {
                                           const newEntries = [...formEntries];
@@ -1056,7 +1091,7 @@ export default function AtendimentosPage() {
                                     <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-3 py-2">
                                       <input 
                                         type="text"
-                                        className="bg-transparent border-none p-0 text-table-header outline-none focus:ring-0 w-full text-black dark:text-slate-100"
+                                        className="bg-transparent border-none p-0 text-[11px] font-bold text-on-surface outline-none focus:ring-0 w-full"
                                         value={entry.observacoes_clinicas || ''}
                                         onChange={(e) => {
                                           const newEntries = [...formEntries];
@@ -1091,11 +1126,11 @@ export default function AtendimentosPage() {
                     </div>
 
                     <div className="flex justify-end gap-2 mt-4">
-                      <button type="button" onClick={() => setIsFormOpen(false)} className="flex items-center gap-2 px-4 py-1.5 rounded-full text-table-header transition-all duration-300 bg-white text-primary border border-primary hover:bg-primary/5 shadow-lg shadow-primary/5">
+                      <button type="button" onClick={() => setIsFormOpen(false)} className="flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold transition-all duration-300 bg-white text-primary border border-primary hover:bg-primary/5 shadow-lg shadow-primary/5">
                         <span className="material-symbols-outlined text-sm">close</span>
                         Cancelar
                       </button>
-                      <button type="submit" className="flex items-center gap-2 px-4 py-1.5 rounded-full text-table-header transition-all duration-300 bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20">
+                      <button type="submit" className="flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold transition-all duration-300 bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20">
                         <span className="material-symbols-outlined text-sm">save</span>
                         Salvar Atendimento
                       </button>
@@ -1115,19 +1150,21 @@ export default function AtendimentosPage() {
                             <colgroup>
                               <col style={{ width: '12%' }} />
                               <col style={{ width: '10%' }} />
-                              <col style={{ width: '20%' }} />
+                              <col style={{ width: '18%' }} />
+                              <col style={{ width: '10%' }} />
+                              <col style={{ width: '18%' }} />
                               <col style={{ width: '12%' }} />
-                              <col style={{ width: '20%' }} />
                               <col style={{ width: '8%' }} />
                             </colgroup>
                             <thead className="bg-surface-container-low">
                               <tr>
-                                <th className="px-2 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Data Consulta</th>
-                                <th className="px-2 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Trimestre</th>
-                                <th className="px-2 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Profissional</th>
-                                <th className="px-2 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Próxima Consulta</th>
-                                <th className="px-2 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Observações</th>
-                                <th className="px-2 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-center">Ações</th>
+                                <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Data Consulta</th>
+                                <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Trimestre</th>
+                                <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Profissional</th>
+                                <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Grupo</th>
+                                <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Próxima Consulta</th>
+                                <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Observações</th>
+                                <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5 text-center">Ações</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-outline-variant/5">
@@ -1140,9 +1177,11 @@ export default function AtendimentosPage() {
                                     <div className="text-xs font-bold text-on-surface uppercase">{h.trimestre_consulta}</div>
                                   </td>
                                   <td className="px-2 py-1.5">
-                                    <div className="text-[9px]">
-                                      <p className="font-black text-sm text-on-surface uppercase">{allProfessionals.find(p => p.cpf === h.cpf)?.nome || '---'}</p>
-                                      <p className="font-bold text-on-surface-variant/60 uppercase">{getCboCategory(h.cbo)}</p>
+                                    <div className="text-xs font-bold text-on-surface uppercase">{allProfessionals.find(p => p.cpf === h.cpf)?.nome || '---'}</div>
+                                  </td>
+                                  <td className="px-2 py-1.5">
+                                    <div className="text-xs font-bold text-on-surface uppercase">
+                                      {h.grupo || '---'}
                                     </div>
                                   </td>
                                   <td className="px-2 py-1.5">
@@ -1195,43 +1234,49 @@ export default function AtendimentosPage() {
                           <colgroup>
                             <col style={{ width: '12%' }} />
                             <col style={{ width: '10%' }} />
-                            <col style={{ width: '20%' }} />
+                            <col style={{ width: '18%' }} />
+                            <col style={{ width: '10%' }} />
+                            <col style={{ width: '18%' }} />
                             <col style={{ width: '12%' }} />
-                            <col style={{ width: '20%' }} />
                             <col style={{ width: '8%' }} />
                           </colgroup>
                           <thead className="bg-surface-container-low">
                             <tr>
-                              <th className="px-2 py-2 text-[9px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Data Consulta</th>
-                              <th className="px-2 py-2 text-[9px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Trimestre</th>
-                              <th className="px-2 py-2 text-[9px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Profissional</th>
-                              <th className="px-2 py-2 text-[9px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Próx.</th>
-                              <th className="px-2 py-2 text-[9px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Observações</th>
-                              <th className="px-2 py-2 text-[9px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-center">Ações</th>
+                              <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Data Consulta</th>
+                              <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Trimestre</th>
+                              <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Profissional</th>
+                              <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Grupo</th>
+                              <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Próxima Consulta</th>
+                              <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Observações</th>
+                              <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5 text-center">Ações</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-outline-variant/5">
                             {selectedPatientHistory.map((h) => (
                               <tr key={h.id_consulta} className="hover:bg-primary/[0.02] transition-colors group">
                                 <td className="px-2 py-1.5">
-                                  <div className="text-[10px] font-bold text-on-surface">{new Date(h.data_consulta).toLocaleDateString('pt-BR')}</div>
+                                  <div className="text-xs font-bold text-on-surface">{new Date(h.data_consulta).toLocaleDateString('pt-BR')}</div>
                                 </td>
                                 <td className="px-2 py-1.5">
-                                  <div className="text-[10px] font-bold text-on-surface uppercase">{h.trimestre_consulta}</div>
+                                  <div className="text-xs font-bold text-on-surface uppercase">{h.trimestre_consulta}</div>
                                 </td>
                                 <td className="px-2 py-1.5">
-                                  <div className="text-[9px]">
-                                    <p className="font-black text-[10px] text-on-surface uppercase">{allProfessionals.find(p => p.cpf === h.cpf)?.nome || '---'}</p>
-                                    <p className="font-medium text-on-surface-variant/60 uppercase">{getCboCategory(h.cbo)}</p>
+                                  <div className="text-xs font-bold text-on-surface uppercase">
+                                    {allProfessionals.find(p => p.cpf === h.cpf)?.nome || '---'}
                                   </div>
                                 </td>
                                 <td className="px-2 py-1.5">
-                                  <div className="text-[10px] font-bold text-on-surface">
+                                  <div className="text-xs font-bold text-on-surface uppercase">
+                                    {h.grupo || '---'}
+                                  </div>
+                                </td>
+                                <td className="px-2 py-1.5">
+                                  <div className="text-xs font-bold text-on-surface">
                                     {h.data_proxima_consulta ? new Date(h.data_proxima_consulta).toLocaleDateString('pt-BR') : '---'}
                                   </div>
                                 </td>
                                 <td className="px-2 py-1.5">
-                                  <div className="text-[10px] font-medium text-on-surface-variant truncate max-w-[120px]">
+                                  <div className="text-xs font-medium text-on-surface-variant truncate">
                                     {h.observacoes_clinicas || '---'}
                                   </div>
                                 </td>
@@ -1279,7 +1324,7 @@ export default function AtendimentosPage() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap items-center gap-3 w-full md:w-auto">
               <select 
-                className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
+                className="w-full lg:w-auto px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
                 value={filters.unidade}
                 onChange={(e) => setFilters({ ...filters, unidade: e.target.value })}
               >
@@ -1290,7 +1335,7 @@ export default function AtendimentosPage() {
               </select>
               
               <select 
-                className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
+                className="w-full lg:w-auto px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
                 value={filters.status}
                 onChange={(e) => setFilters({ ...filters, status: e.target.value })}
               >
@@ -1300,7 +1345,7 @@ export default function AtendimentosPage() {
               </select>
 
               <select 
-                className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
+                className="w-full lg:w-auto px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
                 value={filters.dpp}
                 onChange={(e) => setFilters({ ...filters, dpp: e.target.value })}
               >
@@ -1311,7 +1356,7 @@ export default function AtendimentosPage() {
               </select>
 
               <select 
-                className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
+                className="w-full lg:w-auto px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
                 value={filters.trimestre}
                 onChange={(e) => setFilters({ ...filters, trimestre: e.target.value as any })}
               >
@@ -1322,7 +1367,7 @@ export default function AtendimentosPage() {
               </select>
 
               <select 
-                className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
+                className="w-full lg:w-auto px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
                 value={filters.categoria}
                 onChange={(e) => setFilters({ ...filters, categoria: e.target.value })}
               >
@@ -1333,7 +1378,7 @@ export default function AtendimentosPage() {
               </select>
 
               <select 
-                className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
+                className="w-full lg:w-auto px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
                 value={filters.equipe}
                 onChange={(e) => setFilters({ ...filters, equipe: e.target.value })}
               >
@@ -1360,12 +1405,12 @@ export default function AtendimentosPage() {
                     <table className="w-full text-left border-separate border-spacing-0">
                       <thead className="sticky top-0 z-30 bg-surface-container-low">
                         <tr>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Gestante</th>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Status</th>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Registros</th>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">DPP</th>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Alertas</th>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-center">Ações</th>
+                          <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Gestante</th>
+                          <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Status</th>
+                          <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Registros</th>
+                          <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">DPP</th>
+                          <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Alertas</th>
+                          <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5 text-center">Ações</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-outline-variant/5">
@@ -1378,9 +1423,9 @@ export default function AtendimentosPage() {
                             <tr key={p.sispn} className="hover:bg-primary/[0.02] transition-colors group">
                               <td className="px-4 py-3">
                                 <div className="flex flex-col gap-0.5">
-                                  <span className="text-[10px] font-mono font-bold text-primary">CPF: {p.paciente_cpf !== 'NÃO INFORMADO' ? formatCpf(p.paciente_cpf) : '---'}</span>
+                                  <span className="text-[11px] font-bold text-primary">CPF: {p.paciente_cpf !== 'NÃO INFORMADO' ? formatCpf(p.paciente_cpf) : '---'}</span>
                                   <p className="font-black text-xs text-on-surface uppercase leading-tight">{p.paciente_nome}</p>
-                                  <span className="text-[10px] font-mono font-bold text-primary">SISPN: {formatSispn(p.sispn)}</span>
+                                  <span className="text-[11px] font-bold text-primary">SISPN: {formatSispn(p.sispn)}</span>
                                 </div>
                               </td>
                               <td className="px-4 py-3">
@@ -1394,33 +1439,33 @@ export default function AtendimentosPage() {
                                     p.currentTrimester === '3º TRIMESTRE' ? 'bg-orange-100 text-orange-600' :
                                     'bg-surface-container-high text-on-surface-variant/40'
                                   }`}>
-                                    {p.currentTrimester}
+                                    {p.currentTrimester === '1º TRIMESTRE' ? 'PRIMEIRO' : p.currentTrimester === '2º TRIMESTRE' ? 'SEGUNDO' : p.currentTrimester === '3º TRIMESTRE' ? 'TERCEIRO' : p.currentTrimester}
                                   </span>
                                 </div>
                               </td>
                               <td className="px-4 py-3">
                                 <div className="flex flex-col gap-0.5">
-                                  <span className="text-[10px] font-bold text-on-surface">{p.atendimentosCount} reg.</span>
-                                  <span className="text-[10px] text-on-surface-variant/50">{p.lastAtendimentoDate ? new Date(p.lastAtendimentoDate).toLocaleDateString('pt-BR') : '---'}</span>
+                                  <span className="text-[11px] font-bold text-on-surface">{p.atendimentosCount} reg.</span>
+                                  <span className="text-[11px] font-bold text-on-surface">{p.lastAtendimentoDate ? new Date(p.lastAtendimentoDate).toLocaleDateString('pt-BR') : '---'}</span>
                                 </div>
                               </td>
                               <td className="px-4 py-3">
                                 <div className="flex flex-col gap-0.5">
-                                  <span className={`text-[10px] font-bold ${p.weeksToDpp !== null && p.weeksToDpp <= 4 ? 'text-error' : p.weeksToDpp !== null && p.weeksToDpp <= 12 ? 'text-warning' : 'text-on-surface'}`}>
+                                  <span className={`text-[11px] font-bold ${p.weeksToDpp !== null && p.weeksToDpp <= 4 ? 'text-error' : p.weeksToDpp !== null && p.weeksToDpp <= 12 ? 'text-warning' : 'text-on-surface'}`}>
                                     {p.weeksToDpp !== null ? `${p.weeksToDpp} sem` : '---'}
                                   </span>
-                                  <span className="text-[9px] text-on-surface-variant/50">{p.dpp ? new Date(p.dpp).toLocaleDateString('pt-BR') : '---'}</span>
+                                  <span className="text-[11px] font-bold text-on-surface">{p.dpp ? new Date(p.dpp).toLocaleDateString('pt-BR') : '---'}</span>
                                 </div>
                               </td>
                               <td className="px-4 py-3">
                                 {p.hasAlert ? (
                                   <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-error/10 text-error flex items-center gap-1 w-fit">
-                                    <span className="material-symbols-outlined text-[10px]">warning</span>
+                                    <span className="material-symbols-outlined text-[11px]">warning</span>
                                     {p.alertMessage}
                                   </span>
                                 ) : (
                                   <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-success/10 text-success flex items-center gap-1 w-fit">
-                                    <span className="material-symbols-outlined text-[10px]">check_circle</span>
+                                    <span className="material-symbols-outlined text-[11px]">check_circle</span>
                                     OK
                                   </span>
                                 )}
@@ -1460,8 +1505,8 @@ export default function AtendimentosPage() {
                   <p className="text-sm text-on-surface-variant font-body">Esta ação é permanente. Deseja continuar?</p>
                 </div>
                 <div className="flex gap-3">
-                  <button onClick={() => setDeleteConfirmId(null)} className="flex-1 bg-surface-container-high text-on-surface font-black py-4 rounded-2xl uppercase tracking-widest text-[10px]">Cancelar</button>
-                  <button onPointerDown={() => handleDelete(deleteConfirmId)} className="flex-1 bg-red-600 text-white font-black py-4 rounded-2xl uppercase tracking-widest text-[10px]">Excluir</button>
+                  <button onClick={() => setDeleteConfirmId(null)} className="flex-1 bg-surface-container-high text-on-surface font-black py-4 rounded-2xl uppercase tracking-widest text-[11px]">Cancelar</button>
+                  <button onPointerDown={() => handleDelete(deleteConfirmId)} className="flex-1 bg-red-600 text-white font-black py-4 rounded-2xl uppercase tracking-widest text-[11px]">Excluir</button>
                 </div>
               </motion.div>
             </div>
