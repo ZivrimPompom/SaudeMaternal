@@ -587,7 +587,7 @@ export default function GestacoesAtivasDashboard() {
                       <tr key={g.sispn} className="hover:bg-primary/5 transition-colors">
                         <td className="px-4 py-3 font-medium">{formatSispn(g.sispn)}</td>
                         <td className="px-4 py-3">{paciente?.gestante || '---'}</td>
-                        <td className="px-4 py-3">{g.dum ? new Date(g.dum).toLocaleDateString('pt-BR') : '---'}</td>
+                        <td className="px-4 py-3 text-[10px] font-bold text-on-surface">{g.dum ? new Date(g.dum).toLocaleDateString('pt-BR') : '---'}</td>
                         <td className="px-4 py-3">{weeks} sem</td>
                         <td className="px-4 py-3">
                           <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${

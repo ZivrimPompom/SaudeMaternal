@@ -41,7 +41,7 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
   const isUnidadesPage = pathname === '/unidades';
   const isGestacoesPage = pathname === '/gestacoes';
   const isAtendimentosPage = pathname === '/atendimentos';
-  const isExamesPage = pathname === '/exames';
+  const isExamesPage = pathname === '/rotinas';
   const isDesfechosPage = pathname === '/desfechos';
   
   const [isProfileOpen, setIsProfileOpen] = useState(false);

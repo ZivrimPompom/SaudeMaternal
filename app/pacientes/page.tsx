@@ -626,7 +626,7 @@ export default function PacientesPage() {
                     <div className="pt-4 flex flex-col gap-3">
                       <button 
                         type="submit"
-                        className="w-full bg-primary text-white font-black py-5 rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 font-headline uppercase tracking-widest text-[10px]"
+                        className="w-full bg-primary text-white font-black py-5 rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 font-headline uppercase tracking-widest text-[11px]"
                       >
                         <span className="material-symbols-outlined text-lg">{editingId ? 'save' : 'person_add'}</span>
                         {editingId ? 'Atualizar Paciente' : 'Cadastrar Paciente'}
@@ -683,7 +683,7 @@ export default function PacientesPage() {
               <div className="px-6 md:px-10 py-4 border-b border-outline-variant/5">
                 <div className="flex flex-col sm:flex-row flex-wrap items-start gap-3">
                   <select 
-                    className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
+                    className="w-full lg:w-auto px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
                     value={unidadeFilter}
                     onChange={(e) => { setUnidadeFilter(e.target.value); setCurrentPage(1); }}
                   >
@@ -694,7 +694,7 @@ export default function PacientesPage() {
                   </select>
 
                   <select 
-                    className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
+                    className="w-full lg:w-auto px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
                     value={lifeStageFilter}
                     onChange={(e) => { setLifeStageFilter(e.target.value); setCurrentPage(1); }}
                   >
@@ -755,9 +755,9 @@ export default function PacientesPage() {
                               >
                                 <td className="px-4 py-5">
                                   <div className="flex flex-col gap-1 text-justify">
-                                    <span className="text-[10px] font-mono font-bold text-orange-600">CPF: {formatCpf(pac.cpf || '')}</span>
+                                    <span className="text-[11px] font-bold text-orange-600">CPF: {formatCpf(pac.cpf || '')}</span>
                                     <p className="font-black text-on-surface font-headline text-base group-hover:text-orange-600 transition-colors uppercase">{pac.gestante}</p>
-                                    <span className="text-[10px] font-mono font-bold text-orange-600">CNS: {formatCns(pac.cns || '') || '---'}</span>
+                                    <span className="text-[11px] font-bold text-orange-600">CNS: {formatCns(pac.cns || '') || '---'}</span>
                                   </div>
                                 </td>
                                 <td className="px-4 py-5">
@@ -864,7 +864,7 @@ export default function PacientesPage() {
                 </button>
                 <button 
                   onClick={() => setDeleteConfirmId(null)}
-                  className="w-full bg-surface-container-high text-on-surface-variant font-black py-4 rounded-2xl hover:bg-surface-container-highest transition-all font-headline uppercase tracking-widest text-[10px]"
+                  className="w-full bg-surface-container-high text-on-surface-variant font-black py-4 rounded-2xl hover:bg-surface-container-highest transition-all font-headline uppercase tracking-widest text-[11px]"
                 >
                   Cancelar
                 </button>
