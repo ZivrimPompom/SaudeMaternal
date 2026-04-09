@@ -13,6 +13,7 @@ import SearchInput from '@/components/SearchInput';
 interface Categoria {
   cbo: string;
   categoria: string;
+  grupo?: string;
 }
 
 interface Profissional {
