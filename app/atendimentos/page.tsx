@@ -1058,7 +1058,7 @@ export default function AtendimentosPage() {
                                       >
                                         <option value="">SELECIONE PROFISSIONAL</option>
                                         {allProfessionals
-                                          .filter(p => p.categorias_profissionais?.grupo !== 'ADMINISTRATIVO')
+                                          .filter(p => p.categorias_profissionais?.[0]?.grupo !== 'ADMINISTRATIVO')
                                           .map((p) => (
                                           <option key={p.cpf} value={p.cpf}>{p.nome}</option>
                                         ))}
@@ -1071,7 +1071,7 @@ export default function AtendimentosPage() {
                                   <td className="px-4 py-4">
                                     <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-3 py-2">
                                       <span className="text-[10px] font-bold text-on-surface bg-secondary/10 px-2 py-0.5 rounded-full">
-                                        {allProfessionals.find(p => p.cpf === entry.cpf_profissional)?.categorias_profissionais?.grupo || '---'}
+                                        {allProfessionals.find(p => p.cpf === entry.cpf_profissional)?.categorias_profissionais?.[0]?.grupo || '---'}
                                       </span>
                                     </div>
                                   </td>
