@@ -65,8 +65,8 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
       icon: 'sync_alt', 
       subItems: [
         { name: 'Atendimentos', href: '/atendimentos' },
-        { name: 'Exames e Vacinas', href: '/exames' },
-        { name: 'Desfecho da Gestação', href: '/desfechos' },
+        { name: 'Rotinas', href: '/rotinas' },
+        { name: 'Desfechos', href: '/desfechos' },
       ]
     },
     { 

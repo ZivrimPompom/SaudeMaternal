@@ -722,7 +722,7 @@ export default function AcompanhamentoIndividual() {
                     return (
                       <tr key={a.id_atendimento || `atendimento-${idx}`} className="hover:bg-primary/5">
                         <td style={{ width: '16px' }}></td>
-                        <td className="px-4 py-2">{a.data_consulta ? new Date(a.data_consulta).toLocaleDateString('pt-BR') : '---'}</td>
+                        <td className="px-4 py-2 text-[10px] font-bold text-on-surface">{a.data_consulta ? new Date(a.data_consulta).toLocaleDateString('pt-BR') : '---'}</td>
                         <td className="px-4 py-2">{a.trimestre_consulta}</td>
                         <td className="px-4 py-2">{cat?.categoria || a.cbo || '---'}</td>
                         <td className="px-4 py-2 text-on-surface-variant/60 truncate max-w-xs">

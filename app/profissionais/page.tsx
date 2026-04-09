@@ -134,7 +134,7 @@ export default function ProfissionaisPage() {
     
     let prosResponse = await supabase
       .from('profissionais')
-      .select('*, categorias_profissionais(cbo, categoria), unidades_saude(cnes, nome_fantasia)')
+      .select('*, categorias_profissionais(cbo, categoria, grupo), unidades_saude(cnes, nome_fantasia)')
       .order('nome')
       .limit(5000);
     
@@ -605,7 +605,7 @@ export default function ProfissionaisPage() {
 
               <div className="px-6 md:px-10 pt-6 pb-4 flex flex-wrap items-center gap-3 border-b border-outline-variant/5">
                 <select 
-                  className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
+                  className="w-full lg:w-auto px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
                   value={unidadeFilter}
                   onChange={(e) => { setUnidadeFilter(e.target.value); setCurrentPage(1); }}
                 >
@@ -643,14 +643,14 @@ export default function ProfissionaisPage() {
                     <table className="w-full text-left border-separate border-spacing-0 min-w-[900px]">
                       <thead className="sticky top-0 z-30 bg-surface-container-low">
                         <tr>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Nome</th>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Unidade</th>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Categoria</th>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">CPF</th>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">CNS</th>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Equipe</th>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Situação</th>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-center">Ações</th>
+                          <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Nome</th>
+                          <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Unidade</th>
+                          <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Categoria</th>
+                          <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Grupo</th>
+                          <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Documentação</th>
+                          <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Equipe</th>
+                          <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Situação</th>
+                          <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5 text-center">Ações</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-outline-variant/5">
@@ -666,26 +666,31 @@ export default function ProfissionaisPage() {
                                 <p className="font-black text-xs text-on-surface uppercase leading-tight">{pro.nome}</p>
                               </td>
                               <td className="px-4 py-3">
-                                <div className="text-[10px]">
-                                  <p className="font-black text-primary uppercase">{pro.unidades_saude?.nome_fantasia || pro.unidade_cnes || '---'}</p>
-                                  <p className="text-[9px] text-on-surface-variant/50">CNES: {pro.unidades_saude?.cnes || pro.unidade_cnes || '---'}</p>
+                                <div className="text-[10px] space-y-1">
+                                  <p className="font-bold text-primary">{pro.unidades_saude?.nome_fantasia || pro.unidade_cnes || '---'}</p>
+                                  <p className="font-bold text-on-surface">CNES: {pro.unidades_saude?.cnes || pro.unidade_cnes || '---'}</p>
                                 </div>
                               </td>
                               <td className="px-4 py-3">
-                                <div className="text-[10px]">
-                                  <p className="font-black text-primary uppercase">{pro.categorias_profissionais?.categoria || '---'}</p>
-                                  <p className="text-[9px] text-on-surface-variant/50">CBO: {pro.categorias_profissionais?.cbo || '---'}</p>
+                                <div className="text-[10px] space-y-1">
+                                  <p className="font-bold text-primary">{pro.categorias_profissionais?.categoria || '---'}</p>
+                                  <p className="font-bold text-on-surface">CBO: {pro.categorias_profissionais?.cbo || '---'}</p>
                                 </div>
                               </td>
                               <td className="px-4 py-3">
-                                <span className="text-[10px] font-mono font-bold text-primary">{formatCpf(pro.cpf)}</span>
+                                <span className="text-[10px] font-black text-on-surface uppercase bg-secondary/10 px-2 py-1 rounded-full">
+                                  {pro.categorias_profissionais?.grupo || '---'}
+                                </span>
                               </td>
                               <td className="px-4 py-3">
-                                <span className="text-[10px] font-mono text-on-surface">{formatCns(pro.cns) || '---'}</span>
+                                <div className="text-[10px] space-y-1">
+                                  <p className="font-bold text-primary">CPF: {formatCpf(pro.cpf)}</p>
+                                  <p className="font-bold text-on-surface">CNS: {formatCns(pro.cns) || '---'}</p>
+                                </div>
                               </td>
                               <td className="px-4 py-3">
                                 <span className="text-[9px] font-black text-on-surface uppercase tracking-widest bg-primary/5 px-2 py-0.5 rounded-full">
-                                  {pro.equipe || 'SEM EQUIPE'}
+                                  {pro.equipe ? pro.equipe.replace(/^EQUIPE\s*/i, '') : 'N/A'}
                                 </span>
                               </td>
                               <td className="px-4 py-3">
@@ -763,7 +768,7 @@ export default function ProfissionaisPage() {
                 </button>
                 <button 
                   onClick={() => setDeleteConfirmCpf(null)}
-                  className="w-full bg-surface-container-high text-on-surface-variant font-black py-4 rounded-2xl hover:bg-surface-container-highest transition-all font-headline uppercase tracking-widest text-[10px]"
+                  className="w-full bg-surface-container-high text-on-surface-variant font-black py-4 rounded-2xl hover:bg-surface-container-highest transition-all font-headline uppercase tracking-widest text-[11px]"
                 >
                   Cancelar
                 </button>

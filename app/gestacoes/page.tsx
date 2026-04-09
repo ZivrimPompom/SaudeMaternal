@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Pagination from '@/components/Pagination';
 import RecordsSummary from '@/components/RecordsSummary';
 import SearchInput from '@/components/SearchInput';
+import Link from 'next/link';
 
 interface Gestacao {
   sispn: string;
@@ -912,7 +913,7 @@ export default function GestacoesPage() {
 
                     {/* Identificação da Gestante */}
                     <div className="space-y-4">
-                      <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/40 border-b border-primary/10 pb-2">Identificação da Gestante</h4>
+                      <h4 className="text-[11px] font-black uppercase tracking-[0.3em] text-primary/40 border-b border-primary/10 pb-2">Identificação da Gestante</h4>
                       
                       {/* Linha 1: Nome | CPF | SISPN */}
                       <div className="grid grid-cols-4 gap-4">
@@ -942,7 +943,7 @@ export default function GestacoesPage() {
                                   className="absolute top-full left-0 right-0 z-50 mt-2 bg-surface-container-lowest rounded-2xl shadow-2xl border-4 border-primary overflow-hidden"
                                 >
                                   <div className="bg-primary px-6 py-3">
-                                    <p className="text-white text-[10px] font-black uppercase tracking-widest">Selecione a gestante</p>
+                                    <p className="text-white text-[11px] font-black uppercase tracking-widest">Selecione a gestante</p>
                                   </div>
                                   <div className="max-h-60 overflow-y-auto">
                                     {filteredPacientesLookup.length > 0 ? (
@@ -957,12 +958,12 @@ export default function GestacoesPage() {
                                           }}
                                           className="w-full px-6 py-4 text-left hover:bg-primary/5 transition-colors border-b border-outline-variant/5 last:border-0 group"
                                         >
-                                          <p className="text-[10px] font-black text-on-surface uppercase truncate">{p.gestante}</p>
+                                          <p className="text-[11px] font-black text-on-surface uppercase truncate">{p.gestante}</p>
                                           <p className="text-[9px] text-on-surface-variant/60">{formatCpf(p.cpf)}</p>
                                         </button>
                                       ))
                                     ) : (
-                                      <div className="px-6 py-6 text-center text-on-surface-variant/30 text-[10px] font-black uppercase">Nenhuma paciente encontrada</div>
+                                      <div className="px-6 py-6 text-center text-on-surface-variant/30 text-[11px] font-black uppercase">Nenhuma paciente encontrada</div>
                                     )}
                                   </div>
                                 </motion.div>
@@ -1043,7 +1044,7 @@ export default function GestacoesPage() {
 
                     {/* Datas e Prazos */}
                     <div className="space-y-4">
-                      <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/40 border-b border-primary/10 pb-2">DPP Gestacional</h4>
+                      <h4 className="text-[11px] font-black uppercase tracking-[0.3em] text-primary/40 border-b border-primary/10 pb-2">DPP Gestacional</h4>
                       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div className="space-y-2">
                           <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">DUM (Última Menstruação)</label>
@@ -1095,13 +1096,13 @@ export default function GestacoesPage() {
                         </div>
                         <div className="bg-secondary/5 p-4 rounded-2xl border border-secondary/10 flex justify-between items-center">
                           <span className="text-[8px] font-black uppercase tracking-widest text-secondary/60">Captação</span>
-                          <span className={`text-[10px] font-black px-3 py-1 rounded-full ${getStatusCaptacao(formData.dum || '', formData.data_cadastro || '') === 'PRECOCE' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+                          <span className={`text-[11px] font-black px-3 py-1 rounded-full ${getStatusCaptacao(formData.dum || '', formData.data_cadastro || '') === 'PRECOCE' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
                             {getStatusCaptacao(formData.dum || '', formData.data_cadastro || '')}
                           </span>
                         </div>
                         <div className="bg-secondary/5 p-4 rounded-2xl border border-secondary/10 flex justify-between items-center">
                           <span className="text-[8px] font-black uppercase tracking-widest text-secondary/60">Status Ciclo</span>
-                          <span className={`text-[10px] font-black px-3 py-1 rounded-full ${getGestacaoStatus(formData.dpp || '') === 'ATIVA' ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'}`}>
+                          <span className={`text-[11px] font-black px-3 py-1 rounded-full ${getGestacaoStatus(formData.dpp || '') === 'ATIVA' ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'}`}>
                             {getGestacaoStatus(formData.dpp || '')}
                           </span>
                         </div>
@@ -1110,7 +1111,7 @@ export default function GestacoesPage() {
 
                     {/* Responsáveis */}
                     <div className="space-y-4">
-                      <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/40 border-b border-primary/10 pb-2">Responsáveis e Equipe</h4>
+                      <h4 className="text-[11px] font-black uppercase tracking-[0.3em] text-primary/40 border-b border-primary/10 pb-2">Responsáveis e Equipe</h4>
                       <div className="grid grid-cols-5 gap-4">
                         <div className="col-span-2 space-y-2 relative" ref={rtDropdownRef}>
                           <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Referência Técnica (Enfermeiro)</label>
@@ -1137,7 +1138,7 @@ export default function GestacoesPage() {
                                   className="absolute top-full left-0 right-0 z-50 mt-2 bg-surface-container-lowest rounded-2xl shadow-2xl border-4 border-primary overflow-hidden"
                                 >
                                   <div className="bg-primary px-6 py-3">
-                                    <p className="text-white font-black text-[10px] uppercase tracking-widest">Selecione o enfermeiro...</p>
+                                    <p className="text-white font-black text-[11px] uppercase tracking-widest">Selecione o enfermeiro...</p>
                                   </div>
                                   <div className="max-h-60 overflow-y-auto">
                                     {rtSearchResults.map(p => (
@@ -1151,7 +1152,7 @@ export default function GestacoesPage() {
                                         }}
                                         className="w-full text-left px-6 py-4 hover:bg-primary/5 transition-colors flex flex-col gap-1 border-b border-outline-variant/5 last:border-0 group"
                                       >
-                                        <span className="text-[10px] font-black text-on-surface uppercase group-hover:scale-105 transition-transform origin-left">{p.nome}</span>
+                                        <span className="text-[11px] font-black text-on-surface uppercase group-hover:scale-105 transition-transform origin-left">{p.nome}</span>
                                         <span className="text-[9px] font-bold text-on-surface-variant/60">{p.equipe}</span>
                                       </button>
                                     ))}
@@ -1187,7 +1188,7 @@ export default function GestacoesPage() {
                                   className="absolute top-full left-0 right-0 z-50 mt-2 bg-surface-container-lowest rounded-2xl shadow-2xl border-4 border-primary overflow-hidden"
                                 >
                                   <div className="bg-primary px-6 py-3">
-                                    <p className="text-white font-black text-[10px] uppercase tracking-widest">Selecione o ACS...</p>
+                                    <p className="text-white font-black text-[11px] uppercase tracking-widest">Selecione o ACS...</p>
                                   </div>
                                   <div className="max-h-60 overflow-y-auto">
                                     {acsSearchResults.map(p => (
@@ -1201,7 +1202,7 @@ export default function GestacoesPage() {
                                         }}
                                         className="w-full text-left px-6 py-4 hover:bg-primary/5 transition-colors flex flex-col gap-1 border-b border-outline-variant/5 last:border-0 group"
                                       >
-                                        <span className="text-[10px] font-black text-on-surface uppercase group-hover:scale-105 transition-transform origin-left">{p.nome}</span>
+                                        <span className="text-[11px] font-black text-on-surface uppercase group-hover:scale-105 transition-transform origin-left">{p.nome}</span>
                                         <span className="text-[9px] font-bold text-on-surface-variant/60">{p.equipe}</span>
                                       </button>
                                     ))}
@@ -1225,7 +1226,7 @@ export default function GestacoesPage() {
 
                     {/* Histórico e Clínico */}
                     <div className="space-y-4">
-                      <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/40 border-b border-primary/10 pb-2">Histórico e Dados Clínicos</h4>
+                      <h4 className="text-[11px] font-black uppercase tracking-[0.3em] text-primary/40 border-b border-primary/10 pb-2">Histórico e Dados Clínicos</h4>
                       <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
                         <div className="space-y-2">
                           <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Gest. Ant.</label>
@@ -1301,7 +1302,7 @@ export default function GestacoesPage() {
                     <div className="pt-6 flex flex-col gap-3">
                       <button 
                         type="submit"
-                        className="w-full bg-primary text-white font-black py-5 rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 font-headline uppercase tracking-widest text-[10px]"
+                        className="w-full bg-primary text-white font-black py-5 rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 font-headline uppercase tracking-widest text-[11px]"
                       >
                         <span className="material-symbols-outlined text-lg">{editingId ? 'edit' : 'add'}</span>
                         {editingId ? 'Atualizar Gestação' : 'Cadastrar Gestação'}
@@ -1341,7 +1342,7 @@ export default function GestacoesPage() {
               <div className="px-6 md:px-10 pb-6 flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-outline-variant/5">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap items-center gap-3 w-full md:w-auto">
                   <select 
-                    className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
+                    className="w-full lg:w-auto px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
                     value={filters.unidade}
                     onChange={(e) => { setFilters({ ...filters, unidade: e.target.value }); setCurrentPage(1); }}
                   >
@@ -1350,7 +1351,7 @@ export default function GestacoesPage() {
                   </select>
 
                   <select 
-                    className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
+                    className="w-full lg:w-auto px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
                     value={filters.status}
                     onChange={(e) => { setFilters({ ...filters, status: e.target.value }); setCurrentPage(1); }}
                   >
@@ -1360,7 +1361,7 @@ export default function GestacoesPage() {
                   </select>
 
                   <select 
-                    className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
+                    className="w-full lg:w-auto px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
                     value={filters.dpp}
                     onChange={(e) => { setFilters({ ...filters, dpp: e.target.value }); setCurrentPage(1); }}
                   >
@@ -1369,7 +1370,7 @@ export default function GestacoesPage() {
                   </select>
 
                   <select 
-                    className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
+                    className="w-full lg:w-auto px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
                     value={filters.captacao}
                     onChange={(e) => { setFilters({ ...filters, captacao: e.target.value }); setCurrentPage(1); }}
                   >
@@ -1379,7 +1380,7 @@ export default function GestacoesPage() {
                   </select>
 
                   <select 
-                    className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
+                    className="w-full lg:w-auto px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
                     value={filters.referencia}
                     onChange={(e) => { setFilters({ ...filters, referencia: e.target.value }); setCurrentPage(1); }}
                   >
@@ -1388,7 +1389,7 @@ export default function GestacoesPage() {
                   </select>
 
                   <select 
-                    className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
+                    className="w-full lg:w-auto px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
                     value={filters.acs}
                     onChange={(e) => { setFilters({ ...filters, acs: e.target.value }); setCurrentPage(1); }}
                   >
@@ -1426,13 +1427,13 @@ export default function GestacoesPage() {
                     <table className="w-full text-left border-separate border-spacing-0 min-w-[1000px]">
                       <thead className="sticky top-0 z-30 bg-surface-container-low">
                         <tr>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Gestante</th>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Status</th>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Semanas</th>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Idade</th>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">DUM / DPP</th>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Equipe</th>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-center">Ações</th>
+                          <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40">Gestante</th>
+                          <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40">Status</th>
+                          <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40">Semanas</th>
+                          <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40">Idade</th>
+                          <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40">DUM / DPP</th>
+                          <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40">Equipe</th>
+                          <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 text-center">Ações</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-outline-variant/5">
@@ -1448,9 +1449,9 @@ export default function GestacoesPage() {
                               <motion.tr layout key={g.sispn} className="hover:bg-primary/[0.02] transition-colors group">
                                 <td className="px-4 py-3">
                                   <div className="flex flex-col gap-0.5">
-                                    <span className="text-[10px] font-mono font-bold text-primary">CPF: {formatCpf(g.cpf_paciente)}</span>
+                                    <span className="text-[11px] font-bold text-primary">CPF: {formatCpf(g.cpf_paciente)}</span>
                                     <p className="font-black text-xs text-on-surface uppercase leading-tight">{g.paciente_nome}</p>
-                                    <span className="text-[10px] font-mono font-bold text-primary">SISPN: {formatSispn(g.sispn)}</span>
+                                    <span className="text-[11px] font-bold text-primary">SISPN: {formatSispn(g.sispn)}</span>
                                   </div>
                                 </td>
                                 <td className="px-4 py-3">
@@ -1461,7 +1462,7 @@ export default function GestacoesPage() {
                                   </span>
                                 </td>
                                 <td className="px-4 py-3">
-                                  <span className="text-[10px] font-black text-on-surface">{weeks} SEM</span>
+                                  <span className="text-[11px] font-black text-on-surface">{weeks} SEM</span>
                                   <span className={`text-[9px] font-black px-2 py-0.5 rounded-full block w-fit mt-1 ${
                                     captacao === 'PRECOCE' ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'
                                   }`}>
@@ -1470,7 +1471,7 @@ export default function GestacoesPage() {
                                 </td>
                                 <td className="px-4 py-3">
                                   <div className="flex flex-col gap-0.5">
-                                    <span className="text-[10px] font-bold text-on-surface">{ageInfo.ageText}</span>
+                                    <span className="text-[11px] font-bold text-on-surface">{ageInfo.ageText}</span>
                                     <span className={`text-[9px] font-black px-2 py-0.5 rounded-full w-fit ${
                                       ageInfo.lifeStage === 'INFÂNCIA' ? 'bg-blue-100 text-blue-700' :
                                       ageInfo.lifeStage === 'ADOLESCÊNCIA' ? 'bg-purple-100 text-purple-700' :
@@ -1483,14 +1484,14 @@ export default function GestacoesPage() {
                                 </td>
                                 <td className="px-4 py-3">
                                   <div className="flex flex-col gap-0.5">
-                                    <span className="text-[10px] text-on-surface">DUM: {new Date(g.dum).toLocaleDateString('pt-BR')}</span>
-                                    <span className="text-[10px] text-on-surface">DPP: {new Date(g.dpp).toLocaleDateString('pt-BR')}</span>
+                                    <span className="text-[11px] font-bold text-on-surface">DUM: {new Date(g.dum).toLocaleDateString('pt-BR')}</span>
+                                    <span className="text-[11px] font-bold text-on-surface">DPP: {new Date(g.dpp).toLocaleDateString('pt-BR')}</span>
                                   </div>
                                 </td>
                                 <td className="px-4 py-3">
                                   <div className="flex flex-col gap-0.5">
-                                    <span className="text-[9px] font-black text-primary uppercase">{g.equipe}</span>
-                                    <span className="text-[9px] text-on-surface-variant/50 uppercase">{g.referencia_tecnica_nome}</span>
+                                    <span className="text-[11px] font-bold text-primary">{g.equipe}</span>
+                                    <span className="text-[11px] font-bold text-on-surface uppercase">{g.referencia_tecnica_nome}</span>
                                     <span className="text-[9px] text-on-surface-variant/40 uppercase">ACS: {g.acs_nome}</span>
                                   </div>
                                 </td>
@@ -1502,6 +1503,9 @@ export default function GestacoesPage() {
                                     <button onClick={() => setDeleteConfirmId(g.sispn)} className="p-1.5 rounded-lg bg-error text-white hover:bg-error/80 transition-all" title="Excluir">
                                       <span className="material-symbols-outlined text-sm">delete</span>
                                     </button>
+                                    <Link href={`/dashboard/acompanhamento/${g.sispn}`} className="p-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all" title="Acompanhamento">
+                                      <span className="material-symbols-outlined text-sm">monitoring</span>
+                                    </Link>
                                   </div>
                                 </td>
                               </motion.tr>

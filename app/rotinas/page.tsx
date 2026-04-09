@@ -13,10 +13,12 @@ import SearchInput from '@/components/SearchInput';
 
 interface Rotina {
   id: string;
-  tipo: 'EXAME' | 'VACINA' | 'MEDICACAO';
+  tipo: 'EXAME' | 'VACINA' | 'MEDICACAO' | 'CONSULTA';
   descricao: string;
   trimestre: 'PRIMEIRO' | 'SEGUNDO' | 'TERCEIRO';
   categoria: 'OBRIGATORIO' | 'OPCIONAL' | 'EVENTUAL';
+  quantidade?: number;
+  grupo?: string;
   unidade_cnes?: string;
   cpf_operador?: string;
   operador_nome?: string;
@@ -44,12 +46,15 @@ export default function RotinasPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [grupos, setGrupos] = useState<{nome: string}[]>([]);
 
   const [formData, setFormData] = useState<Partial<Rotina>>({
     tipo: 'EXAME',
     descricao: '',
     trimestre: 'PRIMEIRO',
-    categoria: 'OBRIGATORIO'
+    categoria: 'OBRIGATORIO',
+    quantidade: 1,
+    grupo: ''
   });
 
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -68,13 +73,24 @@ export default function RotinasPage() {
     }
     setLoading(true);
     
-    const { data, error: fetchError } = await supabase
-      .from('rotinas')
-      .select('*')
-      .order('created_at', { ascending: false });
+    const [rotinasRes, gruposRes] = await Promise.all([
+      supabase
+        .from('rotinas')
+        .select('*')
+        .order('descricao', { ascending: true })
+        .order('trimestre', { ascending: true })
+        .order('grupo', { ascending: true })
+        .order('tipo', { ascending: true }),
+      supabase
+        .from('grupos_profissionais')
+        .select('nome')
+        .order('nome')
+    ]);
 
-    if (fetchError) setError('Erro ao carregar rotinas.');
-    else setRoutines(data as Rotina[]);
+    if (rotinasRes.error) setError('Erro ao carregar rotinas.');
+    else setRoutines(rotinasRes.data as Rotina[]);
+    
+    if (gruposRes.data) setGrupos(gruposRes.data);
 
     setLoading(false);
   };
@@ -123,6 +139,8 @@ export default function RotinasPage() {
         descricao: formData.descricao?.toUpperCase(),
         trimestre: formData.trimestre,
         categoria: formData.categoria,
+        quantidade: formData.quantidade || 1,
+        grupo: formData.grupo || null,
         unidade_cnes: authUser?.unidade_cnes || null,
         cpf_operador: authUser?.cpf || null
       };
@@ -165,7 +183,9 @@ export default function RotinasPage() {
       tipo: rot.tipo,
       descricao: rot.descricao,
       trimestre: rot.trimestre,
-      categoria: rot.categoria
+      categoria: rot.categoria,
+      quantidade: rot.quantidade || 1,
+      grupo: rot.grupo || ''
     });
     setError(null);
     setSuccess(null);
@@ -282,8 +302,8 @@ export default function RotinasPage() {
                       )}
                     </AnimatePresence>
 
-                    <div className="grid grid-cols-[2fr_1fr_1fr_1fr] gap-4 items-start">
-                      <div className="space-y-2">
+                    <div className="flex flex-wrap gap-4 items-start">
+                      <div className="w-64 space-y-2">
                         <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Descrição</label>
                         <input 
                           type="text"
@@ -294,42 +314,68 @@ export default function RotinasPage() {
                         />
                       </div>
 
-                      <div className="space-y-2">
+                      <div className="w-32 space-y-2">
                         <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Tipo</label>
                         <select 
                           className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none appearance-none"
                           value={formData.tipo || 'EXAME'}
                           onChange={(e) => setFormData({ ...formData, tipo: e.target.value as any })}
                         >
+                          <option value="CONSULTA">CONSULTA</option>
                           <option value="EXAME">EXAME</option>
                           <option value="VACINA">VACINA</option>
                           <option value="MEDICACAO">MEDICACAO</option>
                         </select>
                       </div>
 
-                      <div className="space-y-2">
+                      <div className="w-40 space-y-2">
                         <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Trimestre</label>
                         <select 
                           className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none appearance-none"
                           value={formData.trimestre || 'PRIMEIRO'}
                           onChange={(e) => setFormData({ ...formData, trimestre: e.target.value as any })}
                         >
-                          <option value="PRIMEIRO">PRIMEIRO TRIMESTRE</option>
-                          <option value="SEGUNDO">SEGUNDO TRIMESTRE</option>
-                          <option value="TERCEIRO">TERCEIRO TRIMESTRE</option>
+                          <option value="PRIMEIRO">PRIMEIRO</option>
+                          <option value="SEGUNDO">SEGUNDO</option>
+                          <option value="TERCEIRO">TERCEIRO</option>
                         </select>
                       </div>
 
-                      <div className="space-y-2">
+                      <div className="w-48 space-y-2">
                         <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Categoria</label>
                         <select 
-                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none appearance-none"
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-4 py-4 transition-all text-input outline-none appearance-none text-xs"
                           value={formData.categoria || 'OBRIGATORIO'}
                           onChange={(e) => setFormData({ ...formData, categoria: e.target.value as any })}
                         >
                           <option value="OBRIGATORIO">OBRIGATORIO</option>
                           <option value="OPCIONAL">OPCIONAL</option>
                           <option value="EVENTUAL">EVENTUAL</option>
+                        </select>
+                      </div>
+
+                      <div className="w-20 space-y-2">
+                        <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Qtd</label>
+                        <input 
+                          type="number"
+                          min="1"
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none"
+                          value={formData.quantidade || 1}
+                          onChange={(e) => setFormData({ ...formData, quantidade: parseInt(e.target.value) || 1 })}
+                        />
+                      </div>
+
+                      <div className="w-64 space-y-2">
+                        <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Grupo</label>
+                        <select 
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-3 py-4 transition-all text-input outline-none appearance-none text-[10px]"
+                          value={formData.grupo || ''}
+                          onChange={(e) => setFormData({ ...formData, grupo: e.target.value })}
+                        >
+                          <option value="">Selecione...</option>
+                          {grupos.filter(g => g.nome !== 'ADMINISTRATIVO').map(g => (
+                            <option key={g.nome} value={g.nome}>{g.nome}</option>
+                          ))}
                         </select>
                       </div>
                     </div>
@@ -411,11 +457,13 @@ export default function RotinasPage() {
                     <table className="w-full text-left border-separate border-spacing-0 min-w-[800px]">
                       <thead className="sticky top-0 z-30 bg-surface-container-low">
                         <tr>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Descrição</th>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Tipo</th>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Trimestre</th>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Categoria</th>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-center">Ações</th>
+                          <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Descrição</th>
+                          <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Tipo</th>
+                          <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Trimestre</th>
+                          <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Qtd</th>
+                          <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Grupo</th>
+                          <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Categoria</th>
+                          <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5 text-center">Ações</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-outline-variant/5">
@@ -434,6 +482,7 @@ export default function RotinasPage() {
                               <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${
                                 rot.tipo === 'EXAME' ? 'bg-blue-100 text-blue-700' : 
                                 rot.tipo === 'VACINA' ? 'bg-success/10 text-success' : 
+                                rot.tipo === 'CONSULTA' ? 'bg-amber-100 text-amber-700' : 
                                 'bg-purple-100 text-purple-700'
                               }`}>
                                 {rot.tipo}
@@ -443,6 +492,12 @@ export default function RotinasPage() {
                               <span className="text-[9px] font-black text-on-surface uppercase tracking-widest">
                                 {rot.trimestre}
                               </span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className="text-[9px] font-black text-on-surface">{rot.quantidade || 1}</span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className="text-[9px] font-black text-on-surface bg-secondary/10 px-2 py-0.5 rounded-full">{rot.grupo || '---'}</span>
                             </td>
                             <td className="px-4 py-3">
                               <span className={`inline-flex px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest ${

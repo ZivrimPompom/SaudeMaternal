@@ -1,0 +1,6 @@
+-- Adicionar colunas QUANTIDADE e GRUPO na tabela rotinas
+ALTER TABLE rotinas 
+ADD COLUMN IF NOT EXISTS quantidade INTEGER DEFAULT 1;
+
+ALTER TABLE rotinas 
+ADD COLUMN IF NOT EXISTS grupo VARCHAR(50);

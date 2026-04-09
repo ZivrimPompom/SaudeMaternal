@@ -10,6 +10,7 @@ import Pagination from '@/components/Pagination';
 import RecordsSummary from '@/components/RecordsSummary';
 import SearchInput from '@/components/SearchInput';
 import PatientBanner from '@/components/PatientBanner';
+import Link from 'next/link';
 
 interface Categoria {
   cbo: string;
@@ -950,7 +951,7 @@ export default function AtendimentosPage() {
                             className="flex items-center gap-2 text-primary hover:text-primary/70 transition-colors"
                           >
                             <span className="material-symbols-outlined text-lg">add_circle</span>
-                            <span className="text-[10px] font-black uppercase tracking-widest">Adicionar Linha</span>
+                            <span className="text-[11px] font-black uppercase tracking-widest">Adicionar Linha</span>
                           </button>
                         )}
                       </div>
@@ -1029,7 +1030,7 @@ export default function AtendimentosPage() {
                                         {entry.nome_profissional ? (
                                           <>
                                             <p className="font-black text-primary">{entry.nome_profissional}</p>
-                                            <p className="text-[10px] text-slate-500">{getCboCategory(allProfessionals.find(p => p.cpf === entry.cpf_profissional)?.cbo)}</p>
+                                            <p className="text-[11px] text-slate-500">{getCboCategory(allProfessionals.find(p => p.cpf === entry.cpf_profissional)?.cbo)}</p>
                                           </>
                                         ) : (
                                           <p className="text-slate-400">SELECIONE PROFISSIONAL</p>
@@ -1121,12 +1122,12 @@ export default function AtendimentosPage() {
                             </colgroup>
                             <thead className="bg-surface-container-low">
                               <tr>
-                                <th className="px-2 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Data Consulta</th>
-                                <th className="px-2 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Trimestre</th>
-                                <th className="px-2 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Profissional</th>
-                                <th className="px-2 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Próxima Consulta</th>
-                                <th className="px-2 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Observações</th>
-                                <th className="px-2 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-center">Ações</th>
+                                <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Data Consulta</th>
+                                <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Trimestre</th>
+                                <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Profissional</th>
+                                <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Próxima Consulta</th>
+                                <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Observações</th>
+                                <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5 text-center">Ações</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-outline-variant/5">
@@ -1213,24 +1214,24 @@ export default function AtendimentosPage() {
                             {selectedPatientHistory.map((h) => (
                               <tr key={h.id_consulta} className="hover:bg-primary/[0.02] transition-colors group">
                                 <td className="px-2 py-1.5">
-                                  <div className="text-[10px] font-bold text-on-surface">{new Date(h.data_consulta).toLocaleDateString('pt-BR')}</div>
+                                  <div className="text-[11px] font-bold text-on-surface">{new Date(h.data_consulta).toLocaleDateString('pt-BR')}</div>
                                 </td>
                                 <td className="px-2 py-1.5">
-                                  <div className="text-[10px] font-bold text-on-surface uppercase">{h.trimestre_consulta}</div>
+                                  <div className="text-[11px] font-bold text-on-surface uppercase">{h.trimestre_consulta}</div>
                                 </td>
                                 <td className="px-2 py-1.5">
                                   <div className="text-[9px]">
-                                    <p className="font-black text-[10px] text-on-surface uppercase">{allProfessionals.find(p => p.cpf === h.cpf)?.nome || '---'}</p>
+                                    <p className="font-black text-[11px] text-on-surface uppercase">{allProfessionals.find(p => p.cpf === h.cpf)?.nome || '---'}</p>
                                     <p className="font-medium text-on-surface-variant/60 uppercase">{getCboCategory(h.cbo)}</p>
                                   </div>
                                 </td>
                                 <td className="px-2 py-1.5">
-                                  <div className="text-[10px] font-bold text-on-surface">
+                                  <div className="text-[11px] font-bold text-on-surface">
                                     {h.data_proxima_consulta ? new Date(h.data_proxima_consulta).toLocaleDateString('pt-BR') : '---'}
                                   </div>
                                 </td>
                                 <td className="px-2 py-1.5">
-                                  <div className="text-[10px] font-medium text-on-surface-variant truncate max-w-[120px]">
+                                  <div className="text-[11px] font-medium text-on-surface-variant truncate max-w-[120px]">
                                     {h.observacoes_clinicas || '---'}
                                   </div>
                                 </td>
@@ -1278,7 +1279,7 @@ export default function AtendimentosPage() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap items-center gap-3 w-full md:w-auto">
               <select 
-                className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
+                className="w-full lg:w-auto px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
                 value={filters.unidade}
                 onChange={(e) => setFilters({ ...filters, unidade: e.target.value })}
               >
@@ -1289,7 +1290,7 @@ export default function AtendimentosPage() {
               </select>
               
               <select 
-                className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
+                className="w-full lg:w-auto px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
                 value={filters.status}
                 onChange={(e) => setFilters({ ...filters, status: e.target.value })}
               >
@@ -1299,7 +1300,7 @@ export default function AtendimentosPage() {
               </select>
 
               <select 
-                className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
+                className="w-full lg:w-auto px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
                 value={filters.dpp}
                 onChange={(e) => setFilters({ ...filters, dpp: e.target.value })}
               >
@@ -1310,7 +1311,7 @@ export default function AtendimentosPage() {
               </select>
 
               <select 
-                className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
+                className="w-full lg:w-auto px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
                 value={filters.trimestre}
                 onChange={(e) => setFilters({ ...filters, trimestre: e.target.value as any })}
               >
@@ -1321,7 +1322,7 @@ export default function AtendimentosPage() {
               </select>
 
               <select 
-                className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
+                className="w-full lg:w-auto px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
                 value={filters.categoria}
                 onChange={(e) => setFilters({ ...filters, categoria: e.target.value })}
               >
@@ -1332,7 +1333,7 @@ export default function AtendimentosPage() {
               </select>
 
               <select 
-                className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
+                className="w-full lg:w-auto px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
                 value={filters.equipe}
                 onChange={(e) => setFilters({ ...filters, equipe: e.target.value })}
               >
@@ -1359,12 +1360,12 @@ export default function AtendimentosPage() {
                     <table className="w-full text-left border-separate border-spacing-0">
                       <thead className="sticky top-0 z-30 bg-surface-container-low">
                         <tr>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Gestante</th>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Status</th>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Registros</th>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">DPP</th>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Alertas</th>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-center">Ações</th>
+                          <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Gestante</th>
+                          <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Status</th>
+                          <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Registros</th>
+                          <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">DPP</th>
+                          <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Alertas</th>
+                          <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5 text-center">Ações</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-outline-variant/5">
@@ -1377,9 +1378,9 @@ export default function AtendimentosPage() {
                             <tr key={p.sispn} className="hover:bg-primary/[0.02] transition-colors group">
                               <td className="px-4 py-3">
                                 <div className="flex flex-col gap-0.5">
-                                  <span className="text-[10px] font-mono font-bold text-primary">CPF: {p.paciente_cpf !== 'NÃO INFORMADO' ? formatCpf(p.paciente_cpf) : '---'}</span>
+                                  <span className="text-[11px] font-bold text-primary">CPF: {p.paciente_cpf !== 'NÃO INFORMADO' ? formatCpf(p.paciente_cpf) : '---'}</span>
                                   <p className="font-black text-xs text-on-surface uppercase leading-tight">{p.paciente_nome}</p>
-                                  <span className="text-[10px] font-mono font-bold text-primary">SISPN: {formatSispn(p.sispn)}</span>
+                                  <span className="text-[11px] font-bold text-primary">SISPN: {formatSispn(p.sispn)}</span>
                                 </div>
                               </td>
                               <td className="px-4 py-3">
@@ -1399,27 +1400,27 @@ export default function AtendimentosPage() {
                               </td>
                               <td className="px-4 py-3">
                                 <div className="flex flex-col gap-0.5">
-                                  <span className="text-[10px] font-bold text-on-surface">{p.atendimentosCount} reg.</span>
-                                  <span className="text-[10px] text-on-surface-variant/50">{p.lastAtendimentoDate ? new Date(p.lastAtendimentoDate).toLocaleDateString('pt-BR') : '---'}</span>
+                                  <span className="text-[11px] font-bold text-on-surface">{p.atendimentosCount} reg.</span>
+                                  <span className="text-[11px] font-bold text-on-surface">{p.lastAtendimentoDate ? new Date(p.lastAtendimentoDate).toLocaleDateString('pt-BR') : '---'}</span>
                                 </div>
                               </td>
                               <td className="px-4 py-3">
                                 <div className="flex flex-col gap-0.5">
-                                  <span className={`text-[10px] font-bold ${p.weeksToDpp !== null && p.weeksToDpp <= 4 ? 'text-error' : p.weeksToDpp !== null && p.weeksToDpp <= 12 ? 'text-warning' : 'text-on-surface'}`}>
+                                  <span className={`text-[11px] font-bold ${p.weeksToDpp !== null && p.weeksToDpp <= 4 ? 'text-error' : p.weeksToDpp !== null && p.weeksToDpp <= 12 ? 'text-warning' : 'text-on-surface'}`}>
                                     {p.weeksToDpp !== null ? `${p.weeksToDpp} sem` : '---'}
                                   </span>
-                                  <span className="text-[9px] text-on-surface-variant/50">{p.dpp ? new Date(p.dpp).toLocaleDateString('pt-BR') : '---'}</span>
+                                  <span className="text-[11px] font-bold text-on-surface">{p.dpp ? new Date(p.dpp).toLocaleDateString('pt-BR') : '---'}</span>
                                 </div>
                               </td>
                               <td className="px-4 py-3">
                                 {p.hasAlert ? (
                                   <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-error/10 text-error flex items-center gap-1 w-fit">
-                                    <span className="material-symbols-outlined text-[10px]">warning</span>
+                                    <span className="material-symbols-outlined text-[11px]">warning</span>
                                     {p.alertMessage}
                                   </span>
                                 ) : (
                                   <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-success/10 text-success flex items-center gap-1 w-fit">
-                                    <span className="material-symbols-outlined text-[10px]">check_circle</span>
+                                    <span className="material-symbols-outlined text-[11px]">check_circle</span>
                                     OK
                                   </span>
                                 )}
@@ -1434,6 +1435,9 @@ export default function AtendimentosPage() {
                                     setIsFormOpen(true); 
                                     window.scrollTo({ top: 0, behavior: 'smooth' });
                                   }} className="p-1.5 rounded-lg bg-surface-container-high text-on-surface-variant hover:bg-primary hover:text-white transition-all" title="Adicionar"><span className="material-symbols-outlined text-sm">add</span></button>
+                                  <Link href={`/dashboard/acompanhamento/${p.sispn}`} className="p-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all" title="Acompanhamento">
+                                    <span className="material-symbols-outlined text-sm">monitoring</span>
+                                  </Link>
                                 </div>
                               </td>
                             </tr>
@@ -1456,8 +1460,8 @@ export default function AtendimentosPage() {
                   <p className="text-sm text-on-surface-variant font-body">Esta ação é permanente. Deseja continuar?</p>
                 </div>
                 <div className="flex gap-3">
-                  <button onClick={() => setDeleteConfirmId(null)} className="flex-1 bg-surface-container-high text-on-surface font-black py-4 rounded-2xl uppercase tracking-widest text-[10px]">Cancelar</button>
-                  <button onPointerDown={() => handleDelete(deleteConfirmId)} className="flex-1 bg-red-600 text-white font-black py-4 rounded-2xl uppercase tracking-widest text-[10px]">Excluir</button>
+                  <button onClick={() => setDeleteConfirmId(null)} className="flex-1 bg-surface-container-high text-on-surface font-black py-4 rounded-2xl uppercase tracking-widest text-[11px]">Cancelar</button>
+                  <button onPointerDown={() => handleDelete(deleteConfirmId)} className="flex-1 bg-red-600 text-white font-black py-4 rounded-2xl uppercase tracking-widest text-[11px]">Excluir</button>
                 </div>
               </motion.div>
             </div>

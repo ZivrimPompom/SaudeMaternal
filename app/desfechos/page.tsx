@@ -10,6 +10,7 @@ import Pagination from '@/components/Pagination';
 import RecordsSummary from '@/components/RecordsSummary';
 import SearchInput from '@/components/SearchInput';
 import PatientBanner from '@/components/PatientBanner';
+import Link from 'next/link';
 
 interface RecemNascido {
   id?: string;
@@ -426,7 +427,7 @@ export default function DesfechosPage() {
             </div>
             <div>
               <h1 className="text-xl font-black text-primary uppercase tracking-tight">Desfechos</h1>
-              <p className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-widest">Gestão de resultados gestacionais</p>
+              <p className="text-[11px] font-bold text-on-surface-variant/40 uppercase tracking-widest">Gestão de resultados gestacionais</p>
             </div>
           </div>
 
@@ -466,7 +467,7 @@ export default function DesfechosPage() {
 
                 {/* Localizar Gestante */}
                 <div className="space-y-4">
-                  <label className="text-[10px] font-black text-on-surface-variant/60 uppercase tracking-[0.2em] px-1">Localizar Gestante</label>
+                  <label className="text-[11px] font-black text-on-surface-variant/60 uppercase tracking-[0.2em] px-1">Localizar Gestante</label>
                   <div className="relative" ref={patientDropdownRef}>
                     <div className="relative group">
                       <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/40 group-focus-within:text-primary transition-colors">person_search</span>
@@ -503,7 +504,7 @@ export default function DesfechosPage() {
                               </div>
                               <div className="flex-1">
                                 <p className="text-sm font-bold text-on-surface">{g.paciente_nome}</p>
-                                <div className="flex items-center gap-2 text-[10px] text-on-surface-variant/60 font-medium">
+                                <div className="flex items-center gap-2 text-[11px] text-on-surface-variant/60 font-medium">
                                   <span className="bg-surface-container-highest px-2 py-0.5 rounded">SISPN: {g.sispn}</span>
                                   <span className="bg-surface-container-highest px-2 py-0.5 rounded">CPF: {g.paciente_cpf}</span>
                                 </div>
@@ -525,7 +526,7 @@ export default function DesfechosPage() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-on-surface-variant/60 uppercase tracking-widest px-1">Tipo de Desfecho</label>
+                      <label className="text-[11px] font-black text-on-surface-variant/60 uppercase tracking-widest px-1">Tipo de Desfecho</label>
                       <select
                         value={formData.tipo_desfecho}
                         onChange={(e) => setFormData({ ...formData, tipo_desfecho: e.target.value as any })}
@@ -538,7 +539,7 @@ export default function DesfechosPage() {
                       </select>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-on-surface-variant/60 uppercase tracking-widest px-1">Data do Desfecho</label>
+                      <label className="text-[11px] font-black text-on-surface-variant/60 uppercase tracking-widest px-1">Data do Desfecho</label>
                       <input
                         type="date"
                         value={formData.data_desfecho}
@@ -561,7 +562,7 @@ export default function DesfechosPage() {
                       <button
                         type="button"
                         onClick={handleAddRN}
-                        className="text-[10px] font-black text-primary uppercase tracking-widest hover:bg-primary/5 px-3 py-1.5 rounded-lg transition-colors"
+                        className="text-[11px] font-black text-primary uppercase tracking-widest hover:bg-primary/5 px-3 py-1.5 rounded-lg transition-colors"
                       >
                         + Adicionar RN (Gemelar)
                       </button>
@@ -582,7 +583,7 @@ export default function DesfechosPage() {
                           
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="space-y-2">
-                              <label className="text-[10px] font-black text-on-surface-variant/60 uppercase tracking-widest px-1">Nome do Recém-Nascido</label>
+                              <label className="text-[11px] font-black text-on-surface-variant/60 uppercase tracking-widest px-1">Nome do Recém-Nascido</label>
                               <input
                                 type="text"
                                 placeholder="Nome completo"
@@ -592,7 +593,7 @@ export default function DesfechosPage() {
                               />
                             </div>
                             <div className="space-y-2">
-                              <label className="text-[10px] font-black text-on-surface-variant/60 uppercase tracking-widest px-1">CPF do RN</label>
+                              <label className="text-[11px] font-black text-on-surface-variant/60 uppercase tracking-widest px-1">CPF do RN</label>
                               <input
                                 type="text"
                                 placeholder="000.000.000-00"
@@ -602,7 +603,7 @@ export default function DesfechosPage() {
                               />
                             </div>
                             <div className="space-y-2">
-                              <label className="text-[10px] font-black text-on-surface-variant/60 uppercase tracking-widest px-1">Data Limite RN (10 DIAS)</label>
+                              <label className="text-[11px] font-black text-on-surface-variant/60 uppercase tracking-widest px-1">Data Limite RN (10 DIAS)</label>
                               <input
                                 type="date"
                                 value={calculateDataLimite(rn.data_nascimento)}
@@ -614,7 +615,7 @@ export default function DesfechosPage() {
 
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
                             <div className="space-y-2">
-                              <label className="text-[10px] font-black text-on-surface-variant/60 uppercase tracking-widest px-1">Data Consulta RN</label>
+                              <label className="text-[11px] font-black text-on-surface-variant/60 uppercase tracking-widest px-1">Data Consulta RN</label>
                               <input
                                 type="date"
                                 value={rn.data_consulta_rn}
@@ -623,7 +624,7 @@ export default function DesfechosPage() {
                               />
                             </div>
                             <div className="space-y-2">
-                              <label className="text-[10px] font-black text-on-surface-variant/60 uppercase tracking-widest px-1">Status</label>
+                              <label className="text-[11px] font-black text-on-surface-variant/60 uppercase tracking-widest px-1">Status</label>
                               <div className="h-[46px] flex items-center px-4">
                                 {rn.data_nascimento ? (
                                   <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
@@ -639,7 +640,7 @@ export default function DesfechosPage() {
                               </div>
                             </div>
                             <div className="space-y-2">
-                              <label className="text-[10px] font-black text-on-surface-variant/60 uppercase tracking-widest px-1">Comparecimento</label>
+                              <label className="text-[11px] font-black text-on-surface-variant/60 uppercase tracking-widest px-1">Comparecimento</label>
                               <div className="flex items-center gap-6 h-[46px]">
                                 <label className="flex items-center gap-2 cursor-pointer group">
                                   <input
@@ -707,7 +708,7 @@ export default function DesfechosPage() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap items-center gap-3 w-full md:w-auto">
               <select 
-                className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
+                className="w-full lg:w-auto px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
                 value={filters.unidade}
                 onChange={(e) => setFilters({ ...filters, unidade: e.target.value })}
               >
@@ -718,7 +719,7 @@ export default function DesfechosPage() {
               </select>
               
               <select 
-                className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
+                className="w-full lg:w-auto px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
                 value={filters.tipo_desfecho}
                 onChange={(e) => setFilters({ ...filters, tipo_desfecho: e.target.value })}
               >
@@ -748,7 +749,7 @@ export default function DesfechosPage() {
               </div>
               <div>
                 <h2 className="text-lg font-bold text-on-surface tracking-tight">Histórico de Desfechos</h2>
-                <p className="text-[10px] uppercase tracking-widest text-on-surface-variant/60 font-bold">Registros Recentes</p>
+                <p className="text-[11px] uppercase tracking-widest text-on-surface-variant/60 font-bold">Registros Recentes</p>
               </div>
             </div>
 
@@ -756,11 +757,11 @@ export default function DesfechosPage() {
             <table className="w-full text-left border-separate border-spacing-0">
               <thead className="bg-surface-container-low">
                 <tr>
-                  <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">#</th>
-                  <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Gestante</th>
-                  <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Desfecho</th>
-                  <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Recém-Nascido</th>
-                  <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-center">Ações</th>
+                  <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">#</th>
+                  <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Gestante</th>
+                  <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Desfecho</th>
+                  <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Recém-Nascido</th>
+                  <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5 text-center">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant/5">
@@ -783,13 +784,13 @@ export default function DesfechosPage() {
                   paginatedDesfechos.map((d, index) => (
                     <tr key={d.id} className="hover:bg-primary/[0.02] transition-colors group">
                       <td className="px-4 py-3">
-                        <span className="text-[10px] font-mono text-on-surface-variant/40">{index + 1 + (currentPage - 1) * itemsPerPage}</span>
+                        <span className="text-[11px] font-mono text-on-surface-variant/40">{index + 1 + (currentPage - 1) * itemsPerPage}</span>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex flex-col gap-0.5">
-                          <span className="text-[10px] font-mono font-bold text-primary">CPF: {d.gestacoes?.pacientes?.cpf ? d.gestacoes.pacientes.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : '---'}</span>
+                          <span className="text-[11px] font-bold text-primary">CPF: {d.gestacoes?.pacientes?.cpf ? d.gestacoes.pacientes.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : '---'}</span>
                           <p className="font-black text-xs text-on-surface uppercase leading-tight">{d.gestacoes?.pacientes?.gestante || 'N/A'}</p>
-                          <span className="text-[10px] font-mono font-bold text-primary">SISPN: {d.sispn ? d.sispn.replace(/(\d{3})(\d{4})(\d{4})/, '$1.$2.$3') : '---'}</span>
+                          <span className="text-[11px] font-bold text-primary">SISPN: {d.sispn ? d.sispn.replace(/(\d{3})(\d{4})(\d{4})/, '$1.$2.$3') : '---'}</span>
                         </div>
                       </td>
                       <td className="px-4 py-3">
@@ -799,7 +800,7 @@ export default function DesfechosPage() {
                           }`}>
                             {d.tipo_desfecho}
                           </span>
-                          <span className="text-[10px] font-bold text-on-surface">{new Date(d.data_desfecho).toLocaleDateString('pt-BR')}</span>
+                          <span className="text-[11px] font-bold text-on-surface">{new Date(d.data_desfecho).toLocaleDateString('pt-BR')}</span>
                         </div>
                       </td>
                       <td className="px-4 py-3">
@@ -808,7 +809,7 @@ export default function DesfechosPage() {
                             <p className="font-black text-xs text-on-surface uppercase leading-tight">
                               {d.nome_rn || `RN ${d.gestacoes?.pacientes?.gestante || 'N/A'}`}
                             </p>
-                            <span className="text-[10px] font-mono text-on-surface-variant/60">{d.cpf_rn ? `CPF: ${d.cpf_rn}` : '---'}</span>
+                            <span className="text-[11px] font-mono text-on-surface-variant/60">{d.cpf_rn ? `CPF: ${d.cpf_rn}` : '---'}</span>
                             {d.data_consulta_rn && (
                               <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${
                                 d.comparecimento ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'
@@ -818,7 +819,7 @@ export default function DesfechosPage() {
                             )}
                           </div>
                         ) : (
-                          <span className="text-[10px] text-on-surface-variant/40">---</span>
+                          <span className="text-[11px] text-on-surface-variant/40">---</span>
                         )}
                       </td>
                       <td className="px-4 py-3">
@@ -837,6 +838,9 @@ export default function DesfechosPage() {
                           >
                             <span className="material-symbols-outlined text-sm">delete</span>
                           </button>
+                          <Link href={`/dashboard/acompanhamento/${d.sispn}`} className="p-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all" title="Acompanhamento">
+                            <span className="material-symbols-outlined text-sm">monitoring</span>
+                          </Link>
                         </div>
                       </td>
                     </tr>

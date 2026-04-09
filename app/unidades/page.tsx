@@ -592,10 +592,10 @@ export default function UnidadesSaudePage() {
                     <table className="w-full text-left border-separate border-spacing-0 min-w-[900px]">
                       <thead className="sticky top-0 z-30 bg-surface-container-low">
                         <tr>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Unidade</th>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">CNES</th>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Localização</th>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-center">Ações</th>
+                          <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Unidade</th>
+                          <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">CNES</th>
+                          <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Localização</th>
+                          <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5 text-center">Ações</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-outline-variant/5">
@@ -610,12 +610,12 @@ export default function UnidadesSaudePage() {
                                   </div>
                                   <div>
                                     <p className="font-black text-xs text-on-surface uppercase leading-tight">{unit.nome_fantasia}</p>
-                                    <p className="text-[9px] text-on-surface-variant/50 font-body">{unit.telefone || '---'}</p>
+                                    <p className="text-[11px] font-bold text-on-surface font-body">{unit.telefone || '---'}</p>
                                   </div>
                                 </div>
                               </td>
                               <td className="px-4 py-3">
-                                <span className="text-[10px] font-mono font-bold text-on-surface">{unit.cnes}</span>
+                                <span className="text-[11px] font-bold text-primary">{unit.cnes}</span>
                               </td>
                               <td className="px-4 py-3">
                                 <div className="text-[9px]">
@@ -691,7 +691,7 @@ export default function UnidadesSaudePage() {
                 </button>
                 <button 
                   onClick={() => setDeleteConfirmId(null)}
-                  className="w-full bg-surface-container-high text-on-surface-variant font-black py-4 rounded-2xl hover:bg-surface-container-highest transition-all font-headline uppercase tracking-widest text-[10px]"
+                  className="w-full bg-surface-container-high text-on-surface-variant font-black py-4 rounded-2xl hover:bg-surface-container-highest transition-all font-headline uppercase tracking-widest text-[11px]"
                 >
                   Cancelar
                 </button>

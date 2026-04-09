@@ -109,38 +109,22 @@ export default function OperadoresPage() {
           .select('cnes, nome_fantasia')
           .order('nome_fantasia');
         
-        if (unitsResult.data) {
-          setUnits(unitsResult.data as HealthUnit[]);
-          console.log('Units loaded:', unitsResult.data);
+        const loadedUnits = unitsResult.data as HealthUnit[] || [];
+        if (loadedUnits.length > 0) {
+          setUnits(loadedUnits);
         }
 
-        // Tenta buscar com join
+        // Fetch Operators
         let result = await supabase
           .from('operadores')
-          .select('*, unidades_saude(cnes, nome_fantasia)')
+          .select('*')
           .order('name', { ascending: true });
         
-        if (result.error && result.error.message.includes('relationship')) {
-          // Fallback if relationship doesn't exist yet
+        if (result.error && result.error.message.includes('column')) {
           result = await supabase
             .from('operadores')
             .select('*')
-            .order('name', { ascending: true });
-        }
-        
-        if (result.error && result.error.message.includes('column')) {
-          // Se falhar por causa da coluna 'name', tenta 'nome'
-          result = await supabase
-            .from('operadores')
-            .select('*, unidades_saude(cnes, nome_fantasia)')
             .order('nome', { ascending: true });
-            
-          if (result.error && result.error.message.includes('relationship')) {
-            result = await supabase
-              .from('operadores')
-              .select('*')
-              .order('nome', { ascending: true });
-          }
         }
 
         if (isMounted) {
@@ -148,23 +132,18 @@ export default function OperadoresPage() {
             console.error('Erro ao buscar operadores:', result.error);
             setError(`Erro ao carregar dados: ${result.error.message}`);
           } else if (result.data) {
-            console.log('Operators raw data:', result.data);
-            console.log('Units available:', units);
-            
-            // Se a relação unidades_saude não retornou dados, busca manualmente
+            // Join manual com unidades
             let enrichedData = result.data;
-            if (!result.data[0]?.unidades_saude && units.length > 0) {
+            if (loadedUnits.length > 0) {
               enrichedData = result.data.map((item: any) => {
-                const matchingUnit = units.find(u => String(u.cnes) === String(item.unidade_cnes));
-                console.log(`Operator ${item.name}: unidade_cnes=${item.unidade_cnes}, matchedUnit=`, matchingUnit);
+                const opCnes = String(item.unidade_cnes || '').trim();
+                const matchingUnit = loadedUnits.find(u => String(u.cnes || '').trim() === opCnes);
                 return {
                   ...item,
                   unidades_saude: matchingUnit || null
                 };
               });
             }
-            
-            console.log('Enriched data:', enrichedData);
             
             // Mapeia os dados para garantir que usem as chaves esperadas pela interface Operator
             const mappedData = enrichedData.map((item: any) => ({
@@ -194,6 +173,17 @@ export default function OperadoresPage() {
     if (!isSupabaseConfigured) return;
     setLoading(true);
     try {
+      // Fetch Units (in case they haven't been loaded yet)
+      const unitsResult = await supabase
+        .from('unidades_saude')
+        .select('cnes, nome_fantasia')
+        .order('nome_fantasia');
+      
+      if (unitsResult.data && unitsResult.data.length > 0) {
+        setUnits(unitsResult.data as HealthUnit[]);
+      }
+      const currentUnits = unitsResult.data as HealthUnit[] || units;
+
       // Tenta buscar com join
       let result = await supabase
         .from('operadores')
@@ -231,12 +221,13 @@ export default function OperadoresPage() {
         
         // Se a relação unidades_saude não retornou dados, busca manualmente
         let enrichedData = result.data;
-        if (!result.data[0]?.unidades_saude && units.length > 0) {
+        if (currentUnits.length > 0) {
           enrichedData = result.data.map((item: any) => {
-            const matchingUnit = units.find(u => String(u.cnes) === String(item.unidade_cnes));
+            const opCnes = String(item.unidade_cnes || '').trim();
+            const matchingUnit = currentUnits.find(u => String(u.cnes || '').trim() === opCnes);
             return {
               ...item,
-              unidades_saude: matchingUnit || null
+              unidades_saude: matchingUnit || item.unidades_saude || null
             };
           });
         }
@@ -552,7 +543,7 @@ export default function OperadoresPage() {
           </div>
           <button 
             onClick={() => window.history.back()}
-            className="px-8 py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-all flex items-center gap-2 uppercase tracking-widest text-[10px]"
+            className="px-8 py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-all flex items-center gap-2 uppercase tracking-widest text-[11px]"
           >
             <ChevronLeft className="w-4 h-4" />
             Voltar
@@ -785,7 +776,7 @@ export default function OperadoresPage() {
               </div>
               <div className="px-6 md:px-8 pt-6 pb-4 flex flex-wrap items-center gap-3 border-b border-surface-container-low">
                 <select 
-                  className="w-full lg:w-auto bg-white text-primary border-2 border-primary/30 hover:shadow-primary/5 hover:border-primary rounded-full px-5 py-2.5 text-[9px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer shadow-sm"
+                  className="w-full lg:w-auto px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
                   value={unidadeFilter}
                   onChange={(e) => { setUnidadeFilter(e.target.value); setCurrentPage(1); }}
                 >
@@ -830,11 +821,12 @@ export default function OperadoresPage() {
                     <table className="w-full text-left border-separate border-spacing-0 min-w-[1000px]">
                       <thead className="sticky top-0 z-30 bg-surface-container-low">
                         <tr>
-                          <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5 w-[250px]">Profissional</th>
-                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5 w-[180px]">Identificação</th>
-                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5 w-[120px]">Nível</th>
-                          <th className="px-4 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label border-b border-outline-variant/5 w-[120px]">Status</th>
-                          <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant font-label text-center border-b border-outline-variant/5 w-[180px]">Ações</th>
+                          <th className="px-4 py-4 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5 w-[250px]">Profissional</th>
+                          <th className="px-4 py-4 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5 w-[200px]">Unidade</th>
+                          <th className="px-4 py-4 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5 w-[180px]">CPF</th>
+                          <th className="px-4 py-4 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5 w-[120px]">Nível</th>
+                          <th className="px-4 py-4 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5 w-[120px]">Status</th>
+                          <th className="px-4 py-4 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 text-center border-b border-outline-variant/5 w-[180px]">Ações</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-surface-container-low/50">
@@ -842,44 +834,33 @@ export default function OperadoresPage() {
                           .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
                           .map((op) => (
                             <tr key={op.cpf} className="hover:bg-surface-container-low/40 transition-all group">
-                              <td className="px-6 py-4">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-surface-container-high to-surface-container-highest flex items-center justify-center text-sm font-bold text-primary shadow-sm group-hover:scale-105 transition-transform">
-                                    {op.initials}
-                                  </div>
-                                  <div>
-                                    <p className="font-bold text-on-surface text-sm font-headline leading-tight uppercase line-clamp-1">{op.name}</p>
-                                    <p className="text-[9px] text-on-surface-variant/60 font-body uppercase tracking-widest mt-0.5 line-clamp-1">
-                                      {op.unidades_saude ? `CNES: ${op.unidades_saude.cnes} - ${op.unidades_saude.nome_fantasia}` : op.unidade_cnes ? `CNES: ${op.unidade_cnes}` : 'Sem Unidade'}
-                                    </p>
-                                  </div>
+                              <td className="px-4 py-4">
+                                <p className="font-black text-xs text-on-surface uppercase leading-tight">{op.name}</p>
+                              </td>
+                              <td className="px-4 py-4">
+                                <div className="text-[11px]">
+                                  <p className="font-black text-primary uppercase">{op.unidades_saude?.nome_fantasia || op.unidade_cnes || '---'}</p>
+                                  <p className="text-[11px] font-bold text-on-surface">CNES: {op.unidade_cnes || '---'}</p>
                                 </div>
                               </td>
                               <td className="px-4 py-4">
-                                <div className="flex flex-col">
-                                  <span className="text-xs font-mono text-on-surface-variant font-medium">{op.cpf}</span>
-                                  <span className="text-[8px] text-on-surface-variant/60 font-body uppercase tracking-tighter mt-0.5 whitespace-nowrap">CPF Verificado</span>
-                                </div>
+                                <span className="text-[11px] font-bold text-primary">{op.cpf}</span>
                               </td>
                               <td className="px-4 py-4">
-                                <div className="flex flex-col gap-0.5">
-                                  <span className={`text-[10px] font-black uppercase tracking-wider ${op.nivel_acesso === 'Administrador' ? 'text-primary' : 'text-on-surface'}`}>
-                                    {op.nivel_acesso || 'Usuário'}
-                                  </span>
-                                  <span className="text-[8px] text-on-surface-variant/60 font-body uppercase tracking-tighter">Nível de Acesso</span>
-                                </div>
+                                <span className={`text-[11px] font-bold uppercase ${op.nivel_acesso === 'Administrador' ? 'text-primary' : 'text-on-surface'}`}>
+                                  {op.nivel_acesso || 'Usuário'}
+                                </span>
                               </td>
                               <td className="px-4 py-4">
-                                <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                                <span className={`inline-flex px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest ${
                                   op.status === 'Ativo' 
-                                    ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' 
-                                    : 'bg-error-container/50 text-on-error-container border border-error/10'
+                                    ? 'bg-success/10 text-success' 
+                                    : 'bg-error/10 text-error'
                                 }`}>
-                                  <span className={`w-1 h-1 rounded-full ${op.status === 'Ativo' ? 'bg-emerald-500' : 'bg-error'} animate-pulse`}></span>
                                   {op.status}
-                                </div>
+                                </span>
                               </td>
-                              <td className="px-6 py-4 bg-surface-container-lowest group-hover:bg-surface-container-low transition-colors">
+                              <td className="px-4 py-4 bg-surface-container-lowest group-hover:bg-surface-container-low transition-colors">
                                 <div className="flex items-center justify-center gap-2">
                                   <button 
                                     onClick={() => handleEdit(op)}
@@ -926,7 +907,7 @@ export default function OperadoresPage() {
               </div>
               <div className="max-w-xs text-right opacity-40">
                 <p className="text-[9px] font-headline font-black uppercase tracking-[0.3em] mb-1">Internal Ledger Audit</p>
-                <p className="text-[10px] leading-relaxed font-body">Todas as alterações são registradas com timestamp e assinatura do administrador para conformidade regulatória.</p>
+                <p className="text-[11px] leading-relaxed font-body">Todas as alterações são registradas com timestamp e assinatura do administrador para conformidade regulatória.</p>
               </div>
             </div>
           </section>
@@ -961,7 +942,7 @@ export default function OperadoresPage() {
                 </button>
                 <button 
                   onClick={() => setDeleteConfirmId(null)}
-                  className="w-full bg-surface-container-high text-on-surface-variant font-black py-4 rounded-2xl hover:bg-surface-container-highest transition-all font-headline uppercase tracking-widest text-[10px]"
+                  className="w-full bg-surface-container-high text-on-surface-variant font-black py-4 rounded-2xl hover:bg-surface-container-highest transition-all font-headline uppercase tracking-widest text-[11px]"
                 >
                   Cancelar
                 </button>

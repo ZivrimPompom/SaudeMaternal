@@ -14,11 +14,10 @@ import SearchInput from '@/components/SearchInput';
 interface CategoriaProfissional {
   cbo: string;
   categoria: string;
+  grupo?: string;
+  grau_instrucao?: string;
   cpf_operador?: string;
   operador_nome?: string;
-  // vinculo: 'DIRETO' | 'INTERMEDIADO';
-  // tipo_vinculo: 'CLT' | 'ESTATUTARIO' | 'AUTÔNOMO';
-  // chs: 20 | 30 | 40;
 }
 
 const formatCpf = (value: string) => {
@@ -45,9 +44,8 @@ export default function CategoriasPage() {
   const [formData, setFormData] = useState<CategoriaProfissional>({
     cbo: '',
     categoria: '',
-    // vinculo: 'INTERMEDIADO',
-    // tipo_vinculo: 'CLT',
-    // chs: 20
+    grupo: '',
+    grau_instrucao: ''
   });
 
   const [editingCbo, setEditingCbo] = useState<string | null>(null);
@@ -127,6 +125,8 @@ export default function CategoriasPage() {
           .from('categorias_profissionais')
           .update({
             categoria: formData.categoria,
+            grupo: formData.grupo || null,
+            grau_instrucao: formData.grau_instrucao || null,
             cpf_operador: authUser?.cpf || null
           })
           .eq('cbo', editingCbo);
@@ -197,9 +197,8 @@ export default function CategoriasPage() {
     setFormData({
       cbo: '',
       categoria: '',
-      // vinculo: 'INTERMEDIADO',
-      // tipo_vinculo: 'CLT',
-      // chs: 20
+      grupo: '',
+      grau_instrucao: ''
     });
     setError(null);
     setSuccess(null);
@@ -207,10 +206,12 @@ export default function CategoriasPage() {
   };
 
   const handleExportCSV = useCallback(() => {
-    const headers = ['CBO', 'CATEGORIA'];
+    const headers = ['CBO', 'CATEGORIA', 'GRUPO', 'GRAU DE INSTRUÇÃO'];
     const rows = filteredCategories.map(c => [
       c.cbo,
-      c.categoria
+      c.categoria,
+      c.grupo || '',
+      c.grau_instrucao || ''
     ]);
     const csvContent = [headers, ...rows].map(e => e.join(";")).join("\n");
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -321,12 +322,44 @@ export default function CategoriasPage() {
                           onChange={(e) => setFormData({ ...formData, categoria: e.target.value.toUpperCase() })}
                         />
                       </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Grupo</label>
+                        <select
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-secondary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none"
+                          value={formData.grupo || ''}
+                          onChange={(e) => setFormData({ ...formData, grupo: e.target.value })}
+                        >
+                          <option value="">Selecione...</option>
+                          <option value="ADMINISTRATIVO">ADMINISTRATIVO</option>
+                          <option value="ENFERMAGEM">ENFERMAGEM</option>
+                          <option value="MEDICO">MÉDICO</option>
+                          <option value="OUTROS DE NIVEL SUPERIOR">OUTROS DE NÍVEL SUPERIOR</option>
+                          <option value="SAUDE BUCAL">SAÚDE BUCAL</option>
+                          <option value="TACS/ACS">TACS/ACS</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Grau de Instrução</label>
+                        <select
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-secondary focus:bg-white rounded-2xl px-6 py-4 transition-all text-input outline-none"
+                          value={formData.grau_instrucao || ''}
+                          onChange={(e) => setFormData({ ...formData, grau_instrucao: e.target.value })}
+                        >
+                          <option value="">Selecione...</option>
+                          <option value="FUNDAMENTAL">FUNDAMENTAL</option>
+                          <option value="MÉDIO">MÉDIO</option>
+                          <option value="SUPERIOR">SUPERIOR</option>
+                          <option value="TÉCNICO">TÉCNICO</option>
+                        </select>
+                      </div>
                     </div>
 
                     <div className="pt-4 flex flex-col gap-3">
                       <button 
                         type="submit"
-                        className="w-full bg-secondary text-white font-black py-5 rounded-2xl shadow-xl shadow-secondary/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 font-headline uppercase tracking-widest text-[10px]"
+                        className="w-full bg-secondary text-white font-black py-5 rounded-2xl shadow-xl shadow-secondary/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 font-headline uppercase tracking-widest text-[11px]"
                       >
                         {editingCbo ? <Edit2 className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
                         {editingCbo ? 'Atualizar Categoria' : 'Cadastrar Categoria'}
@@ -371,7 +404,7 @@ export default function CategoriasPage() {
                     <p className="text-xs text-on-surface-variant/60 font-body uppercase tracking-widest font-bold">Listagem Geral de CBOs</p>
                   </div>
                 </div>
-                <div className="bg-secondary/10 text-secondary px-6 py-2 rounded-full text-[10px] font-black font-headline uppercase tracking-[0.2em]">
+                <div className="bg-secondary/10 text-secondary px-6 py-2 rounded-full text-[11px] font-black font-headline uppercase tracking-[0.2em]">
                   {filteredCategories.length} Registros
                 </div>
               </div>
@@ -394,9 +427,11 @@ export default function CategoriasPage() {
                     <table className="w-full text-left border-separate border-spacing-0 min-w-[600px]">
                       <thead className="sticky top-0 z-30 bg-surface-container-low">
                         <tr>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">CBO</th>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Categoria</th>
-                          <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-center">Ações</th>
+                          <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">CBO</th>
+                          <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Categoria</th>
+                          <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Grupo</th>
+                          <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Grau</th>
+                          <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5 text-center">Ações</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-outline-variant/5">
@@ -409,10 +444,16 @@ export default function CategoriasPage() {
                               className="hover:bg-primary/[0.02] transition-colors group"
                             >
                             <td className="px-4 py-3">
-                              <span className="text-[10px] font-mono font-bold text-primary">{cat.cbo}</span>
+                              <span className="text-[11px] font-bold text-primary">{cat.cbo}</span>
                             </td>
                             <td className="px-4 py-3">
                               <p className="font-black text-xs text-on-surface uppercase">{cat.categoria}</p>
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className="text-[10px] font-bold text-on-surface-variant bg-surface-container-low px-2 py-1 rounded-full">{cat.grupo || '-'}</span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className="text-[10px] font-bold text-on-surface-variant bg-surface-container-low px-2 py-1 rounded-full">{cat.grau_instrucao || '-'}</span>
                             </td>
                             <td className="px-4 py-3">
                               <div className="flex items-center justify-center gap-1">
@@ -480,7 +521,7 @@ export default function CategoriasPage() {
                 </button>
                 <button 
                   onClick={() => setDeleteConfirmCbo(null)}
-                  className="w-full bg-surface-container-high text-on-surface-variant font-black py-4 rounded-2xl hover:bg-surface-container-highest transition-all font-headline uppercase tracking-widest text-[10px]"
+                  className="w-full bg-surface-container-high text-on-surface-variant font-black py-4 rounded-2xl hover:bg-surface-container-highest transition-all font-headline uppercase tracking-widest text-[11px]"
                 >
                   Cancelar
                 </button>
