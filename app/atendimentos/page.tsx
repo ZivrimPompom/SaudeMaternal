@@ -23,11 +23,13 @@ interface Profissional {
   cpf: string;
   nome: string;
   cbo: string;
-  categorias_profissionais?: {
+  situacao?: string;
+  equipe?: string;
+  categorias_profissionais?: Array<{
     cbo: string;
     categoria: string;
     grupo?: string;
-  };
+  }>;
 }
 
 interface Atendimento {
