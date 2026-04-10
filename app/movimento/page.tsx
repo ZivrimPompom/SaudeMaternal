@@ -293,11 +293,17 @@ export default function MovimentoPage() {
 
       if (!matchesSearch) return false;
       
-      if (filters.tipo || filters.trimestre || filters.rotina) {
+      if (filters.trimestre || filters.tipo || filters.rotina) {
         const patientResults = results.filter(r => r.sispn === p.sispn);
         const hasMatchingResult = patientResults.some(r => {
+          const triMap: Record<string, string> = {
+            '1º TRIMESTRE': 'PRIMEIRO',
+            '2º TRIMESTRE': 'SEGUNDO',
+            '3º TRIMESTRE': 'TERCEIRO'
+          };
+          const triRealizacao = triMap[r.trimestre_realizacao] || r.trimestre_realizacao;
+          if (filters.trimestre && triRealizacao !== filters.trimestre) return false;
           if (filters.tipo && (r.tipo || r.rotinas?.tipo) !== filters.tipo) return false;
-          if (filters.trimestre && r.trimestre_realizacao !== filters.trimestre) return false;
           if (filters.rotina && r.rotinas?.descricao !== filters.rotina) return false;
           return true;
         });
@@ -508,8 +514,14 @@ export default function MovimentoPage() {
     return results
       .filter(r => {
         if (r.sispn !== formData.sispn) return false;
+        const triMap: Record<string, string> = {
+          '1º TRIMESTRE': 'PRIMEIRO',
+          '2º TRIMESTRE': 'SEGUNDO',
+          '3º TRIMESTRE': 'TERCEIRO'
+        };
+        const triRealizacao = triMap[r.trimestre_realizacao] || r.trimestre_realizacao;
+        if (filters.trimestre && triRealizacao !== filters.trimestre) return false;
         if (filters.tipo && (r.tipo || r.rotinas?.tipo) !== filters.tipo) return false;
-        if (filters.trimestre && r.trimestre_realizacao !== filters.trimestre) return false;
         if (filters.rotina && r.rotinas?.descricao !== filters.rotina) return false;
         return true;
       })
@@ -681,8 +693,14 @@ export default function MovimentoPage() {
 
       if (!matchesSearch) return false;
       if (filters.status && gestacaoStatus !== filters.status) return false;
+      const triMap: Record<string, string> = {
+        '1º TRIMESTRE': 'PRIMEIRO',
+        '2º TRIMESTRE': 'SEGUNDO',
+        '3º TRIMESTRE': 'TERCEIRO'
+      };
+      const triRealizacao = triMap[r.trimestre_realizacao] || r.trimestre_realizacao;
+      if (filters.trimestre && triRealizacao !== filters.trimestre) return false;
       if (filters.tipo && (r.tipo || r.rotinas?.tipo) !== filters.tipo) return false;
-      if (filters.trimestre && r.trimestre_realizacao !== filters.trimestre) return false;
       if (filters.rotina && r.rotinas?.descricao !== filters.rotina) return false;
       if (filters.equipe && (gest as any)?.equipe !== filters.equipe) return false;
       
@@ -988,7 +1006,18 @@ export default function MovimentoPage() {
                                     <div className="text-[10px] text-on-surface-variant/40">-</div>
                                   ) : (
                                     <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-2 py-1">
-                                      <select 
+              <select 
+                className="w-full lg:w-auto px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
+                value={filters.tipo}
+                onChange={(e) => setFilters({ ...filters, tipo: e.target.value })}
+              >
+                <option value="">Tipo</option>
+                <option value="EXAME">EXAME</option>
+                <option value="VACINA">VACINA</option>
+                <option value="CONSULTA">CONSULTA</option>
+              </select>
+
+              <select
                                         className={`bg-transparent border-none p-0 text-[10px] font-bold outline-none focus:ring-0 w-full uppercase cursor-pointer appearance-none ${
                                           entry.resultado === '-' || entry.resultado === 'N/A'
                                             ? 'text-on-surface-variant/40' 
@@ -1450,17 +1479,6 @@ export default function MovimentoPage() {
 
               <select 
                 className="w-full lg:w-auto px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
-                value={filters.tipo}
-                onChange={(e) => setFilters({ ...filters, tipo: e.target.value })}
-              >
-                <option value="">Tipo</option>
-                <option value="EXAME">EXAME</option>
-                <option value="VACINA">VACINA</option>
-                <option value="CONSULTA">CONSULTA</option>
-              </select>
-
-              <select 
-                className="w-full lg:w-auto px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
                 value={filters.rotina}
                 onChange={(e) => setFilters({ ...filters, rotina: e.target.value })}
               >
@@ -1468,6 +1486,17 @@ export default function MovimentoPage() {
                 {Array.from(new Set(routines.map(r => r.descricao))).sort().map(desc => (
                   <option key={desc} value={desc}>{desc}</option>
                 ))}
+              </select>
+
+              <select 
+                className="w-full lg:w-auto px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
+                value={filters.tipo}
+                onChange={(e) => setFilters({ ...filters, tipo: e.target.value })}
+              >
+                <option value="">Tipo</option>
+                <option value="EXAME">EXAME</option>
+                <option value="VACINA">VACINA</option>
+                <option value="CONSULTA">CONSULTA</option>
               </select>
 
               <select 
@@ -1498,9 +1527,9 @@ export default function MovimentoPage() {
                   <tr>
                     <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Gestante</th>
                     <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Status</th>
-                    <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Exames</th>
-                    <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Consultas</th>
-                    <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Vacinas</th>
+                    <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-center">Exames</th>
+                    <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-center">Consultas</th>
+                    <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-center">Vacinas</th>
                     <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">DPP</th>
                     <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Alertas</th>
                     <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-center">Ações</th>
