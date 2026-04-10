@@ -373,9 +373,13 @@ export default function MovimentoPage() {
       ]);
 
       if (routinesRes.error) throw routinesRes.error;
-      setRoutines(routinesRes.data || []);
-      setCategories(catsRes.data || []);
-      setAllProfessionals(prosRes.data || []);
+      const routinesData = routinesRes.data || [];
+      const categoriesData = catsRes.data || [];
+      const professionalsData = prosRes.data || [];
+      
+      setRoutines(routinesData);
+      setCategories(categoriesData);
+      setAllProfessionals(professionalsData);
 
       // Fetch Results in chunks (bypassing 1000 limit)
       let resultsData: any[] = [];
@@ -436,7 +440,7 @@ export default function MovimentoPage() {
         const gest = formattedGest.find(g => g.sispn === r.sispn);
         
         // Enrich with profissional data
-        const prof = allProfessionals.find(p => p.cpf === r.cpf_profissional);
+        const prof = professionalsData.find(p => p.cpf === r.cpf_profissional);
         let nome_profissional = '---';
         let grupo = '---';
         
@@ -451,7 +455,7 @@ export default function MovimentoPage() {
         // Fallback: try CBO prefix lookup if profissional not found
         if (grupo === '---' && r.cbo) {
           const cboPrefixo = String(r.cbo).substring(0, 4);
-          const catBackup = categories.find(cat => cat.cbo === cboPrefixo);
+          const catBackup = categoriesData.find(cat => cat.cbo === cboPrefixo);
           grupo = catBackup?.grupo || '---';
         }
         
@@ -987,14 +991,14 @@ export default function MovimentoPage() {
                         <div className="bg-surface-container-low rounded-2xl overflow-x-auto border border-outline-variant/10">
                           <table className="w-full text-left border-separate border-spacing-0" style={{ tableLayout: 'fixed' }}>
                             <colgroup>
-                              <col style={{ width: '10%' }} />
-                              <col style={{ width: '8%' }} />
-                              <col style={{ width: '16%' }} />
-                              <col style={{ width: '8%' }} />
-                              <col style={{ width: '14%' }} />
+                              <col style={{ width: '12%' }} />
                               <col style={{ width: '10%' }} />
                               <col style={{ width: '18%' }} />
                               <col style={{ width: '8%' }} />
+                              <col style={{ width: '18%' }} />
+                              <col style={{ width: '12%' }} />
+                              <col style={{ width: '15%' }} />
+                              <col style={{ width: '7%' }} />
                             </colgroup>
                             <thead className="bg-surface-container-low">
                             <tr>
@@ -1034,9 +1038,13 @@ export default function MovimentoPage() {
                                     </div>
                                   </td>
                                   <td className="px-2 py-1.5">
-                                    <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-2 py-1 h-full flex flex-col justify-center">
+                                    <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-2 py-1">
                                       <div className="text-[10px] font-bold text-on-surface uppercase truncate">{h.nome_profissional || '---'}</div>
-                                      <div className="text-[9px] font-bold text-on-surface bg-secondary/10 px-2 py-0.5 rounded-full mt-1">
+                                    </div>
+                                  </td>
+                                  <td className="px-2 py-1.5">
+                                    <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-2 py-1">
+                                      <div className="text-[10px] font-bold text-on-surface bg-secondary/10 px-2 py-0.5 rounded-full">
                                         {h.grupo || '---'}
                                       </div>
                                     </div>
