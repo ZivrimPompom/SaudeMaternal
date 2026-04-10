@@ -857,7 +857,8 @@ export default function MovimentoPage() {
                                         const prof = allProfessionals.find(p => p.cpf === cpf);
                                         if (prof) {
                                           newEntries[index].nome_profissional = prof.nome;
-                                          newEntries[index].grupo_profissional = prof.categorias_profissionais?.grupo || '';
+                                          const catFromJoin = Array.isArray(prof.categorias_profissionais) ? prof.categorias_profissionais[0] : prof.categorias_profissionais;
+                                          newEntries[index].grupo_profissional = catFromJoin?.grupo || '';
                                           const cat = categories.find(c => prof.cbo.startsWith(c.cbo));
                                           newEntries[index].categoria_profissional = cat?.categoria || 'MEDICO';
                                         }
@@ -866,7 +867,10 @@ export default function MovimentoPage() {
                                     >
                                       <option value="">SELECIONE PROFISSIONAL</option>
                                       {allProfessionals
-                                        .filter(p => p.categorias_profissionais?.grupo !== 'ADMINISTRATIVO')
+                                        .filter(p => {
+                                          const grupo = Array.isArray(p.categorias_profissionais) ? p.categorias_profissionais[0]?.grupo : p.categorias_profissionais?.grupo;
+                                          return grupo !== 'ADMINISTRATIVO';
+                                        })
                                         .map((p) => (
                                           <option key={p.cpf} value={p.cpf}>{p.nome}</option>
                                         ))}
@@ -1006,7 +1010,12 @@ export default function MovimentoPage() {
                                     <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-2 py-1 h-full flex flex-col justify-center">
                                       <div className="text-[10px] font-bold text-on-surface uppercase truncate">{allProfessionals.find(p => p.cpf === h.cpf_profissional)?.nome || '---'}</div>
                                       <div className="text-[9px] font-bold text-on-surface bg-secondary/10 px-2 py-0.5 rounded-full mt-1">
-                                        {allProfessionals.find(p => p.cpf === h.cpf_profissional)?.categorias_profissionais?.grupo || '---'}
+                                        {(() => {
+                                          const prof = allProfessionals.find(p => p.cpf === h.cpf_profissional);
+                                          if (!prof) return '---';
+                                          const catFromJoin = Array.isArray(prof.categorias_profissionais) ? prof.categorias_profissionais[0] : prof.categorias_profissionais;
+                                          return catFromJoin?.grupo || '---';
+                                        })()}
                                       </div>
                                     </div>
                                   </td>
@@ -1117,7 +1126,12 @@ export default function MovimentoPage() {
                                 <td className="px-2 py-1.5">
                                   <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-2 py-1">
                                     <div className="text-[10px] font-bold text-on-surface bg-secondary/10 px-2 py-0.5 rounded-full">
-                                      {allProfessionals.find(p => p.cpf === h.cpf_profissional)?.categorias_profissionais?.grupo || '---'}
+                                      {(() => {
+                                        const prof = allProfessionals.find(p => p.cpf === h.cpf_profissional);
+                                        if (!prof) return '---';
+                                        const catFromJoin = Array.isArray(prof.categorias_profissionais) ? prof.categorias_profissionais[0] : prof.categorias_profissionais;
+                                        return catFromJoin?.grupo || '---';
+                                      })()}
                                     </div>
                                   </div>
                                 </td>
