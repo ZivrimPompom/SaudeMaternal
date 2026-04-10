@@ -1260,9 +1260,9 @@ export default function MovimentoPage() {
                         </div>
                       </div>
                     )}
+                    {error && <div className="mt-2 p-3 bg-error/10 rounded-xl text-error text-xs font-bold">{error}</div>}
+                    {success && <div className="mt-2 p-3 bg-green-500/10 rounded-xl text-green-600 text-xs font-bold">{success}</div>}
                   </form>
-                  {error && <div className="mt-2 p-3 bg-error/10 rounded-xl text-error text-xs font-bold">{error}</div>}
-                  {success && <div className="mt-2 p-3 bg-green-500/10 rounded-xl text-green-600 text-xs font-bold">{success}</div>}
                 ) : (
                   <div className="space-y-4">
                     <div className="flex items-center gap-2">
