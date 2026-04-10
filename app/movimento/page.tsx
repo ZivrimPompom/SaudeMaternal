@@ -1479,24 +1479,28 @@ export default function MovimentoPage() {
 
               <select 
                 className="w-full lg:w-auto px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
-                value={filters.rotina}
-                onChange={(e) => setFilters({ ...filters, rotina: e.target.value })}
-              >
-                <option value="">Rotina</option>
-                {Array.from(new Set(routines.map(r => r.descricao))).sort().map(desc => (
-                  <option key={desc} value={desc}>{desc}</option>
-                ))}
-              </select>
-
-              <select 
-                className="w-full lg:w-auto px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
                 value={filters.tipo}
-                onChange={(e) => setFilters({ ...filters, tipo: e.target.value })}
+                onChange={(e) => setFilters({ ...filters, tipo: e.target.value, rotina: '' })}
               >
                 <option value="">Tipo</option>
                 <option value="EXAME">EXAME</option>
                 <option value="VACINA">VACINA</option>
                 <option value="CONSULTA">CONSULTA</option>
+              </select>
+
+              <select 
+                className="w-full lg:w-auto px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
+                value={filters.rotina}
+                onChange={(e) => setFilters({ ...filters, rotina: e.target.value })}
+              >
+                <option value="">Rotina</option>
+                {Array.from(new Set(
+                  filters.tipo 
+                    ? routines.filter(r => r.tipo === filters.tipo).map(r => r.descricao)
+                    : routines.map(r => r.descricao)
+                )).sort().map(desc => (
+                  <option key={desc} value={desc}>{desc}</option>
+                ))}
               </select>
 
               <select 
