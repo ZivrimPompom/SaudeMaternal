@@ -759,7 +759,7 @@ export default function ExamesPage() {
                         )}
                       </div>
 
-                      <div className="bg-surface-container-low rounded-2xl overflow-x-auto border border-outline-variant/10">
+                      <div className="bg-surface-container-lowest md:bg-surface-container-low rounded-2xl overflow-x-auto border border-outline-variant/10">
                         <table className="w-full text-left border-separate border-spacing-0" style={{ tableLayout: 'fixed' }}>
                           <colgroup>
                             <col style={{ width: '12%' }} />
@@ -948,7 +948,7 @@ export default function ExamesPage() {
                             <h4 className="text-sm font-black text-primary uppercase tracking-widest">Movimento de Rotinas Realizadas</h4>
                           </div>
                         </div>
-                        <div className="bg-surface-container-low rounded-2xl overflow-x-auto border border-outline-variant/10">
+                        <div className="bg-surface-container-lowest md:bg-surface-container-low rounded-2xl overflow-x-auto border border-outline-variant/10">
                           <table className="w-full text-left border-separate border-spacing-0" style={{ tableLayout: 'fixed' }}>
                             <colgroup>
                               <col style={{ width: '10%' }} />
