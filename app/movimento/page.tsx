@@ -494,9 +494,15 @@ export default function MovimentoPage() {
   const selectedPatientHistory = useMemo(() => {
     if (!formData.sispn) return [];
     return results
-      .filter(r => r.sispn === formData.sispn)
+      .filter(r => {
+        if (r.sispn !== formData.sispn) return false;
+        if (filters.tipo && (r.tipo || r.rotinas?.tipo) !== filters.tipo) return false;
+        if (filters.trimestre && r.trimestre_realizacao !== filters.trimestre) return false;
+        if (filters.rotina && r.rotinas?.descricao !== filters.rotina) return false;
+        return true;
+      })
       .sort((a, b) => new Date(b.data_realizacao).getTime() - new Date(a.data_realizacao).getTime());
-  }, [formData.sispn, results]);
+  }, [formData.sispn, results, filters]);
 
   const uniqueEquipes = Array.from(new Set(gestacoes.map(g => g.equipe))).filter(Boolean).sort();
 
