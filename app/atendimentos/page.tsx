@@ -184,6 +184,22 @@ export default function AtendimentosPage() {
   const [gestacoes, setGestacoes] = useState<Gestacao[]>([]);
   const [categories, setCategories] = useState<Categoria[]>([]);
   const [allProfessionals, setAllProfessionals] = useState<Profissional[]>([]);
+
+  const getProfessionalGrupo = useCallback((cpf: string) => {
+    const prof = allProfessionals.find(p => p.cpf === cpf);
+    if (!prof) return '---';
+    
+    const grupoFromJoin = Array.isArray(prof.categorias_profissionais) 
+      ? prof.categorias_profissionais[0]?.grupo 
+      : prof.categorias_profissionais?.grupo;
+    
+    if (grupoFromJoin) return grupoFromJoin;
+    
+    const cboPrefixo = String(prof.cbo || '').substring(0, 4);
+    const cat = categories.find(cat => cat.cbo === cboPrefixo);
+    return cat?.grupo || '---';
+  }, [allProfessionals, categories]);
+
   const [unidades, setUnidades] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -852,14 +868,20 @@ export default function AtendimentosPage() {
 
   const professionalSearchResults = useMemo(() => {
     const activePros = allProfessionals.filter(p => (p as any).situacao === 'ATIVO');
-    if (!professionalSearch || professionalSearch.length < 1) return activePros.slice(0, 10);
+    const filteredByCategory = activePros.filter(p => {
+      const grupo = Array.isArray(p.categorias_profissionais) 
+        ? p.categorias_profissionais[0]?.grupo 
+        : p.categorias_profissionais?.grupo;
+      return grupo !== 'ADMINISTRATIVO';
+    });
+    if (!professionalSearch || professionalSearch.length < 1) return filteredByCategory.slice(0, 10);
     
     const normalize = (str: string) => 
       str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : "";
     
     const query = normalize(professionalSearch);
     
-    return activePros.filter(p => {
+    return filteredByCategory.filter(p => {
       const nome = normalize(p.nome || '');
       const cpf = p.cpf || '';
       return nome.includes(query) || cpf.includes(query);
@@ -870,7 +892,13 @@ export default function AtendimentosPage() {
     if (!selectedCategory) return [];
     const category = categories.find(c => c.categoria === selectedCategory);
     if (!category) return [];
-    return allProfessionals.filter(p => p.cbo.startsWith(category.cbo));
+    return allProfessionals.filter(p => {
+      if (!p.cbo.startsWith(category.cbo)) return false;
+      const grupo = Array.isArray(p.categorias_profissionais) 
+        ? p.categorias_profissionais[0]?.grupo 
+        : p.categorias_profissionais?.grupo;
+      return grupo !== 'ADMINISTRATIVO';
+    });
   }, [selectedCategory, categories, allProfessionals]);
 
   const handleExportCSV = useCallback(() => {
@@ -1058,7 +1086,12 @@ export default function AtendimentosPage() {
                                       >
                                         <option value="">SELECIONE PROFISSIONAL</option>
                                         {allProfessionals
-                                          .filter(p => p.categorias_profissionais?.[0]?.grupo !== 'ADMINISTRATIVO')
+                                          .filter(p => {
+                                            const grupo = Array.isArray(p.categorias_profissionais) 
+                                              ? p.categorias_profissionais[0]?.grupo 
+                                              : p.categorias_profissionais?.grupo;
+                                            return grupo !== 'ADMINISTRATIVO';
+                                          })
                                           .map((p) => (
                                           <option key={p.cpf} value={p.cpf}>{p.nome}</option>
                                         ))}
@@ -1071,7 +1104,7 @@ export default function AtendimentosPage() {
                                   <td className="px-4 py-4">
                                     <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-3 py-2">
                                       <span className="text-[10px] font-bold text-on-surface bg-secondary/10 px-2 py-0.5 rounded-full">
-                                        {allProfessionals.find(p => p.cpf === entry.cpf_profissional)?.categorias_profissionais?.[0]?.grupo || '---'}
+                                        {getProfessionalGrupo(entry.cpf_profissional)}
                                       </span>
                                     </div>
                                   </td>
@@ -1109,12 +1142,9 @@ export default function AtendimentosPage() {
                                     <button 
                                       type="button" 
                                       onClick={() => {
-                                        if (formEntries.length > 1) {
-                                          setFormEntries(formEntries.filter((_, i) => i !== index));
-                                        }
+                                        setFormEntries(formEntries.filter((_, i) => i !== index));
                                       }}
-                                      className="text-error hover:scale-110 transition-transform disabled:opacity-20"
-                                      disabled={formEntries.length === 1}
+                                      className="text-error hover:scale-110 transition-transform"
                                     >
                                       <span className="material-symbols-outlined text-sm">delete</span>
                                     </button>

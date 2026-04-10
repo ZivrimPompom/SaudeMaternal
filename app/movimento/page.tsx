@@ -11,6 +11,7 @@ import Pagination from '@/components/Pagination';
 import RecordsSummary from '@/components/RecordsSummary';
 import SearchInput from '@/components/SearchInput';
 import PatientBanner from '@/components/PatientBanner';
+import CSVImporter from '@/components/CSVImporter';
 
 interface Routine {
   id: string;
@@ -149,7 +150,7 @@ export default function MovimentoPage() {
     setMounted(true);
   }, []);
 
-  const { searchQuery, setSearchQuery, isFormOpen, setIsFormOpen, refreshTrigger, setOnExportCSV } = useSearch();
+  const { searchQuery, setSearchQuery, isFormOpen, setIsFormOpen, refreshTrigger, setOnExportCSV, onExportCSV } = useSearch();
   const [isViewingHistory, setIsViewingHistory] = useState(false);
   const { user: authUser } = useAuth();
   const [results, setResults] = useState<ExamResult[]>([]);
@@ -720,6 +721,19 @@ export default function MovimentoPage() {
   }, [handleExportCSV, setOnExportCSV]);
 
   if (!mounted) return null;
+
+  const handleExportLayout = () => {
+    const headers = ['sispn', 'id_rotina', 'data_realizacao', 'resultado', 'cpf_profissional', 'cbo', 'trimestre_realizacao', 'observacoes'];
+    const blob = new Blob([headers.join(',')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'layout_importacao_movimento.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <DashboardLayout title="Movimento">

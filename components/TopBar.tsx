@@ -43,6 +43,7 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
   const isAtendimentosPage = pathname === '/atendimentos';
   const isExamesPage = pathname === '/rotinas';
   const isDesfechosPage = pathname === '/desfechos';
+  const isMovimentoPage = pathname === '/movimento';
   
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [pacientes, setPacientes] = useState<any[]>([]);
@@ -51,9 +52,9 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
   const [gestacoes, setGestacoes] = useState<any[]>([]);
 
   useEffect(() => {
-    if (isGestacoesPage || isExamesPage || isAtendimentosPage || isDesfechosPage) {
+    if (isGestacoesPage || isExamesPage || isAtendimentosPage || isDesfechosPage || isMovimentoPage) {
       const fetchData = async () => {
-        console.log('Fetching data for import validation...', { isGestacoesPage, isExamesPage, isAtendimentosPage, isDesfechosPage });
+        console.log('Fetching data for import validation...', { isGestacoesPage, isExamesPage, isAtendimentosPage, isDesfechosPage, isMovimentoPage });
         
         const fetchChunked = async (tableName: string, selectStr: string) => {
           let allData: any[] = [];
@@ -93,7 +94,7 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
           setProfissionais(profData);
           console.log('Fetched', pacData.length, 'pacientes and', profData.length, 'profissionais');
         }
-        if (isExamesPage || isAtendimentosPage) {
+        if (isExamesPage || isAtendimentosPage || isMovimentoPage) {
           const rotData = await fetchChunked('rotinas', 'id, descricao, tipo, trimestre');
           const gestData = await fetchChunked('gestacoes', 'sispn, dum');
           setRotinas(rotData);
@@ -696,6 +697,132 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
         return { valid, rejected };
       }
     };
+    if (isMovimentoPage) return {
+      tableName: "registro_rotinas",
+      expectedColumns: ['sispn', 'id_rotina', 'data_realizacao', 'resultado', 'cpf_profissional', 'cbo', 'trimestre_realizacao', 'observacoes'],
+      requiredColumns: ['sispn', 'id_rotina', 'data_realizacao'],
+      conflictColumn: "id_registro",
+      transformData: (data: any[]) => {
+        console.log('Starting transformation for', data.length, 'rows');
+        const valid: any[] = [];
+        const rejected: any[] = [];
+
+        data.forEach((item) => {
+          const formatDate = (dateStr: string) => {
+            if (!dateStr) return null;
+            if (dateStr.includes('/')) {
+              const [d, m, y] = dateStr.split('/');
+              return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+            }
+            return dateStr;
+          };
+
+          const calculateTrimestre = (dumStr: string, realizacaoStr: string) => {
+            if (!dumStr || !realizacaoStr) return '1º TRIMESTRE';
+            const dum = new Date(dumStr);
+            const realizacao = new Date(realizacaoStr);
+            if (isNaN(dum.getTime()) || isNaN(realizacao.getTime())) return '1º TRIMESTRE';
+            const diffTime = realizacao.getTime() - dum.getTime();
+            const diffWeeks = Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 7));
+            if (diffWeeks <= 13) return '1º TRIMESTRE';
+            if (diffWeeks <= 27) return '2º TRIMESTRE';
+            return '3º TRIMESTRE';
+          };
+
+          const mapToRotinaTrimestre = (trim: string) => {
+            if (trim === '1º TRIMESTRE') return 'PRIMEIRO';
+            if (trim === '2º TRIMESTRE') return 'SEGUNDO';
+            return 'TERCEIRO';
+          };
+
+          const normalizeSispn = (val: any) => {
+            if (!val) return '';
+            return val.toString().replace(/\D/g, '').replace(/^0+/, '');
+          };
+
+          const sispn = normalizeSispn(item.sispn);
+          const dataRealizacao = formatDate(item.data_realizacao);
+          const gestacao = gestacoes.find(g => normalizeSispn(g.sispn) === sispn);
+          
+          let rejectionReason = '';
+          if (!gestacao) {
+            rejectionReason = `Gestação com SISPN ${sispn} não encontrada no Cadastro de Gestações.`;
+          }
+
+          const calculatedTrimestre = item.trimestre_realizacao || calculateTrimestre(gestacao?.dum || '', dataRealizacao || '');
+          const rotinaTrimestre = mapToRotinaTrimestre(calculatedTrimestre);
+
+          const normalizeDescription = (desc: string) => {
+            if (!desc) return '';
+            return desc
+              .toUpperCase()
+              .replace(/\uFFFD/g, 'A')
+              .normalize("NFD")
+              .replace(/[\u0300-\u036f]/g, "")
+              .trim();
+          };
+
+          const descricaoCsv = normalizeDescription(item.id_rotina || '');
+
+          let rotina = rotinas.find(r =>
+            normalizeDescription(r.descricao) === descricaoCsv &&
+            r.trimestre === rotinaTrimestre
+          );
+
+          if (!rotina) {
+            rotina = rotinas.find(r =>
+              normalizeDescription(r.descricao) === descricaoCsv
+            );
+          }
+
+          if (!rotina) {
+            rotina = rotinas.find(r => {
+              const dbDesc = normalizeDescription(r.descricao);
+              return (dbDesc.includes(descricaoCsv) || descricaoCsv.includes(dbDesc));
+            });
+          }
+
+          if (!rotina) {
+            rejectionReason = rejectionReason ? `${rejectionReason} | ` : '';
+            rejectionReason += `Rotina "${descricaoCsv}" não encontrada.`;
+          }
+
+          const cpfProf = (item.cpf_profissional || '').replace(/\D/g, '').padStart(11, '0');
+          const transformedItem = {
+            ...item,
+            sispn,
+            id_rotina: rotina?.id || item.id_rotina,
+            cpf_profissional: cpfProf || 'NÃO INFORMADO',
+            data_realizacao: dataRealizacao,
+            resultado: (item.resultado || '').toUpperCase(),
+            trimestre_realizacao: calculatedTrimestre,
+            cbo: (item.cbo || '').replace(/\D/g, ''),
+            cpf_operador: user?.cpf || null,
+            observacoes: (item.observacoes || '').toUpperCase(),
+            tipo: (item.tipo || rotina?.tipo || 'EXAME').toUpperCase()
+          };
+
+          const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(transformedItem.id_rotina);
+          if (!isUuid) {
+            rejectionReason = rejectionReason ? `${rejectionReason} | ` : '';
+            rejectionReason += `ID da Rotina inválido (${transformedItem.id_rotina}).`;
+          }
+          if (!transformedItem.sispn) {
+            rejectionReason = rejectionReason ? `${rejectionReason} | ` : '';
+            rejectionReason += `SISPN ausente.`;
+          }
+
+          if (rejectionReason) {
+            rejected.push({ ...item, MOTIVO_REJEICAO: rejectionReason });
+          } else {
+            valid.push(transformedItem);
+          }
+        });
+
+        console.log('Transformation complete.', valid.length, 'valid,', rejected.length, 'rejected');
+        return { valid, rejected };
+      }
+    };
     return null;
   };
 
@@ -740,7 +867,7 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
           <span className="hidden sm:inline text-sm font-semibold">Home</span>
         </Link>
         
-        {!isHomePage && (
+        {!isHomePage && !isMovimentoPage && (
           <div className="flex items-center gap-1 md:gap-2 ml-auto">
             {importerProps && (
               <CSVImporter 
@@ -790,6 +917,52 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
           </div>
         )}
       </div>
+
+      {/* Botões específicos para Movimento - ordem invertida (direita pra esquerda): Cadastrar, Exportar CSV, Exportar Layout, Importar */}
+      {isMovimentoPage && (
+        <div className="flex items-center gap-2">
+          {importerProps && (
+            <CSVImporter 
+              {...importerProps}
+              onSuccess={triggerRefresh}
+              title="Importar"
+              hideTitleOnMobile={true}
+              className="flex items-center gap-2 px-3 md:px-4 py-1.5 rounded-full text-xs md:text-sm font-bold transition-all duration-300 bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20"
+            />
+          )}
+          {importerProps && (
+            <button
+              onClick={handleExportLayout}
+              className="flex items-center gap-2 px-3 md:px-4 py-1.5 rounded-full text-xs md:text-sm font-bold transition-all duration-300 bg-white text-primary border border-primary hover:bg-primary/5 shadow-lg shadow-primary/5"
+              title="Baixar modelo de planilha para importação"
+            >
+              <span className="material-symbols-outlined text-sm">download</span>
+              <span className="hidden md:inline">Exportar Layout</span>
+            </button>
+          )}
+          {onExportCSV && (
+            <button
+              onClick={onExportCSV}
+              className="flex items-center gap-2 px-3 md:px-4 py-1.5 rounded-full text-xs md:text-sm font-bold transition-all duration-300 bg-white text-primary border border-primary hover:bg-primary/5 shadow-lg shadow-primary/5"
+              title="Exportar dados atuais para CSV"
+            >
+              <span className="material-symbols-outlined text-sm">download</span>
+              <span className="hidden md:inline">Exportar CSV</span>
+            </button>
+          )}
+          <button
+            onClick={() => { if (!isFormOpen) setSearchQuery(''); setIsFormOpen(!isFormOpen); }}
+            className={`flex items-center gap-2 px-3 md:px-4 py-1.5 rounded-full text-xs md:text-sm font-bold transition-all duration-300 ${
+              isFormOpen 
+                ? 'bg-red-600 text-white hover:bg-red-700 shadow-lg shadow-red-200' 
+                : 'bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20'
+            }`}
+          >
+            <span className="material-symbols-outlined text-sm">{isFormOpen ? 'close' : 'add'}</span>
+            <span className="hidden md:inline">{isFormOpen ? 'Fechar' : 'Cadastrar'}</span>
+          </button>
+        </div>
+      )}
 
       <div className="flex items-center gap-2 md:gap-6 ml-2">
         <div className="flex items-center gap-1 md:gap-4">
