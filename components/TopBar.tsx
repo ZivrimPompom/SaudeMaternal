@@ -40,7 +40,6 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
   const isPacientesPage = pathname === '/pacientes';
   const isUnidadesPage = pathname === '/unidades';
   const isGestacoesPage = pathname === '/gestacoes';
-  const isAtendimentosPage = pathname === '/atendimentos';
   const isExamesPage = pathname === '/rotinas';
   const isDesfechosPage = pathname === '/desfechos';
   const isMovimentoPage = pathname === '/movimento';
@@ -52,9 +51,9 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
   const [gestacoes, setGestacoes] = useState<any[]>([]);
 
   useEffect(() => {
-    if (isGestacoesPage || isExamesPage || isAtendimentosPage || isDesfechosPage || isMovimentoPage) {
+    if (isGestacoesPage || isExamesPage || isDesfechosPage || isMovimentoPage) {
       const fetchData = async () => {
-        console.log('Fetching data for import validation...', { isGestacoesPage, isExamesPage, isAtendimentosPage, isDesfechosPage, isMovimentoPage });
+        console.log('Fetching data for import validation...', { isGestacoesPage, isExamesPage, isDesfechosPage, isMovimentoPage });
         
         const fetchChunked = async (tableName: string, selectStr: string) => {
           let allData: any[] = [];
@@ -94,7 +93,7 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
           setProfissionais(profData);
           console.log('Fetched', pacData.length, 'pacientes and', profData.length, 'profissionais');
         }
-        if (isExamesPage || isAtendimentosPage || isMovimentoPage) {
+        if (isExamesPage || isMovimentoPage) {
           const rotData = await fetchChunked('rotinas', 'id, descricao, tipo, trimestre');
           const gestData = await fetchChunked('gestacoes', 'sispn, dum');
           setRotinas(rotData);
@@ -109,7 +108,7 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
       };
       fetchData();
     }
-  }, [isGestacoesPage, isExamesPage, isAtendimentosPage, isDesfechosPage, triggerRefresh]);
+  }, [isGestacoesPage, isExamesPage, isDesfechosPage, isMovimentoPage, triggerRefresh]);
 
 
   const getImporterProps = () => {
@@ -358,61 +357,6 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
           });
         });
 
-        return { valid, rejected };
-      }
-    };
-    if (isAtendimentosPage) return {
-      tableName: "atendimentos",
-      expectedColumns: ['sispn', 'data_consulta', 'trimestre_consulta', 'cpf', 'data_proxima_consulta', 'observacoes_clinicas'],
-      requiredColumns: ['sispn', 'data_consulta', 'cpf'],
-      conflictColumn: "id_atendimento",
-      transformData: (data: any[]) => {
-        const valid: any[] = [];
-        const rejected: any[] = [];
-        
-        const formatDate = (dateStr: string) => {
-          if (!dateStr) return null;
-          if (dateStr.includes('/')) {
-            const [d, m, y] = dateStr.split('/');
-            return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
-          }
-          return dateStr;
-        };
-
-        const normalizeSispn = (val: any) => {
-          if (!val) return '';
-          return val.toString().replace(/\D/g, '').replace(/^0+/, '');
-        };
-
-        data.forEach(item => {
-          const sispn = normalizeSispn(item.sispn);
-          let rejectionReason = '';
-
-          if (!sispn) {
-            rejectionReason = 'SISPN ausente';
-          } else {
-            const gestacao = gestacoes.find(g => normalizeSispn(g.sispn) === sispn);
-            if (!gestacao) {
-              rejectionReason = `Gestação com SISPN ${sispn} não encontrada no Cadastro de Gestações.`;
-            }
-          }
-
-          if (rejectionReason) {
-            rejected.push({ ...item, MOTIVO_REJEICAO: rejectionReason });
-          } else {
-            valid.push({
-              ...item,
-              sispn,
-              cpf: (item.cpf || '').replace(/\D/g, '').padStart(11, '0'),
-              data_consulta: formatDate(item.data_consulta),
-              data_proxima_consulta: formatDate(item.data_proxima_consulta),
-              cbo: (item.cbo || '').replace(/\D/g, ''),
-              trimestre_consulta: (item.trimestre_consulta || '1º TRIMESTRE').toUpperCase(),
-              cpf_operador: user?.cpf || null,
-              observacoes_clinicas: (item.observacoes_clinicas || '').toUpperCase()
-            });
-          }
-        });
         return { valid, rejected };
       }
     };
@@ -901,7 +845,7 @@ export default function TopBar({ onToggleSidebar, isSidebarOpen }: { onToggleSid
               </button>
             )}
 
-            {(isCategoriesPage || isProfessionalsPage || isOperatorsPage || isRotinasPage || isPacientesPage || isUnidadesPage || isGestacoesPage || isAtendimentosPage || isExamesPage || isDesfechosPage) && (
+            {(isCategoriesPage || isProfessionalsPage || isOperatorsPage || isRotinasPage || isPacientesPage || isUnidadesPage || isGestacoesPage || isExamesPage || isDesfechosPage) && (
               <button
                 onClick={() => { if (!isFormOpen) setSearchQuery(''); setIsFormOpen(!isFormOpen); }}
                 className={`flex items-center gap-2 px-3 md:px-4 py-1.5 rounded-full text-xs md:text-sm font-bold transition-all duration-300 ${
