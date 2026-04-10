@@ -392,6 +392,63 @@ export default function AcompanhamentoIndividual() {
     return result;
   }, [gestacao, gestacaoInfo, rotinas, registrosRotinas]);
 
+  const consultasPorTrimestre = useMemo(() => {
+    if (!gestacao) return { 1: [], 2: [], 3: [] };
+    
+    const result: Record<number, { descricao: string; grupo?: string; status: 'realizado' | 'pendente' | 'vencido' | 'nao_realizado'; data?: string; resultado?: string; semanasRestantes?: number }[]> = {
+      1: [],
+      2: [],
+      3: []
+    };
+
+    const triAtual = gestacaoInfo?.triAtual || 1;
+    const weeks = gestacaoInfo?.weeks || 0;
+
+    const limitesTri: Record<number, number> = { 1: 12, 2: 24, 3: 40 };
+    const inicioTri: Record<number, number> = { 1: 0, 2: 13, 3: 25 };
+
+    rotinas.filter(r => r.tipo === 'CONSULTA').forEach(r => {
+      const triRotina = TRIMESTRE_MAP[r.trimestre];
+      if (!triRotina) return;
+
+      const registro = registrosRotinas.find(rr => rr.id_rotina === r.id);
+
+      let status: 'realizado' | 'pendente' | 'vencido' | 'nao_realizado';
+      let semanasRestantes: number | undefined;
+
+      if (registro) {
+        status = 'realizado';
+      } else if (triAtual > triRotina) {
+        status = 'vencido';
+        semanasRestantes = 0;
+      } else if (triAtual === triRotina) {
+        status = 'pendente';
+        const limite = limitesTri[triRotina];
+        semanasRestantes = Math.max(0, limite - weeks);
+      } else {
+        status = 'pendente';
+        const limite = limitesTri[triRotina];
+        const inicio = inicioTri[triRotina];
+        semanasRestantes = Math.max(0, limite - inicio);
+      }
+
+      result[triRotina].push({
+        descricao: r.descricao,
+        grupo: r.grupo,
+        status,
+        data: registro?.data_realizacao,
+        resultado: registro?.resultado,
+        semanasRestantes
+      });
+    });
+
+    Object.keys(result).forEach(tri => {
+      result[parseInt(tri)].sort((a, b) => a.descricao.localeCompare(b.descricao));
+    });
+
+    return result;
+  }, [gestacao, gestacaoInfo, rotinas, registrosRotinas]);
+
   if (!mounted) return null;
 
   if (!sispn || showSearch) {
@@ -614,6 +671,7 @@ export default function AcompanhamentoIndividual() {
             const consultasMeta = info.consultasEsperadas[tri - 1] || 0;
             const consultasStatus = consultasRealizadas >= consultasMeta ? 'completo' : consultasRealizadas > 0 ? 'parcial' : 'pendente';
             const exams = examsPorTrimestre[tri as keyof typeof examsPorTrimestre];
+            const consultasItens = consultasPorTrimestre[tri as keyof typeof consultasPorTrimestre] || [];
             const realizado = exams.filter(e => e.status === 'realizado').length;
             const pendente = exams.filter(e => e.status === 'pendente').length;
             const vencido = exams.filter(e => e.status === 'vencido').length;
@@ -635,6 +693,33 @@ export default function AcompanhamentoIndividual() {
                 </div>
 
                 <div className="p-2 space-y-1 flex-1 flex flex-col">
+                  {consultasItens.length > 0 && (
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-2 text-sm font-black uppercase tracking-wider text-on-surface-variant/60 pl-2">
+                        <Stethoscope className="w-5 h-5" />
+                        <span>Consultas</span>
+                      </div>
+                      <div className="flex items-center justify-between p-2 bg-surface-container-low rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <span className={`w-2 h-2 rounded-full ${
+                            consultasStatus === 'completo' ? 'bg-green-500' :
+                            consultasStatus === 'parcial' ? 'bg-amber-500' : 'bg-gray-400'
+                          }`}></span>
+                          <span className="text-[12px] font-medium">Realizadas</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-sm font-bold ${
+                            consultasStatus === 'completo' ? 'text-green-600' :
+                            consultasStatus === 'parcial' ? 'text-amber-600' : 'text-gray-400'
+                          }`}>
+                            {consultasRealizadas}
+                          </span>
+                          <span className="text-[10px] text-on-surface-variant/60">/ {consultasMeta}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="space-y-1 flex-1">
                     <div className="flex items-center justify-between text-sm font-black uppercase tracking-wider text-on-surface-variant/60 pl-2">
                       <div className="flex items-center gap-2">
