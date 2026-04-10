@@ -870,9 +870,10 @@ export default function AtendimentosPage() {
   const professionalSearchResults = useMemo(() => {
     const activePros = allProfessionals.filter(p => (p as any).situacao === 'ATIVO');
     const filteredByCategory = activePros.filter(p => {
-      const grupo = Array.isArray(p.categorias_profissionais) 
-        ? p.categorias_profissionais[0]?.grupo 
-        : p.categorias_profissionais?.grupo;
+      const cats = p.categorias_profissionais;
+      const grupo = Array.isArray(cats) 
+        ? cats[0]?.grupo 
+        : (cats as any)?.grupo;
       return grupo !== 'ADMINISTRATIVO';
     });
     if (!professionalSearch || professionalSearch.length < 1) return filteredByCategory.slice(0, 10);
@@ -895,9 +896,10 @@ export default function AtendimentosPage() {
     if (!category) return [];
     return allProfessionals.filter(p => {
       if (!p.cbo.startsWith(category.cbo)) return false;
-      const grupo = Array.isArray(p.categorias_profissionais) 
-        ? p.categorias_profissionais[0]?.grupo 
-        : p.categorias_profissionais?.grupo;
+      const cats = p.categorias_profissionais;
+      const grupo = Array.isArray(cats) 
+        ? cats[0]?.grupo 
+        : (cats as any)?.grupo;
       return grupo !== 'ADMINISTRATIVO';
     });
   }, [selectedCategory, categories, allProfessionals]);
@@ -1088,9 +1090,10 @@ export default function AtendimentosPage() {
                                         <option value="">SELECIONE PROFISSIONAL</option>
                                         {allProfessionals
                                           .filter(p => {
-                                            const grupo = Array.isArray(p.categorias_profissionais) 
-                                              ? p.categorias_profissionais[0]?.grupo 
-                                              : p.categorias_profissionais?.grupo;
+                                            const cats = p.categorias_profissionais;
+                                            const grupo = Array.isArray(cats) 
+                                              ? cats[0]?.grupo 
+                                              : (cats as any)?.grupo;
                                             return grupo !== 'ADMINISTRATIVO';
                                           })
                                           .map((p) => (
