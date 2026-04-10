@@ -56,6 +56,7 @@ interface Rotina {
   trimestre: string;
   categoria: string;
   quantidade?: number;
+  grupo?: string;
 }
 
 interface RegistroRotina {
@@ -335,7 +336,7 @@ export default function AcompanhamentoIndividual() {
   const examsPorTrimestre = useMemo(() => {
     if (!gestacao) return { 1: [], 2: [], 3: [] };
     
-    const result: Record<number, { descricao: string; status: 'realizado' | 'pendente' | 'vencido' | 'nao_realizado'; data?: string; resultado?: string; semanasRestantes?: number }[]> = {
+    const result: Record<number, { descricao: string; grupo?: string; status: 'realizado' | 'pendente' | 'vencido' | 'nao_realizado'; data?: string; resultado?: string; semanasRestantes?: number }[]> = {
       1: [],
       2: [],
       3: []
@@ -347,7 +348,7 @@ export default function AcompanhamentoIndividual() {
     const limitesTri: Record<number, number> = { 1: 12, 2: 24, 3: 40 };
     const inicioTri: Record<number, number> = { 1: 0, 2: 13, 3: 25 };
 
-    rotinas.forEach(r => {
+    rotinas.filter(r => r.tipo !== 'CONSULTA').forEach(r => {
       const triRotina = TRIMESTRE_MAP[r.trimestre];
       if (!triRotina) return;
 
@@ -624,7 +625,7 @@ export default function AcompanhamentoIndividual() {
                   tri === info.triAtual ? 'border-primary/30' : 'border-outline-variant/10'
                 }`}
               >
-                <div className={`p-4 border-b ${tri === info.triAtual ? 'bg-primary/10' : 'bg-surface-container-low'}`}>
+                <div className={`p-2 border-b ${tri === info.triAtual ? 'bg-primary/10' : 'bg-surface-container-low'}`}>
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-black text-on-surface uppercase">{tri}º Trimestre</h3>
                     {tri === info.triAtual && (
@@ -633,53 +634,46 @@ export default function AcompanhamentoIndividual() {
                   </div>
                 </div>
 
-                <div className="p-4 space-y-4 flex-1 flex flex-col">
-                  <div className="flex items-center justify-between p-3 bg-surface-container-low rounded-xl">
-                    <div className="flex items-center gap-3">
-                      <Stethoscope className={`w-5 h-5 ${consultasStatus === 'completo' ? 'text-green-500' : consultasStatus === 'parcial' ? 'text-amber-500' : 'text-gray-400'}`} />
-                      <span className="text-sm font-medium">Consultas</span>
+                <div className="p-2 space-y-1 flex-1 flex flex-col">
+                  <div className="space-y-1 flex-1">
+                    <div className="flex items-center justify-between text-sm font-black uppercase tracking-wider text-on-surface-variant/60 pl-2">
+                      <div className="flex items-center gap-2">
+                        <FileText className="w-5 h-5" />
+                        <span>Rotinas Obrigatórias</span>
+                      </div>
+                      <span className="text-[12px] font-black">PRAZO</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`text-lg font-black ${
-                        consultasStatus === 'completo' ? 'text-green-500' : consultasStatus === 'parcial' ? 'text-amber-500' : 'text-red-500'
-                      }`}>
-                        {consultasRealizadas}
-                      </span>
-                      <span className="text-sm text-on-surface-variant/60">/ {consultasMeta}</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2 flex-1">
-                    <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-on-surface-variant/60 pl-2">
-                      <FileText className="w-4 h-4" />
-                      <span>Rotinas Obrigatórias</span>
-                    </div>
-                    <div className="space-y-1.5">
+                    <div className="space-y-0.5">
                       {exams.length === 0 ? (
-                        <p className="text-xs text-on-surface-variant/40 py-2">Nenhum exame esperado</p>
+                        <p className="text-xs text-on-surface-variant/40 py-1">Nenhum exame esperado</p>
                       ) : (
                         exams.map((exam, idx) => (
                           <div 
                             key={idx} 
-                            className="grid grid-cols-[auto_1fr_auto] items-center gap-2 p-2 rounded-lg text-sm"
+                            className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-2 p-1.5 rounded-lg text-sm"
                           >
                             <div className="flex items-center justify-center w-3">
-                              <span className={`w-1.5 h-1.5 rounded-full ${
+                              <span className={`w-2 h-2 rounded-full ${
                                 exam.status === 'realizado' ? 'bg-green-500' :
                                 exam.status === 'vencido' ? 'bg-red-500' :
                                 exam.status === 'pendente' ? 'bg-amber-500' : 'bg-gray-400'
                               }`}></span>
                             </div>
-                            <div className="text-on-surface truncate">
+                            <div className="text-on-surface truncate text-[12px] font-medium">
                               {exam.descricao}
                             </div>
+                            {exam.grupo && (
+                              <span className="text-[10px] font-bold bg-secondary/10 px-1.5 py-0.5 rounded text-on-surface-variant">
+                                {exam.grupo}
+                              </span>
+                            )}
                             <div className="text-right">
                               {exam.status === 'realizado' ? (
-                                <span className="text-[10px] font-bold text-green-600">OK</span>
+                                <span className="text-[12px] font-bold text-green-600">OK</span>
                               ) : exam.semanasRestantes === 0 ? (
-                                <span className="text-[10px] font-bold text-red-600">VENCIDO</span>
+                                <span className="text-[12px] font-bold text-red-600">VENCIDO</span>
                               ) : (
-                                <span className={`text-[10px] font-bold ${
+                                <span className={`text-[12px] font-bold ${
                                   exam.status === 'pendente' ? 'text-amber-600' : 'text-gray-400'
                                 }`}>
                                   {exam.semanasRestantes} sem
@@ -692,17 +686,17 @@ export default function AcompanhamentoIndividual() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2 pt-2 border-t border-outline-variant/10 mt-auto">
+                  <div className="grid grid-cols-3 gap-1 pt-1 border-t border-outline-variant/10 mt-auto">
                     <div className="text-center p-2 bg-green-500/10 rounded-lg">
-                      <p className="text-lg font-black text-green-500">{realizado}</p>
+                      <p className="text-xl font-black text-green-500">{realizado}</p>
                       <p className="text-[10px] font-bold uppercase text-green-600">Feitos</p>
                     </div>
                     <div className="text-center p-2 bg-amber-500/10 rounded-lg">
-                      <p className="text-lg font-black text-amber-500">{pendente}</p>
+                      <p className="text-xl font-black text-amber-500">{pendente}</p>
                       <p className="text-[10px] font-bold uppercase text-amber-600">Pendente</p>
                     </div>
                     <div className="text-center p-2 bg-red-500/10 rounded-lg">
-                      <p className="text-lg font-black text-red-500">{vencido}</p>
+                      <p className="text-xl font-black text-red-500">{vencido}</p>
                       <p className="text-[10px] font-bold uppercase text-red-600">Vencido</p>
                     </div>
                   </div>
