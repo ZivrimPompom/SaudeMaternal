@@ -189,9 +189,10 @@ export default function AtendimentosPage() {
     const prof = allProfessionals.find(p => p.cpf === cpf);
     if (!prof) return '---';
     
-    const grupoFromJoin = Array.isArray(prof.categorias_profissionais) 
-      ? prof.categorias_profissionais[0]?.grupo 
-      : prof.categorias_profissionais?.grupo;
+    const cats = prof.categorias_profissionais;
+    const grupoFromJoin = Array.isArray(cats) 
+      ? cats[0]?.grupo 
+      : (cats as any)?.grupo;
     
     if (grupoFromJoin) return grupoFromJoin;
     
