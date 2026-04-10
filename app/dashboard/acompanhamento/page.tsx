@@ -61,12 +61,6 @@ interface RegistroRotina {
   trimestre_realizacao: string;
 }
 
-interface Atendimento {
-  sispn: string;
-  data_consulta: string;
-  trimestre_consulta: string;
-}
-
 const COLORS = {
   primary: '#0D9488',
   success: '#10B981',
@@ -126,12 +120,13 @@ export default function AcompanhamentoDashboard() {
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
   const [rotinas, setRotinas] = useState<Rotina[]>([]);
   const [registrosRotinas, setRegistrosRotinas] = useState<RegistroRotina[]>([]);
-  const [atendimentos, setAtendimentos] = useState<Atendimento[]>([]);
   const [unidades, setUnidades] = useState<{cnes: string; nome_fantasia: string}[]>([]);
 
   const [filterStatus, setFilterStatus] = useState<'ATIVA' | 'VENCIDA' | 'TODAS'>('ATIVA');
   const [filterTrimestre, setFilterTrimestre] = useState<number | 'TODOS'>(0);
   const [filterUnidade, setFilterUnidade] = useState<string>('all');
+  const [filterTipoRotina, setFilterTipoRotina] = useState('all');
+  const [filterRotina, setFilterRotina] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   const isAdmin = user?.nivel_acesso === 'Administrador';
@@ -149,12 +144,11 @@ export default function AcompanhamentoDashboard() {
 
     const fetchData = async () => {
       try {
-        const [g, p, r, rr, a, u] = await Promise.all([
+        const [g, p, r, rr, u] = await Promise.all([
           supabase.from('gestacoes').select('*'),
           supabase.from('pacientes').select('cpf, gestante, nome_mae'),
-          supabase.from('rotinas').select('*').eq('categoria', 'OBRIGATORIO'),
+          supabase.from('rotinas').select('*'),
           supabase.from('registro_rotinas').select('*'),
-          supabase.from('atendimentos').select('sispn, data_consulta, trimestre_consulta'),
           supabase.from('unidades_saude').select('cnes, nome_fantasia')
         ]);
 
@@ -162,7 +156,6 @@ export default function AcompanhamentoDashboard() {
         if (p.data) setPacientes(p.data);
         if (r.data) setRotinas(r.data);
         if (rr.data) setRegistrosRotinas(rr.data);
-        if (a.data) setAtendimentos(a.data);
         if (u.data) setUnidades(u.data);
       } catch (err) {
         console.error('Erro ao buscar dados:', err);
@@ -173,38 +166,6 @@ export default function AcompanhamentoDashboard() {
 
     fetchData();
   }, [mounted]);
-
-  useEffect(() => {
-    if (!mounted || loading) return;
-    
-    const interval = setInterval(() => {
-      const fetchData = async () => {
-        try {
-          const [g, p, r, rr, a, u] = await Promise.all([
-            supabase.from('gestacoes').select('*'),
-            supabase.from('pacientes').select('cpf, gestante, nome_mae'),
-            supabase.from('rotinas').select('*').eq('categoria', 'OBRIGATORIO'),
-            supabase.from('registro_rotinas').select('*'),
-            supabase.from('atendimentos').select('sispn, data_consulta, trimestre_consulta'),
-            supabase.from('unidades_saude').select('cnes, nome_fantasia')
-          ]);
-
-          if (g.data) setGestacoes(g.data);
-          if (p.data) setPacientes(p.data);
-          if (r.data) setRotinas(r.data);
-          if (rr.data) setRegistrosRotinas(rr.data);
-          if (a.data) setAtendimentos(a.data);
-          if (u.data) setUnidades(u.data);
-        } catch (err) {
-          console.error('Erro ao buscar dados:', err);
-        }
-      };
-
-      fetchData();
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, [mounted, loading]);
 
   useEffect(() => {
     if (user?.unidade_cnes && !isAdmin) {
@@ -247,9 +208,9 @@ export default function AcompanhamentoDashboard() {
 
     gestacoesFiltradas.forEach(g => {
       const tri = getTrimestreAtual(g.dum);
-      const consultas = atendimentos.filter(a => a.sispn === g.sispn);
+      const consultas = registrosRotinas.filter(r => r.sispn === g.sispn && r.tipo === 'CONSULTA');
       const porTri = consultas.filter(a => {
-        const triCons = TRIMESTRE_MAP[a.trimestre_consulta];
+        const triCons = TRIMESTRE_MAP[a.trimestre_realizacao];
         return triCons === tri;
       });
       
@@ -292,7 +253,7 @@ export default function AcompanhamentoDashboard() {
       consultasPorTrimestre,
       examesPorTrimestre
     };
-  }, [gestacoesFiltradas, atendimentos, registrosRotinas, rotinas]);
+  }, [gestacoesFiltradas, registrosRotinas, rotinas]);
 
   const chartData = useMemo(() => {
     return [
@@ -330,7 +291,7 @@ export default function AcompanhamentoDashboard() {
         </header>
 
         <div className="flex flex-wrap gap-3 items-center">
-          <div className="relative flex-1 min-w-[200px]">
+          <div className="relative w-48">
             <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
               <Search className="w-4 h-4 text-on-surface-variant/40" />
             </div>
@@ -361,9 +322,9 @@ export default function AcompanhamentoDashboard() {
             onChange={(e) => setFilterStatus(e.target.value as any)}
             className="px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
           >
+            <option value="TODAS">Todos os Status</option>
             <option value="ATIVA">Ativas</option>
             <option value="VENCIDA">Vencidas</option>
-            <option value="TODAS">Todas</option>
           </select>
 
           <select
@@ -376,6 +337,55 @@ export default function AcompanhamentoDashboard() {
             <option value="2">2º Trimestre</option>
             <option value="3">3º Trimestre</option>
           </select>
+
+          <select
+            value={filterTipoRotina}
+            onChange={(e) => {
+              setFilterTipoRotina(e.target.value);
+              setFilterRotina('all');
+            }}
+            className="px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
+          >
+            <option value="all">Todos os Tipos</option>
+            <option value="CONSULTA">Consultas</option>
+            <option value="EXAME">Exames</option>
+            <option value="VACINA">Vacinas</option>
+            <option value="MEDICACAO">Medicações</option>
+          </select>
+
+          <select
+            value={filterRotina}
+            onChange={(e) => setFilterRotina(e.target.value)}
+            disabled={filterTipoRotina === 'all'}
+            className="px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
+          >
+            <option value="all">Todas as Rotinas</option>
+            {filterTipoRotina !== 'all' && rotinas
+              .filter(r => r.tipo === filterTipoRotina)
+              .reduce((acc, r) => {
+                if (!acc.find((item: Rotina) => item.descricao === r.descricao)) {
+                  acc.push(r);
+                }
+                return acc;
+              }, [] as Rotina[])
+              .map(r => (
+                <option key={r.id} value={r.id}>{r.descricao}</option>
+              ))}
+          </select>
+
+          <button
+            onClick={() => {
+              setSearchQuery('');
+              setFilterUnidade('all');
+              setFilterStatus('ATIVA');
+              setFilterTrimestre(0);
+              setFilterTipoRotina('all');
+              setFilterRotina('all');
+            }}
+            className="px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl hover:bg-surface-container-low focus:outline-none focus:ring-2 focus:ring-primary/20"
+          >
+            Limpar
+          </button>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">

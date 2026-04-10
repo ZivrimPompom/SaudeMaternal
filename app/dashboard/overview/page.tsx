@@ -49,18 +49,46 @@ interface Paciente {
   cpf: string;
   gestante: string;
   nome_mae?: string;
+  data_nascimento?: string;
 }
 
-interface Atendimento {
-  sispn: string;
-  data_consulta: string;
-  trimestre_consulta: string;
+const calculateAgeAndPhase = (dataNascimento: string, dataReferencia?: string): { phase: string } => {
+  if (!dataNascimento) return { phase: 'Não informado' };
+  
+  const birth = new Date(dataNascimento);
+  const ref = dataReferencia ? new Date(dataReferencia) : new Date();
+  
+  if (isNaN(birth.getTime())) return { phase: 'Não informado' };
+  
+  let age = ref.getFullYear() - birth.getFullYear();
+  const monthDiff = ref.getMonth() - birth.getMonth();
+  
+  if (monthDiff < 0 || (monthDiff === 0 && ref.getDate() < birth.getDate())) {
+    age--;
+  }
+  
+  if (age >= 60) return { phase: 'VELHICE' };
+  if (age >= 20) return { phase: 'ADULTO' };
+  if (age >= 12) return { phase: 'ADOLESCENTE' };
+  if (age >= 2) return { phase: 'CRIANÇA' };
+  return { phase: 'BEBÊ' };
+};
+
+interface Rotina {
+  id: string;
+  tipo: string;
+  descricao: string;
+  trimestre: string;
+  quantidade?: number;
 }
 
 interface RegistroRotina {
+  id_registro: string;
   sispn: string;
+  id_rotina: string;
   data_realizacao: string;
   trimestre_realizacao: string;
+  tipo?: string;
 }
 
 const COLORS = ['#0D9488', '#0066FF', '#F59E0B', '#10B981', '#EF4444'];
@@ -105,7 +133,7 @@ export default function GestacoesAtivasDashboard() {
 
   const [gestacoes, setGestacoes] = useState<Gestacao[]>([]);
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
-  const [atendimentos, setAtendimentos] = useState<Atendimento[]>([]);
+  const [rotinas, setRotinas] = useState<Rotina[]>([]);
   const [registrosRotinas, setRegistrosRotinas] = useState<RegistroRotina[]>([]);
   const [unidades, setUnidades] = useState<{cnes: string; nome_fantasia: string}[]>([]);
 
@@ -113,6 +141,9 @@ export default function GestacoesAtivasDashboard() {
   const [filterStatus, setFilterStatus] = useState<'ATIVA' | 'VENCIDA' | 'TODAS'>('ATIVA');
   const [filterRisk, setFilterRisk] = useState('all');
   const [filterTrimestre, setFilterTrimestre] = useState('all');
+  const [filterTipoRotina, setFilterTipoRotina] = useState('all');
+  const [filterRotina, setFilterRotina] = useState('all');
+  const [filterFaseVida, setFilterFaseVida] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   const isAdmin = user?.nivel_acesso === 'Administrador';
@@ -130,17 +161,17 @@ export default function GestacoesAtivasDashboard() {
 
     const fetchData = async () => {
       try {
-        const [g, p, a, rr, u] = await Promise.all([
+        const [g, p, r, rr, u] = await Promise.all([
           supabase.from('gestacoes').select('*'),
-          supabase.from('pacientes').select('cpf, gestante, nome_mae'),
-          supabase.from('atendimentos').select('sispn, data_consulta, trimestre_consulta'),
-          supabase.from('registro_rotinas').select('sispn, data_realizacao, trimestre_realizacao'),
+          supabase.from('pacientes').select('cpf, gestante, nome_mae, data_nascimento'),
+          supabase.from('rotinas').select('*'),
+          supabase.from('registro_rotinas').select('*'),
           supabase.from('unidades_saude').select('cnes, nome_fantasia')
         ]);
 
         if (g.data) setGestacoes(g.data);
         if (p.data) setPacientes(p.data);
-        if (a.data) setAtendimentos(a.data);
+        if (r.data) setRotinas(r.data);
         if (rr.data) setRegistrosRotinas(rr.data);
         if (u.data) setUnidades(u.data);
       } catch (err) {
@@ -154,42 +185,15 @@ export default function GestacoesAtivasDashboard() {
   }, [mounted]);
 
   useEffect(() => {
-    if (!mounted || loading) return;
-    
-    const interval = setInterval(() => {
-      const fetchData = async () => {
-        try {
-          const [g, p, a, rr, u] = await Promise.all([
-            supabase.from('gestacoes').select('*'),
-            supabase.from('pacientes').select('cpf, gestante, nome_mae'),
-            supabase.from('atendimentos').select('sispn, data_consulta, trimestre_consulta'),
-            supabase.from('registro_rotinas').select('sispn, data_realizacao, trimestre_realizacao'),
-            supabase.from('unidades_saude').select('cnes, nome_fantasia')
-          ]);
-
-          if (g.data) setGestacoes(g.data);
-          if (p.data) setPacientes(p.data);
-          if (a.data) setAtendimentos(a.data);
-          if (rr.data) setRegistrosRotinas(rr.data);
-          if (u.data) setUnidades(u.data);
-        } catch (err) {
-          console.error('Erro ao buscar dados:', err);
-        }
-      };
-
-      fetchData();
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, [mounted, loading]);
-
-  useEffect(() => {
     if (user?.unidade_cnes && !isAdmin) {
       setFilterUnidade(user.unidade_cnes);
     }
   }, [user, isAdmin]);
 
   const TRIMESTRE_MAP: Record<string, number> = {
+    'PRIMEIRO': 1,
+    'SEGUNDO': 2,
+    'TERCEIRO': 3,
     '1º TRIMESTRE': 1,
     '2º TRIMESTRE': 2,
     '3º TRIMESTRE': 3
@@ -208,6 +212,11 @@ export default function GestacoesAtivasDashboard() {
         const tri = getTrimestreAtual(g.dum);
         const triFilter = TRIMESTRE_MAP[filterTrimestre];
         if (tri !== triFilter) return false;
+      }
+      if (filterFaseVida !== 'all') {
+        const paciente = pacientes.find(p => p.cpf === g.cpf_paciente);
+        const { phase } = calculateAgeAndPhase(paciente?.data_nascimento || '');
+        if (phase !== filterFaseVida) return false;
       }
       return true;
     });
@@ -231,37 +240,60 @@ export default function GestacoesAtivasDashboard() {
     const habitual = gestacoesFiltradas.filter(g => g.classificacao_pn === 'HABITUAL').length;
     const risco = gestacoesFiltradas.filter(g => g.classificacao_pn === 'RISCO').length;
 
-    const consultasPorTri = [0, 0, 0];
-    
+    const faseVidaCounts: Record<string, number> = {};
     gestacoesFiltradas.forEach(g => {
-      const tri = getTrimestreAtual(g.dum);
-      const consultas = atendimentos.filter(a => a.sispn === g.sispn);
-      
-      consultas.forEach(a => {
-        const triCons = TRIMESTRE_MAP[a.trimestre_consulta];
+      const paciente = pacientes.find(p => p.cpf === g.cpf_paciente);
+      const { phase } = calculateAgeAndPhase(paciente?.data_nascimento || '');
+      faseVidaCounts[phase] = (faseVidaCounts[phase] || 0) + 1;
+    });
+
+    let registrosFiltrados = registrosRotinas.filter(r => 
+      gestacoesFiltradas.some(g => g.sispn === r.sispn)
+    );
+
+    if (filterTipoRotina !== 'all') {
+      registrosFiltrados = registrosFiltrados.filter(r => r.tipo === filterTipoRotina);
+    }
+
+    if (filterRotina !== 'all') {
+      registrosFiltrados = registrosFiltrados.filter(r => r.id_rotina === filterRotina);
+    }
+
+    const consultasPorTri = [0, 0, 0];
+    registrosFiltrados
+      .filter(r => r.tipo === 'CONSULTA')
+      .forEach(c => {
+        const triCons = TRIMESTRE_MAP[c.trimestre_realizacao];
         if (triCons >= 1 && triCons <= 3) {
           consultasPorTri[triCons - 1]++;
         }
       });
-    });
 
     const totalConsultas = consultasPorTri.reduce((a, b) => a + b, 0);
 
     const examesPorTri = [0, 0, 0];
-    gestacoesFiltradas.forEach(g => {
-      const exams = registrosRotinas.filter(r => r.sispn === g.sispn);
-      
-      exams.forEach(r => {
+    registrosFiltrados
+      .filter(r => r.tipo !== 'CONSULTA')
+      .forEach(r => {
         const triExam = TRIMESTRE_MAP[r.trimestre_realizacao];
         if (triExam >= 1 && triExam <= 3) {
           examesPorTri[triExam - 1]++;
         }
       });
-    });
 
     const totalExames = examesPorTri.reduce((a, b) => a + b, 0);
 
-    const consultasEsperadas = ativas * 3;
+    let rotinasFiltradas = rotinas;
+    if (filterTipoRotina !== 'all') {
+      rotinasFiltradas = rotinasFiltradas.filter(r => r.tipo === filterTipoRotina);
+    }
+    if (filterRotina !== 'all') {
+      rotinasFiltradas = rotinasFiltradas.filter(r => r.id === filterRotina);
+    }
+
+    const consultasEsperadas = rotinasFiltradas
+      .filter(r => r.tipo === 'CONSULTA')
+      .reduce((acc, r) => acc + (r.quantidade || 1), 0) * ativas;
     const pctConsultas = consultasEsperadas > 0 ? Math.round((totalConsultas / consultasEsperadas) * 100) : 0;
 
     return {
@@ -274,9 +306,10 @@ export default function GestacoesAtivasDashboard() {
       exames: totalExames,
       pctConsultas,
       consultasPorTri,
-      examesPorTri
+      examesPorTri,
+      faseVidaCounts
     };
-  }, [gestacoesFiltradas, atendimentos, registrosRotinas]);
+  }, [gestacoesFiltradas, pacientes, registrosRotinas, rotinas, filterTipoRotina, filterRotina]);
 
   const chartData = useMemo(() => {
     return [
@@ -300,6 +333,12 @@ export default function GestacoesAtivasDashboard() {
     ];
   }, [stats]);
 
+  const getStatusFilter = (name: string): 'ATIVA' | 'VENCIDA' | 'TODAS' => {
+    if (name === 'Ativas') return 'ATIVA';
+    if (name === 'Vencidas') return 'VENCIDA';
+    return 'TODAS';
+  };
+
   if (!mounted) return null;
 
   return (
@@ -310,7 +349,7 @@ export default function GestacoesAtivasDashboard() {
             <span className="w-8 h-1 bg-primary rounded-full"></span>
             <span className="text-[8px] font-black text-primary uppercase tracking-[0.4em]">Dashboard</span>
           </div>
-          <h2 className="text-2xl md:text-4xl font-black tracking-tight font-headline text-primary uppercase leading-tight">
+          <h2 className="text-xl md:text-2xl font-black tracking-tight font-headline text-primary uppercase leading-tight">
             Gestações Ativas
           </h2>
           <p className="text-sm text-on-surface-variant/60 font-body max-w-xl">
@@ -319,13 +358,13 @@ export default function GestacoesAtivasDashboard() {
         </header>
 
         <div className="flex flex-wrap gap-3 items-center">
-          <div className="relative flex-1 min-w-[200px]">
+          <div className="relative w-48">
             <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
               <Search className="w-4 h-4 text-on-surface-variant/40" />
             </div>
             <input
               type="text"
-              placeholder="Buscar gestante por nome ou SISPN..."
+              placeholder="Buscar..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
@@ -371,10 +410,60 @@ export default function GestacoesAtivasDashboard() {
             className="px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
           >
             <option value="all">Todos os Trimestres</option>
-            <option value="1º TRIMESTRE">1º Trimestre</option>
-            <option value="2º TRIMESTRE">2º Trimestre</option>
-            <option value="3º TRIMESTRE">3º Trimestre</option>
+            <option value="PRIMEIRO">1º Trimestre</option>
+            <option value="SEGUNDO">2º Trimestre</option>
+            <option value="TERCEIRO">3º Trimestre</option>
           </select>
+
+          <select
+            value={filterTipoRotina}
+            onChange={(e) => {
+              setFilterTipoRotina(e.target.value);
+              setFilterRotina('all');
+            }}
+            className="px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
+          >
+            <option value="all">Todos os Tipos</option>
+            <option value="CONSULTA">Consultas</option>
+            <option value="EXAME">Exames</option>
+            <option value="VACINA">Vacinas</option>
+            <option value="MEDICACAO">Medicações</option>
+          </select>
+
+          <select
+            value={filterRotina}
+            onChange={(e) => setFilterRotina(e.target.value)}
+            disabled={filterTipoRotina === 'all'}
+            className="px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
+          >
+            <option value="all">Todas as Rotinas</option>
+            {filterTipoRotina !== 'all' && rotinas
+              .filter(r => r.tipo === filterTipoRotina)
+              .reduce((acc, r) => {
+                if (!acc.find((item: Rotina) => item.descricao === r.descricao)) {
+                  acc.push(r);
+                }
+                return acc;
+              }, [] as Rotina[])
+              .map(r => (
+                <option key={r.id} value={r.id}>{r.descricao}</option>
+              ))}
+          </select>
+
+          <button
+            onClick={() => {
+              setSearchQuery('');
+              setFilterUnidade('all');
+              setFilterStatus('ATIVA');
+              setFilterRisk('all');
+              setFilterTrimestre('all');
+              setFilterTipoRotina('all');
+              setFilterRotina('all');
+            }}
+            className="px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl hover:bg-surface-container-low focus:outline-none focus:ring-2 focus:ring-primary/20"
+          >
+            Limpar
+          </button>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -385,7 +474,7 @@ export default function GestacoesAtivasDashboard() {
               </div>
             </div>
             <p className="text-[10px] font-black uppercase tracking-wider text-on-surface-variant/40">Total</p>
-            <p className="text-2xl font-black text-primary">{loading ? '...' : stats.total}</p>
+            <p className="text-xl font-black text-primary">{loading ? '...' : stats.total}</p>
           </div>
 
           <div className="bg-surface-container-lowest p-4 rounded-2xl border border-outline-variant/10">
@@ -395,7 +484,7 @@ export default function GestacoesAtivasDashboard() {
               </div>
             </div>
             <p className="text-[10px] font-black uppercase tracking-wider text-on-surface-variant/40">Ativas</p>
-            <p className="text-2xl font-black text-green-500">{loading ? '...' : stats.ativas}</p>
+            <p className="text-xl font-black text-green-500">{loading ? '...' : stats.ativas}</p>
           </div>
 
           <div className="bg-surface-container-lowest p-4 rounded-2xl border border-outline-variant/10">
@@ -405,7 +494,7 @@ export default function GestacoesAtivasDashboard() {
               </div>
             </div>
             <p className="text-[10px] font-black uppercase tracking-wider text-on-surface-variant/40">Vencidas</p>
-            <p className="text-2xl font-black text-red-500">{loading ? '...' : stats.vencidas}</p>
+            <p className="text-xl font-black text-red-500">{loading ? '...' : stats.vencidas}</p>
           </div>
 
           <div className="bg-surface-container-lowest p-4 rounded-2xl border border-outline-variant/10">
@@ -415,7 +504,7 @@ export default function GestacoesAtivasDashboard() {
               </div>
             </div>
             <p className="text-[10px] font-black uppercase tracking-wider text-on-surface-variant/40">Consultas</p>
-            <p className="text-2xl font-black text-amber-500">{loading ? '...' : stats.consultas}</p>
+            <p className="text-xl font-black text-amber-500">{loading ? '...' : stats.consultas}</p>
           </div>
 
           <div className="bg-surface-container-lowest p-4 rounded-2xl border border-outline-variant/10">
@@ -425,7 +514,7 @@ export default function GestacoesAtivasDashboard() {
               </div>
             </div>
             <p className="text-[10px] font-black uppercase tracking-wider text-on-surface-variant/40">Exames</p>
-            <p className="text-2xl font-black text-blue-500">{loading ? '...' : stats.exames}</p>
+            <p className="text-xl font-black text-blue-500">{loading ? '...' : stats.exames}</p>
           </div>
 
           <div className="bg-surface-container-lowest p-4 rounded-2xl border border-outline-variant/10">
@@ -435,117 +524,138 @@ export default function GestacoesAtivasDashboard() {
               </div>
             </div>
             <p className="text-[10px] font-black uppercase tracking-wider text-on-surface-variant/40">% Consultas</p>
-            <p className="text-2xl font-black text-purple-500">{loading ? '...' : `${stats.pctConsultas}%`}</p>
+            <p className="text-xl font-black text-purple-500">{loading ? '...' : `${stats.pctConsultas}%`}</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 bg-surface-container-lowest p-5 rounded-2xl border border-outline-variant/10">
-            <h3 className="text-sm font-black uppercase tracking-wider text-on-surface-variant/60 mb-4">Atividades por Trimestre</h3>
-            <div className="h-80">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+          <div className="lg:col-span-2 bg-surface-container-lowest p-4 rounded-2xl border border-outline-variant/10">
+            <h3 className="text-[10px] font-black uppercase tracking-wider text-on-surface-variant/60 mb-3">Atividades por Trimestre</h3>
+            <div className="h-40">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                  <YAxis tick={{ fontSize: 11 }} />
+                  <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                  <YAxis tick={{ fontSize: 10 }} />
                   <Tooltip 
                     contentStyle={{ borderRadius: 8, border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                   />
-                  <Legend />
-                  <Bar dataKey="consultas" name="Consultas" fill={COLORS[0]} radius={[4, 4, 0, 0]}>
-                    <LabelList dataKey="consultas" position="top" style={{ fontSize: 10, fill: '#666' }} />
+                  <Legend wrapperStyle={{ fontSize: 10 }} />
+                  <Bar 
+                    dataKey="consultas" 
+                    name="Consultas" 
+                    fill={COLORS[0]} 
+                    radius={[4, 4, 0, 0]}
+                    onClick={(data) => {
+                      const triMap: Record<string, string> = { '1º Tri': 'PRIMEIRO', '2º Tri': 'SEGUNDO', '3º Tri': 'TERCEIRO' };
+                      setFilterTrimestre(triMap[data.name] || 'all');
+                    }}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <LabelList dataKey="consultas" position="top" style={{ fontSize: 11, fill: '#666', fontWeight: 'bold' }} />
                   </Bar>
-                  <Bar dataKey="exames" name="Exames" fill={COLORS[1]} radius={[4, 4, 0, 0]}>
-                    <LabelList dataKey="exames" position="top" style={{ fontSize: 10, fill: '#666' }} />
+                  <Bar 
+                    dataKey="exames" 
+                    name="Exames" 
+                    fill={COLORS[1]} 
+                    radius={[4, 4, 0, 0]}
+                    onClick={(data) => {
+                      const triMap: Record<string, string> = { '1º Tri': 'PRIMEIRO', '2º Tri': 'SEGUNDO', '3º Tri': 'TERCEIRO' };
+                      setFilterTrimestre(triMap[data.name] || 'all');
+                    }}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <LabelList dataKey="exames" position="top" style={{ fontSize: 11, fill: '#666', fontWeight: 'bold' }} />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
 
-          <div className="bg-surface-container-lowest p-5 rounded-2xl border border-outline-variant/10">
-            <h3 className="text-sm font-black uppercase tracking-wider text-on-surface-variant/60 mb-4">Classificação de Risco</h3>
-            <div className="h-72">
+          <div className="lg:col-span-1 bg-surface-container-lowest p-3 rounded-2xl border border-outline-variant/10">
+            <h3 className="text-[10px] font-black uppercase tracking-wider text-on-surface-variant/60 mb-2">Risco</h3>
+            <div className="h-[120px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={pieData.filter(d => d.value > 0)}
                     cx="50%"
                     cy="50%"
-                    innerRadius={50}
-                    outerRadius={70}
-                    paddingAngle={5}
+                    innerRadius={25}
+                    outerRadius={42}
+                    paddingAngle={3}
                     dataKey="value"
-                    label={({ name, value }) => `${name}: ${value}`}
-                    labelLine={true}
+                    label={({ name, value }) => `${value}`}
+                    labelLine={false}
+                    onClick={(entry) => setFilterRisk(entry.name as string)}
+                    style={{ cursor: 'pointer' }}
                   >
                     {pieData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
                   <Tooltip />
-                  <Legend />
+                  <Legend wrapperStyle={{ fontSize: 10 }} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
           </div>
-        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-surface-container-lowest p-5 rounded-2xl border border-outline-variant/10">
-            <h3 className="text-sm font-black uppercase tracking-wider text-on-surface-variant/60 mb-4">Status das Gestações</h3>
-            <div className="h-72">
+          <div className="lg:col-span-1 bg-surface-container-lowest p-3 rounded-2xl border border-outline-variant/10">
+            <h3 className="text-[10px] font-black uppercase tracking-wider text-on-surface-variant/60 mb-2">Status</h3>
+            <div className="h-[120px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={pieStatusData.filter(d => d.value > 0)}
                     cx="50%"
                     cy="50%"
-                    innerRadius={50}
-                    outerRadius={70}
-                    paddingAngle={5}
+                    innerRadius={25}
+                    outerRadius={42}
+                    paddingAngle={3}
                     dataKey="value"
-                    label={({ name, value }) => `${name}: ${value}`}
-                    labelLine={true}
+                    label={({ name, value }) => `${value}`}
+                    labelLine={false}
+                    onClick={(entry) => setFilterStatus(getStatusFilter(entry.name))}
+                    style={{ cursor: 'pointer' }}
                   >
                     {pieStatusData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
                   <Tooltip />
-                  <Legend />
+                  <Legend wrapperStyle={{ fontSize: 10 }} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
           </div>
 
-          <div className="bg-primary p-5 rounded-2xl shadow-lg shadow-primary/20 text-white">
-            <div className="flex items-start justify-between">
-              <div>
-                <h3 className="text-lg font-black uppercase tracking-wider mb-2">Cobertura de Pré-natal</h3>
-                <p className="text-white/70 text-sm">
-                  {filterRisk !== 'all' 
-                    ? `Filtrado por risco ${filterRisk === 'HABITUAL' ? 'Habitual' : 'Alto Risco'}`
-                    : 'Indicador geral de acompanhamento'
-                  }
-                </p>
-              </div>
-              <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
-                <Activity className="w-6 h-6" />
-              </div>
-            </div>
-            <div className="mt-6">
-              <div className="flex items-end justify-between mb-2">
-                <span className="text-4xl font-black">{stats.pctConsultas}%</span>
-                <span className="text-white/60 text-sm">das consultas realizadas</span>
-              </div>
-              <div className="w-full bg-white/20 h-2 rounded-full overflow-hidden">
-                <div className="bg-white h-full rounded-full" style={{ width: `${Math.min(stats.pctConsultas, 100)}%` }}></div>
-              </div>
-              <div className="flex justify-between mt-2 text-[10px] font-black uppercase tracking-widest text-white/60">
-                <span>0%</span>
-                <span>100%</span>
-              </div>
+          <div className="lg:col-span-1 bg-surface-container-lowest p-3 rounded-2xl border border-outline-variant/10">
+            <h3 className="text-[10px] font-black uppercase tracking-wider text-on-surface-variant/60 mb-2">Fase Vida</h3>
+            <div className="h-[120px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={Object.entries(stats.faseVidaCounts).map(([name, value]) => ({ name, value }))}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={25}
+                    outerRadius={42}
+                    paddingAngle={3}
+                    dataKey="value"
+                    label={({ name, value }) => `${value}`}
+                    labelLine={false}
+                    onClick={(entry) => setFilterFaseVida(entry.name as string)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    {Object.entries(stats.faseVidaCounts).map(([name], index) => (
+                      <Cell key={`cell-${index}`} fill={['#10B981', '#F59E0B', '#3B82F6', '#EF4444', '#8B5CF6', '#EC4899'][index % 6]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend wrapperStyle={{ fontSize: 10 }} />
+                </PieChart>
+              </ResponsiveContainer>
             </div>
           </div>
         </div>
@@ -578,7 +688,21 @@ export default function GestacoesAtivasDashboard() {
                     <td colSpan={7} className="px-4 py-8 text-center text-on-surface-variant/60">Nenhuma gestação encontrada</td>
                   </tr>
                 ) : (
-                  gestacoesFiltradas.slice(0, 10).map(g => {
+                  [...gestacoesFiltradas].sort((a, b) => {
+                    const aPaciente = pacientes.find(p => p.cpf === a.cpf_paciente);
+                    const bPaciente = pacientes.find(p => p.cpf === b.cpf_paciente);
+                    const aNome = aPaciente?.gestante?.toLowerCase() || '';
+                    const bNome = bPaciente?.gestante?.toLowerCase() || '';
+                    
+                    if (!a.dpp && !b.dpp) return aNome.localeCompare(bNome);
+                    if (!a.dpp) return 1;
+                    if (!b.dpp) return -1;
+                    
+                    const diffDpp = new Date(a.dpp).getTime() - new Date(b.dpp).getTime();
+                    if (diffDpp !== 0) return diffDpp;
+                    
+                    return aNome.localeCompare(bNome);
+                  }).slice(0, 10).map(g => {
                     const paciente = pacientes.find(p => p.cpf === g.cpf_paciente);
                     const status = getGestacaoStatus(g.dum);
                     const weeks = getWeeksFromDum(g.dum);
@@ -587,7 +711,7 @@ export default function GestacoesAtivasDashboard() {
                       <tr key={g.sispn} className="hover:bg-primary/5 transition-colors">
                         <td className="px-4 py-3 font-medium">{formatSispn(g.sispn)}</td>
                         <td className="px-4 py-3">{paciente?.gestante || '---'}</td>
-                        <td className="px-4 py-3 text-[10px] font-bold text-on-surface">{g.dum ? new Date(g.dum).toLocaleDateString('pt-BR') : '---'}</td>
+                        <td className="px-4 py-3">{g.dum ? new Date(g.dum).toLocaleDateString('pt-BR') : '---'}</td>
                         <td className="px-4 py-3">{weeks} sem</td>
                         <td className="px-4 py-3">
                           <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${
