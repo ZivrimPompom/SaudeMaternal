@@ -733,7 +733,7 @@ export default function PacientesPage() {
                 ) : (
                   <>
                     <table className="w-full text-left border-separate border-spacing-0 min-w-[1200px]">
-                      <thead className="sticky top-0 z-30 bg-surface-container-low">
+                      <thead className="sticky top-0 z-30 bg-surface-container-lowest md:bg-surface-container-low">
                         <tr>
                           <th className="px-4 py-4 text-table-header border-b border-slate-300 dark:border-slate-700 w-[320px]">Gestante</th>
                           <th className="px-4 py-4 text-table-header border-b border-slate-300 dark:border-slate-700 w-[180px]">Prontuário</th>

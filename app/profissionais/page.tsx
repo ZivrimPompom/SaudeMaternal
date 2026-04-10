@@ -642,7 +642,7 @@ export default function ProfissionaisPage() {
                 ) : (
                   <>
                     <table className="w-full text-left border-separate border-spacing-0 min-w-[900px]">
-                      <thead className="sticky top-0 z-30 bg-surface-container-low">
+                      <thead className="sticky top-0 z-30 bg-surface-container-lowest md:bg-surface-container-low">
                         <tr>
                           <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Nome</th>
                           <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Unidade</th>

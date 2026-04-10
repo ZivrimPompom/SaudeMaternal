@@ -1210,7 +1210,7 @@ export default function ExamesPage() {
           <div className="bg-surface-container-lowest rounded-2xl shadow-2xl border border-outline-variant/10 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-separate border-spacing-0">
-                <thead className="sticky top-0 z-30 bg-surface-container-low">
+                <thead className="sticky top-0 z-30 bg-surface-container-lowest md:bg-surface-container-low">
                   <tr>
                     <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Gestante</th>
                     <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Status</th>

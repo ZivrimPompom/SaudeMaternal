@@ -819,7 +819,7 @@ export default function OperadoresPage() {
                 ) : (
                   <>
                     <table className="w-full text-left border-separate border-spacing-0 min-w-[1000px]">
-                      <thead className="sticky top-0 z-30 bg-surface-container-low">
+                      <thead className="sticky top-0 z-30 bg-surface-container-lowest md:bg-surface-container-low">
                         <tr>
                           <th className="px-4 py-4 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5 w-[250px]">Profissional</th>
                           <th className="px-4 py-4 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5 w-[200px]">Unidade</th>

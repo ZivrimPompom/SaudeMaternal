@@ -1477,7 +1477,7 @@ const [unidades, setUnidades] = useState<{cnes: string; nome_fantasia: string}[]
                 ) : (
                   <>
                     <table className="w-full text-left border-separate border-spacing-0 min-w-[1000px]">
-                      <thead className="sticky top-0 z-30 bg-surface-container-low">
+                      <thead className="sticky top-0 z-30 bg-surface-container-lowest md:bg-surface-container-low">
                         <tr>
                           <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40">Gestante</th>
                           <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40">Status</th>
