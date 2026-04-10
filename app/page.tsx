@@ -17,6 +17,16 @@ export default function Page() {
   const [error, setError] = useState<string | null>(null);
   const [unidadeFilter, setUnidadeFilter] = useState('');
   const [unidades, setUnidades] = useState<any[]>([]);
+  const [gestacoes, setGestacoes] = useState<any[]>([]);
+
+  const getGestacaoStatus = (dum: string): 'ATIVA' | 'VENCIDA' => {
+    if (!dum) return 'ATIVA';
+    const dumDate = new Date(dum);
+    const today = new Date();
+    const limitDate = new Date(dumDate);
+    limitDate.setDate(limitDate.getDate() + 280);
+    return today >= limitDate ? 'VENCIDA' : 'ATIVA';
+  };
 
   useEffect(() => {
     if (!mounted) return;
@@ -37,7 +47,7 @@ export default function Page() {
         supabase.from('rotinas').select('*', { count: 'exact', head: true }),
         supabase.from('pacientes').select('*', { count: 'exact', head: true }),
         supabase.from('unidades_saude').select('*', { count: 'exact', head: true }),
-        supabase.from('gestacoes').select('*', { count: 'exact', head: true }),
+        supabase.from('gestacoes').select('*'),
         supabase.from('atendimentos').select('*', { count: 'exact', head: true }),
         supabase.from('registro_rotinas').select('*', { count: 'exact', head: true }),
         supabase.from('desfechos_e_rn').select('*', { count: 'exact', head: true })
@@ -49,8 +59,11 @@ export default function Page() {
         const errors = [ops, cats, pros, rots, pacs, units, gests, cons, exams, outcomes].filter(r => r.error);
         if (errors.length > 0) {
           console.error('Alguns erros ao buscar estatísticas:', errors);
-          // We still set what we got, but log errors
         }
+
+        if (gests.data) setGestacoes(gests.data);
+        
+        const gestacoesAtivas = gests.data ? gests.data.filter((g: any) => getGestacaoStatus(g.dum) === 'ATIVA').length : (gests.count || 0);
 
         setStats({
           operators: ops.count || 0,
@@ -59,7 +72,7 @@ export default function Page() {
           routines: rots.count || 0,
           patients: pacs.count || 0,
           units: units.count || 0,
-          gestations: gests.count || 0,
+          gestations: gestacoesAtivas,
           consultations: cons.count || 0,
           examResults: exams.count || 0,
           outcomes: outcomes.count || 0

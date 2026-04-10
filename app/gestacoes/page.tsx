@@ -162,8 +162,9 @@ export default function GestacoesPage() {
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
   const [operadores, setOperadores] = useState<Operador[]>([]);
   const [profissionais, setProfissionais] = useState<Profissional[]>([]);
-  const [unidades, setUnidades] = useState<{cnes: string; nome_fantasia: string}[]>([]);
-  
+const [unidades, setUnidades] = useState<{cnes: string; nome_fantasia: string}[]>([]);
+  const [desfechos, setDesfechos] = useState<any[]>([]);
+   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -440,6 +441,12 @@ export default function GestacoesPage() {
       });
       setGestacoes(formattedGest);
 
+      // Fetch Desfechos
+      const { data: desfechosData } = await supabase
+        .from('desfechos_e_rn')
+        .select('sispn, data_desfecho');
+      if (desfechosData) setDesfechos(desfechosData);
+
     } catch (err: any) {
       console.error('Erro ao carregar dados:', err);
       setError(`Erro ao carregar dados: ${err.message}`);
@@ -602,9 +609,33 @@ export default function GestacoesPage() {
 
     // Regra: só podemos cadastrar pacientes que tenham cadastro prévio
     const cpfPaciente = formData.cpf_paciente || '';
-    const patientExists = pacientes.some(p => p.cpf.replace(/\D/g, '') === cpfPaciente.replace(/\D/g, ''));
+    const cleanCpf = cpfPaciente.replace(/\D/g, '');
+    const patientExists = pacientes.some(p => p.cpf.replace(/\D/g, '') === cleanCpf);
     if (!patientExists) {
       setError('Paciente não encontrada no cadastro de pacientes. Cadastre a paciente primeiro.');
+      return;
+    }
+
+    // Regra: paciente não pode ter gestação ativa
+    const patientHasActiveGestacao = gestacoes.some(g => {
+      const gCpf = g.cpf_paciente?.replace(/\D/g, '') || '';
+      return gCpf === cleanCpf && getGestacaoStatus(g.dpp) === 'ATIVA';
+    });
+    if (patientHasActiveGestacao) {
+      setError('Esta paciente já possui uma gestação ativa. Encerrre a gestação atual antes de cadastrar uma nova.');
+      return;
+    }
+
+    // Regra: paciente não pode ter desfecho em aberto (sem data de desfecho) vinculado às suas gestações
+    const pacienteGestacoes = gestacoes.filter(g => g.cpf_paciente?.replace(/\D/g, '') === cleanCpf);
+    const pacienteSispns = pacienteGestacoes.map(g => g.sispn?.replace(/\D/g, ''));
+    
+    const patientHasOpenDesfecho = desfechos.find(d => {
+      const dSispn = d.sispn?.replace(/\D/g, '') || '';
+      return pacienteSispns.includes(dSispn) && !d.data_desfecho;
+    });
+    if (patientHasOpenDesfecho) {
+      setError('Esta paciente possui um desfecho pendente. Complete o desfecho antes de cadastrar uma nova gestação.');
       return;
     }
 
@@ -783,13 +814,34 @@ export default function GestacoesPage() {
     const query = normalize(pacienteSearchQuery);
     const queryDigits = pacienteSearchQuery.replace(/\D/g, '');
 
-    if (!query && !queryDigits) return pacientes.slice(0, 10);
+    let availablePacientes = pacientes.filter(p => {
+      const cleanCpf = p.cpf.replace(/\D/g, '');
+      
+      const gestacaoAtiva = gestacoes.find(g => {
+        const gCpf = g.cpf_paciente?.replace(/\D/g, '') || '';
+        if (gCpf !== cleanCpf) return false;
+        return getGestacaoStatus(g.dpp) === 'ATIVA';
+      });
+      
+      // Check if any of this patient's gestações has an open desfecho
+      const pacienteGestacoes = gestacoes.filter(g => g.cpf_paciente?.replace(/\D/g, '') === cleanCpf);
+      const pacienteSispns = pacienteGestacoes.map(g => g.sispn?.replace(/\D/g, ''));
+      
+      const hasOpenDesfecho = desfechos.find(d => {
+        const dSispn = d.sispn?.replace(/\D/g, '') || '';
+        return pacienteSispns.includes(dSispn) && !d.data_desfecho;
+      });
+
+      return !gestacaoAtiva && !hasOpenDesfecho;
+    });
+
+    if (!query && !queryDigits) return availablePacientes.slice(0, 10);
     
-    return pacientes.filter(p => 
+    return availablePacientes.filter(p => 
       normalize(p.gestante).includes(query) || 
       (queryDigits !== '' && p.cpf.includes(queryDigits))
     ).slice(0, 10);
-  }, [pacientes, pacienteSearchQuery]);
+  }, [pacientes, pacienteSearchQuery, gestacoes, desfechos]);
 
   const rtSearchResults = useMemo(() => {
     const normalize = (str: string) => 
@@ -1492,7 +1544,7 @@ export default function GestacoesPage() {
                                   <div className="flex flex-col gap-0.5">
                                     <span className="text-[11px] font-bold text-primary">{g.equipe}</span>
                                     <span className="text-[11px] font-bold text-on-surface uppercase">{g.referencia_tecnica_nome}</span>
-                                    <span className="text-[9px] text-on-surface-variant/40 uppercase">ACS: {g.acs_nome}</span>
+                                    <span className="text-[11px] font-bold text-on-surface uppercase">ACS: {g.acs_nome}</span>
                                   </div>
                                 </td>
                                 <td className="px-4 py-3">
