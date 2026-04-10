@@ -50,6 +50,9 @@ interface ExamResult {
   unidade_cnes?: string;
   cpf_operador?: string;
   created_at?: string;
+  // Enriched fields
+  nome_profissional?: string;
+  grupo?: string;
   // Joins
   gestacoes?: {
     dum: string;
@@ -431,8 +434,31 @@ export default function MovimentoPage() {
 
       const enrichedResults = resultsData.map(r => {
         const gest = formattedGest.find(g => g.sispn === r.sispn);
+        
+        // Enrich with profissional data
+        const prof = allProfessionals.find(p => p.cpf === r.cpf_profissional);
+        let nome_profissional = '---';
+        let grupo = '---';
+        
+        if (prof) {
+          nome_profissional = prof.nome;
+          const catFromJoin = Array.isArray(prof.categorias_profissionais) 
+            ? prof.categorias_profissionais[0] 
+            : prof.categorias_profissionais;
+          grupo = catFromJoin?.grupo || '---';
+        }
+        
+        // Fallback: try CBO prefix lookup if profissional not found
+        if (grupo === '---' && r.cbo) {
+          const cboPrefixo = String(r.cbo).substring(0, 4);
+          const catBackup = categories.find(cat => cat.cbo === cboPrefixo);
+          grupo = catBackup?.grupo || '---';
+        }
+        
         return {
           ...r,
+          nome_profissional,
+          grupo,
           gestacoes: gest ? {
             dum: gest.dum,
             dpp: gest.dpp,
@@ -1009,14 +1035,9 @@ export default function MovimentoPage() {
                                   </td>
                                   <td className="px-2 py-1.5">
                                     <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-2 py-1 h-full flex flex-col justify-center">
-                                      <div className="text-[10px] font-bold text-on-surface uppercase truncate">{allProfessionals.find(p => p.cpf === h.cpf_profissional)?.nome || '---'}</div>
+                                      <div className="text-[10px] font-bold text-on-surface uppercase truncate">{h.nome_profissional || '---'}</div>
                                       <div className="text-[9px] font-bold text-on-surface bg-secondary/10 px-2 py-0.5 rounded-full mt-1">
-                                        {(() => {
-                                          const prof = allProfessionals.find(p => p.cpf === h.cpf_profissional);
-                                          if (!prof) return '---';
-                                          const catFromJoin = Array.isArray(prof.categorias_profissionais) ? prof.categorias_profissionais[0] : prof.categorias_profissionais;
-                                          return catFromJoin?.grupo || '---';
-                                        })()}
+                                        {h.grupo || '---'}
                                       </div>
                                     </div>
                                   </td>
@@ -1121,18 +1142,13 @@ export default function MovimentoPage() {
                                 </td>
                                 <td className="px-2 py-1.5">
                                   <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-2 py-1">
-                                    <div className="text-[10px] font-bold text-on-surface uppercase truncate">{allProfessionals.find(p => p.cpf === h.cpf_profissional)?.nome || '---'}</div>
+                                    <div className="text-[10px] font-bold text-on-surface uppercase truncate">{h.nome_profissional || '---'}</div>
                                   </div>
                                 </td>
                                 <td className="px-2 py-1.5">
                                   <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-2 py-1">
                                     <div className="text-[10px] font-bold text-on-surface bg-secondary/10 px-2 py-0.5 rounded-full">
-                                      {(() => {
-                                        const prof = allProfessionals.find(p => p.cpf === h.cpf_profissional);
-                                        if (!prof) return '---';
-                                        const catFromJoin = Array.isArray(prof.categorias_profissionais) ? prof.categorias_profissionais[0] : prof.categorias_profissionais;
-                                        return catFromJoin?.grupo || '---';
-                                      })()}
+                                      {h.grupo || '---'}
                                     </div>
                                   </div>
                                 </td>
