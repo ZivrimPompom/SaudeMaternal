@@ -3,31 +3,17 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import Link from 'next/link';
-import { 
-  Users, 
-  CalendarCheck, 
-  AlertTriangle, 
-  CheckCircle2, 
+import {
+  Users,
+  CalendarCheck,
+  AlertTriangle,
+  CheckCircle2,
   Clock,
   Activity,
   Search,
   Filter,
   ChevronRight
 } from 'lucide-react';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Legend,
-  LabelList
-} from 'recharts';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { useAuth, Operator } from '@/context/AuthContext';
 
@@ -59,12 +45,6 @@ interface RegistroRotina {
   id_rotina: string;
   data_realizacao: string;
   trimestre_realizacao: string;
-}
-
-interface Atendimento {
-  sispn: string;
-  data_consulta: string;
-  trimestre_consulta: string;
 }
 
 const COLORS = {
@@ -126,12 +106,13 @@ export default function AcompanhamentoDashboard() {
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
   const [rotinas, setRotinas] = useState<Rotina[]>([]);
   const [registrosRotinas, setRegistrosRotinas] = useState<RegistroRotina[]>([]);
-  const [atendimentos, setAtendimentos] = useState<Atendimento[]>([]);
   const [unidades, setUnidades] = useState<{cnes: string; nome_fantasia: string}[]>([]);
 
   const [filterStatus, setFilterStatus] = useState<'ATIVA' | 'VENCIDA' | 'TODAS'>('ATIVA');
   const [filterTrimestre, setFilterTrimestre] = useState<number | 'TODOS'>(0);
   const [filterUnidade, setFilterUnidade] = useState<string>('all');
+  const [filterTipoRotina, setFilterTipoRotina] = useState('all');
+  const [filterRotina, setFilterRotina] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   const isAdmin = user?.nivel_acesso === 'Administrador';
@@ -149,12 +130,11 @@ export default function AcompanhamentoDashboard() {
 
     const fetchData = async () => {
       try {
-        const [g, p, r, rr, a, u] = await Promise.all([
+        const [g, p, r, rr, u] = await Promise.all([
           supabase.from('gestacoes').select('*'),
           supabase.from('pacientes').select('cpf, gestante, nome_mae'),
-          supabase.from('rotinas').select('*').eq('categoria', 'OBRIGATORIO'),
+          supabase.from('rotinas').select('*'),
           supabase.from('registro_rotinas').select('*'),
-          supabase.from('atendimentos').select('sispn, data_consulta, trimestre_consulta'),
           supabase.from('unidades_saude').select('cnes, nome_fantasia')
         ]);
 
@@ -162,7 +142,6 @@ export default function AcompanhamentoDashboard() {
         if (p.data) setPacientes(p.data);
         if (r.data) setRotinas(r.data);
         if (rr.data) setRegistrosRotinas(rr.data);
-        if (a.data) setAtendimentos(a.data);
         if (u.data) setUnidades(u.data);
       } catch (err) {
         console.error('Erro ao buscar dados:', err);
@@ -173,38 +152,6 @@ export default function AcompanhamentoDashboard() {
 
     fetchData();
   }, [mounted]);
-
-  useEffect(() => {
-    if (!mounted || loading) return;
-    
-    const interval = setInterval(() => {
-      const fetchData = async () => {
-        try {
-          const [g, p, r, rr, a, u] = await Promise.all([
-            supabase.from('gestacoes').select('*'),
-            supabase.from('pacientes').select('cpf, gestante, nome_mae'),
-            supabase.from('rotinas').select('*').eq('categoria', 'OBRIGATORIO'),
-            supabase.from('registro_rotinas').select('*'),
-            supabase.from('atendimentos').select('sispn, data_consulta, trimestre_consulta'),
-            supabase.from('unidades_saude').select('cnes, nome_fantasia')
-          ]);
-
-          if (g.data) setGestacoes(g.data);
-          if (p.data) setPacientes(p.data);
-          if (r.data) setRotinas(r.data);
-          if (rr.data) setRegistrosRotinas(rr.data);
-          if (a.data) setAtendimentos(a.data);
-          if (u.data) setUnidades(u.data);
-        } catch (err) {
-          console.error('Erro ao buscar dados:', err);
-        }
-      };
-
-      fetchData();
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, [mounted, loading]);
 
   useEffect(() => {
     if (user?.unidade_cnes && !isAdmin) {
@@ -247,9 +194,9 @@ export default function AcompanhamentoDashboard() {
 
     gestacoesFiltradas.forEach(g => {
       const tri = getTrimestreAtual(g.dum);
-      const consultas = atendimentos.filter(a => a.sispn === g.sispn);
+      const consultas = registrosRotinas.filter(r => r.sispn === g.sispn && r.tipo === 'CONSULTA');
       const porTri = consultas.filter(a => {
-        const triCons = TRIMESTRE_MAP[a.trimestre_consulta];
+        const triCons = TRIMESTRE_MAP[a.trimestre_realizacao];
         return triCons === tri;
       });
       
@@ -292,24 +239,7 @@ export default function AcompanhamentoDashboard() {
       consultasPorTrimestre,
       examesPorTrimestre
     };
-  }, [gestacoesFiltradas, atendimentos, registrosRotinas, rotinas]);
-
-  const chartData = useMemo(() => {
-    return [
-      { name: '1º Trimestre', consultas: stats.consultasPorTrimestre[0], esperada: stats.ativas > 0 ? Math.floor(stats.ativas / 3) : 0 },
-      { name: '2º Trimestre', consultas: stats.consultasPorTrimestre[1], esperada: stats.ativas > 0 ? Math.floor(stats.ativas / 3) : 0 },
-      { name: '3º Trimestre', consultas: stats.consultasPorTrimestre[2], esperada: stats.ativas > 0 ? Math.floor(stats.ativas / 3) : 0 }
-    ];
-  }, [stats]);
-
-  const pieData = useMemo(() => {
-    const ativas = stats.ativas;
-    const vencidas = stats.vencidas;
-    return [
-      { name: 'Ativas', value: ativas, color: COLORS.success },
-      { name: 'Vencidas', value: vencidas, color: COLORS.error }
-    ];
-  }, [stats]);
+  }, [gestacoesFiltradas, registrosRotinas, rotinas]);
 
   if (!mounted) return null;
 
@@ -330,7 +260,7 @@ export default function AcompanhamentoDashboard() {
         </header>
 
         <div className="flex flex-wrap gap-3 items-center">
-          <div className="relative flex-1 min-w-[200px]">
+          <div className="relative w-48">
             <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
               <Search className="w-4 h-4 text-on-surface-variant/40" />
             </div>
@@ -361,9 +291,9 @@ export default function AcompanhamentoDashboard() {
             onChange={(e) => setFilterStatus(e.target.value as any)}
             className="px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
           >
-            <option value="ATIVA">Ativas</option>
-            <option value="VENCIDA">Vencidas</option>
-            <option value="TODAS">Todas</option>
+            <option value="TODAS">Todos os Status</option>
+            <option value="ATIVA">ATIVAS</option>
+            <option value="VENCIDA">VENCIDAS</option>
           </select>
 
           <select
@@ -376,6 +306,55 @@ export default function AcompanhamentoDashboard() {
             <option value="2">2º Trimestre</option>
             <option value="3">3º Trimestre</option>
           </select>
+
+          <select
+            value={filterTipoRotina}
+            onChange={(e) => {
+              setFilterTipoRotina(e.target.value);
+              setFilterRotina('all');
+            }}
+            className="px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
+          >
+            <option value="all">Todos os Tipos</option>
+            <option value="CONSULTA">CONSULTAS</option>
+            <option value="EXAME">EXAMES</option>
+            <option value="VACINA">VACINAS</option>
+            <option value="MEDICACAO">MEDICAÇÕES</option>
+          </select>
+
+          <select
+            value={filterRotina}
+            onChange={(e) => setFilterRotina(e.target.value)}
+            disabled={filterTipoRotina === 'all'}
+            className="px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
+          >
+            <option value="all">Todas as Rotinas</option>
+            {filterTipoRotina !== 'all' && rotinas
+              .filter(r => r.tipo === filterTipoRotina)
+              .reduce((acc, r) => {
+                if (!acc.find((item: Rotina) => item.descricao === r.descricao)) {
+                  acc.push(r);
+                }
+                return acc;
+              }, [] as Rotina[])
+              .map(r => (
+                <option key={r.id} value={r.id}>{r.descricao}</option>
+              ))}
+          </select>
+
+          <button
+            onClick={() => {
+              setSearchQuery('');
+              setFilterUnidade('all');
+              setFilterStatus('ATIVA');
+              setFilterTrimestre(0);
+              setFilterTipoRotina('all');
+              setFilterRotina('all');
+            }}
+            className="px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl hover:bg-surface-container-low focus:outline-none focus:ring-2 focus:ring-primary/20"
+          >
+            Limpar
+          </button>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
@@ -440,57 +419,6 @@ export default function AcompanhamentoDashboard() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-surface-container-lowest p-5 rounded-2xl border border-outline-variant/10">
-            <h3 className="text-sm font-black uppercase tracking-wider text-on-surface-variant/60 mb-4">Consultas por Trimestre</h3>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip 
-                    contentStyle={{ borderRadius: 8, border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                  />
-                  <Legend />
-                  <Bar dataKey="consultas" name="Realizadas" fill={COLORS.primary} radius={[4, 4, 0, 0]}>
-                    <LabelList dataKey="consultas" position="top" style={{ fontSize: 10, fill: '#666' }} />
-                  </Bar>
-                  <Bar dataKey="esperada" name="Esperadas (3x)" fill={COLORS.gray} radius={[4, 4, 0, 0]}>
-                    <LabelList dataKey="esperada" position="top" style={{ fontSize: 10, fill: '#666' }} />
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          <div className="bg-surface-container-lowest p-5 rounded-2xl border border-outline-variant/10">
-            <h3 className="text-sm font-black uppercase tracking-wider text-on-surface-variant/60 mb-4">Status das Gestações</h3>
-            <div className="h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={pieData.filter(d => d.value > 0)}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={5}
-                    dataKey="value"
-                    label={({ name, value }) => `${name}: ${value}`}
-                  >
-                    {pieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
-
         <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/10 overflow-hidden">
           <div className="p-4 border-b border-outline-variant/10 flex items-center justify-between">
             <h3 className="text-sm font-black uppercase tracking-wider text-on-surface-variant/60">Lista de Gestantes</h3>
@@ -505,7 +433,7 @@ export default function AcompanhamentoDashboard() {
                   <th className="px-4 py-3">DUM</th>
                   <th className="px-4 py-3">DPP</th>
                   <th className="px-4 py-3">Semanas</th>
-                  <th className="px-4 py-3">Trim</th>
+                  <th className="px-4 py-3">Classificação</th>
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3 text-right">Ações</th>
                 </tr>
@@ -520,20 +448,39 @@ export default function AcompanhamentoDashboard() {
                     <td colSpan={8} className="px-4 py-8 text-center text-on-surface-variant/60">Nenhuma gestação encontrada</td>
                   </tr>
                 ) : (
-                  gestacoesFiltradas.map(g => {
+                  [...gestacoesFiltradas].sort((a, b) => {
+                    const aPaciente = pacientes.find(p => p.cpf === a.cpf_paciente);
+                    const bPaciente = pacientes.find(p => p.cpf === b.cpf_paciente);
+                    const aNome = aPaciente?.gestante?.toLowerCase() || '';
+                    const bNome = bPaciente?.gestante?.toLowerCase() || '';
+
+                    if (!a.dpp && !b.dpp) return aNome.localeCompare(bNome);
+                    if (!a.dpp) return 1;
+                    if (!b.dpp) return -1;
+
+                    const diffDpp = new Date(a.dpp).getTime() - new Date(b.dpp).getTime();
+                    if (diffDpp !== 0) return diffDpp;
+
+                    return aNome.localeCompare(bNome);
+                  }).map(g => {
                     const paciente = pacientes.find(p => p.cpf === g.cpf_paciente);
                     const status = getGestacaoStatus(g.dum);
                     const weeks = getWeeksFromDum(g.dum);
-                    const tri = getTrimestreAtual(g.dum);
-                    
+
                     return (
                       <tr key={g.sispn} className="hover:bg-primary/5 transition-colors">
                         <td className="px-4 py-3 font-medium">{formatSispn(g.sispn)}</td>
                         <td className="px-4 py-3">{paciente?.gestante || '---'}</td>
-                        <td className="px-4 py-3 text-[10px] font-bold text-on-surface">{g.dum ? new Date(g.dum).toLocaleDateString('pt-BR') : '---'}</td>
-                        <td className="px-4 py-3 text-[10px] font-bold text-on-surface">{g.dpp ? new Date(g.dpp).toLocaleDateString('pt-BR') : '---'}</td>
+                        <td className="px-4 py-3">{g.dum ? new Date(g.dum).toLocaleDateString('pt-BR') : '---'}</td>
+                        <td className="px-4 py-3">{g.dpp ? new Date(g.dpp).toLocaleDateString('pt-BR') : '---'}</td>
                         <td className="px-4 py-3">{weeks} sem</td>
-                        <td className="px-4 py-3">{tri}º</td>
+                        <td className="px-4 py-3">
+                          <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${
+                            g.classificacao_pn === 'HABITUAL' ? 'bg-green-500/10 text-green-600' : 'bg-amber-500/10 text-amber-600'
+                          }`}>
+                            {g.classificacao_pn || '---'}
+                          </span>
+                        </td>
                         <td className="px-4 py-3">
                           <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${
                             status === 'ATIVA' ? 'bg-green-500/10 text-green-600' : 'bg-red-500/10 text-red-600'
@@ -542,7 +489,7 @@ export default function AcompanhamentoDashboard() {
                           </span>
                         </td>
                         <td className="px-4 py-3 text-right">
-                          <Link 
+                          <Link
                             href={`/dashboard/acompanhamento/${g.sispn}`}
                             className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors"
                           >
