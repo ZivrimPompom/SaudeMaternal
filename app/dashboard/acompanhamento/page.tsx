@@ -45,6 +45,7 @@ interface RegistroRotina {
   id_rotina: string;
   data_realizacao: string;
   trimestre_realizacao: string;
+  tipo?: string;
 }
 
 const COLORS = {
