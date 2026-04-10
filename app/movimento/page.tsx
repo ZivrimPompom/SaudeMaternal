@@ -45,6 +45,7 @@ interface ExamResult {
   data_realizacao: string;
   resultado: string;
   observacoes?: string;
+  data_proxima_consulta?: string;
   trimestre_realizacao: string;
   cbo: string;
   cpf_profissional: string;
@@ -193,6 +194,8 @@ export default function MovimentoPage() {
           tipo_temp: '',
           data_realizacao: '',
           resultado: 'NEGATIVO / NÃO REAGENTE',
+          data_proxima_consulta: '',
+          observacoes: '',
           trimestre_realizacao: '---',
           cpf_profissional: '',
           categoria_profissional: 'MEDICO',
@@ -368,7 +371,7 @@ export default function MovimentoPage() {
 
       // Fetch routines, categories and professionals (usually < 1000)
       const [routinesRes, catsRes, prosRes] = await Promise.all([
-        supabase.from('rotinas').select('*').in('tipo', ['EXAME', 'VACINA']).order('descricao').limit(1000),
+        supabase.from('rotinas').select('*').in('tipo', ['EXAME', 'VACINA', 'CONSULTA']).order('descricao').limit(1000),
         supabase.from('categorias_profissionais').select('*').order('categoria').limit(1000),
         supabase.from('profissionais').select('cpf, nome, cbo, situacao, equipe, categorias_profissionais(cbo, categoria, grupo)').order('nome').limit(1000)
       ]);
@@ -544,7 +547,7 @@ export default function MovimentoPage() {
 
         const professional = allProfessionals.find(p => p.cpf === entry.cpf_profissional);
 
-        return {
+        const payload: any = {
           sispn: formData.sispn,
           id_rotina: routine?.id || entry.id_rotina,
           data_realizacao: entry.data_realizacao,
@@ -555,6 +558,13 @@ export default function MovimentoPage() {
           unidade_cnes: authUser?.unidade_cnes || null,
           cpf_operador: authUser?.cpf || null
         };
+
+        if (entry.tipo_temp === 'CONSULTA') {
+          payload.data_proxima_consulta = entry.data_proxima_consulta || null;
+          payload.observacoes = entry.observacoes || null;
+        }
+
+        return payload;
       });
 
       if (payloads.some(p => !p.id_rotina)) return setError('Selecione uma descrição válida para todas as linhas.');
@@ -789,6 +799,8 @@ export default function MovimentoPage() {
                                 tipo_temp: '',
                                 data_realizacao: '',
                                 resultado: 'NEGATIVO / NÃO REAGENTE',
+                                data_proxima_consulta: '',
+                                observacoes: '',
                                 trimestre_realizacao: '---',
                                 cpf_profissional: '',
                                 categoria_profissional: 'MEDICO',
@@ -804,26 +816,29 @@ export default function MovimentoPage() {
                       </div>
 
                         <div className="bg-surface-container-low rounded-2xl overflow-x-auto border border-outline-variant/10">
-                        <table className="w-full text-left border-separate border-spacing-0" style={{ tableLayout: 'fixed' }}>
-                          <colgroup>
-                            <col style={{ width: '12%' }} />
-                            <col style={{ width: '10%' }} />
-                            <col style={{ width: '18%' }} />
-                            <col style={{ width: '8%' }} />
-                            <col style={{ width: '18%' }} />
-                            <col style={{ width: '12%' }} />
-                            <col style={{ width: '15%' }} />
-                            <col style={{ width: '7%' }} />
-                          </colgroup>
+                          <table className="w-full text-left border-separate border-spacing-0" style={{ tableLayout: 'fixed' }}>
+                            <colgroup>
+                              <col style={{ width: '10%' }} />
+                              <col style={{ width: '8%' }} />
+                              <col style={{ width: '15%' }} />
+                              <col style={{ width: '8%' }} />
+                              <col style={{ width: '15%' }} />
+                              <col style={{ width: '10%' }} />
+                              <col style={{ width: '12%' }} />
+                              <col style={{ width: '10%' }} />
+                              <col style={{ width: '12%' }} />
+                            </colgroup>
                           <thead className="bg-surface-container-low">
                             <tr>
-                              <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Data Realização</th>
-                              <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Trimestre</th>
+                              <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Data</th>
+                              <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Trim</th>
                               <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Rotina</th>
                               <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Tipo</th>
                               <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Profissional</th>
                               <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Grupo</th>
                               <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Resultado</th>
+                              <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Próxima</th>
+                              <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Obs</th>
                               <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5 text-center">Ações</th>
                             </tr>
                           </thead>
@@ -937,27 +952,68 @@ export default function MovimentoPage() {
                                   </div>
                                 </td>
                                 <td className="px-2 py-1.5">
-                                  <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-2 py-1">
-                                    <select 
-                                      className={`bg-transparent border-none p-0 text-[10px] font-bold outline-none focus:ring-0 w-full uppercase cursor-pointer appearance-none ${
-                                        entry.resultado === '-' 
-                                          ? 'text-on-surface-variant/40' 
-                                          : (entry.resultado.includes('POSITIVO') || entry.resultado.includes('REAGENTE')) 
-                                            ? 'text-error' 
-                                            : 'text-green-600'
-                                      }`}
-                                      value={entry.resultado}
-                                      onChange={(e) => {
-                                        const newEntries = [...formEntries];
-                                        newEntries[index].resultado = e.target.value;
-                                        setFormEntries(newEntries);
-                                      }}
-                                    >
-                                      <option value="POSITIVO / REAGENTE">POSITIVO / REAGENTE</option>
-                                      <option value="NEGATIVO / NÃO REAGENTE">NEGATIVO / NÃO REAGENTE</option>
-                                      <option value="-">-</option>
-                                    </select>
-                                  </div>
+                                  {entry.tipo_temp === 'CONSULTA' ? (
+                                    <div className="text-[10px] text-on-surface-variant/40">-</div>
+                                  ) : (
+                                    <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-2 py-1">
+                                      <select 
+                                        className={`bg-transparent border-none p-0 text-[10px] font-bold outline-none focus:ring-0 w-full uppercase cursor-pointer appearance-none ${
+                                          entry.resultado === '-' 
+                                            ? 'text-on-surface-variant/40' 
+                                            : (entry.resultado.includes('POSITIVO') || entry.resultado.includes('REAGENTE')) 
+                                              ? 'text-error' 
+                                              : 'text-green-600'
+                                        }`}
+                                        value={entry.resultado}
+                                        onChange={(e) => {
+                                          const newEntries = [...formEntries];
+                                          newEntries[index].resultado = e.target.value;
+                                          setFormEntries(newEntries);
+                                        }}
+                                      >
+                                        <option value="POSITIVO / REAGENTE">POSITIVO / REAGENTE</option>
+                                        <option value="NEGATIVO / NÃO REAGENTE">NEGATIVO / NÃO REAGENTE</option>
+                                        <option value="-">-</option>
+                                      </select>
+                                    </div>
+                                  )}
+                                </td>
+                                  <td className="px-2 py-1.5">
+                                  {entry.tipo_temp === 'CONSULTA' ? (
+                                    <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-2 py-1">
+                                      <input 
+                                        type="date" 
+                                        className="bg-transparent border-none p-0 text-[10px] font-bold outline-none focus:ring-0 w-full text-on-surface"
+                                        value={entry.data_proxima_consulta || ''}
+                                        onChange={(e) => {
+                                          const newEntries = [...formEntries];
+                                          newEntries[index].data_proxima_consulta = e.target.value;
+                                          setFormEntries(newEntries);
+                                        }}
+                                      />
+                                    </div>
+                                  ) : (
+                                    <div className="text-[10px] text-on-surface-variant/40">-</div>
+                                  )}
+                                </td>
+                                <td className="px-2 py-1.5">
+                                  {entry.tipo_temp === 'CONSULTA' ? (
+                                    <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-2 py-1">
+                                      <input 
+                                        type="text"
+                                        className="bg-transparent border-none p-0 text-[10px] font-bold outline-none focus:ring-0 w-full text-on-surface"
+                                        value={entry.observacoes || ''}
+                                        onChange={(e) => {
+                                          const newEntries = [...formEntries];
+                                          newEntries[index].observacoes = e.target.value;
+                                          setFormEntries(newEntries);
+                                        }}
+                                        placeholder="Obs"
+                                      />
+                                    </div>
+                                  ) : (
+                                    <div className="text-[10px] text-on-surface-variant/40">-</div>
+                                  )}
                                 </td>
                                 {!editingId && (
                                   <td className="px-2 py-1.5 text-center">
@@ -1003,26 +1059,29 @@ export default function MovimentoPage() {
                           </div>
                         </div>
                         <div className="bg-surface-container-low rounded-2xl overflow-x-auto border border-outline-variant/10">
-                          <table className="w-full text-left border-separate border-spacing-0" style={{ tableLayout: 'fixed' }}>
-                            <colgroup>
-                              <col style={{ width: '12%' }} />
-                              <col style={{ width: '10%' }} />
-                              <col style={{ width: '18%' }} />
-                              <col style={{ width: '8%' }} />
-                              <col style={{ width: '18%' }} />
-                              <col style={{ width: '12%' }} />
-                              <col style={{ width: '15%' }} />
-                              <col style={{ width: '7%' }} />
-                            </colgroup>
+                        <table className="w-full text-left border-separate border-spacing-0" style={{ tableLayout: 'fixed' }}>
+                          <colgroup>
+                            <col style={{ width: '10%' }} />
+                            <col style={{ width: '8%' }} />
+                            <col style={{ width: '15%' }} />
+                            <col style={{ width: '8%' }} />
+                            <col style={{ width: '15%' }} />
+                            <col style={{ width: '10%' }} />
+                            <col style={{ width: '12%' }} />
+                            <col style={{ width: '10%' }} />
+                            <col style={{ width: '12%' }} />
+                          </colgroup>
                             <thead className="bg-surface-container-low">
                             <tr>
-                              <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Data Realização</th>
-                              <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Trimestre</th>
+                              <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Data</th>
+                              <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Trim</th>
                               <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Rotina</th>
                               <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Tipo</th>
                               <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Profissional</th>
                               <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Grupo</th>
                               <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Resultado</th>
+                              <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Próxima</th>
+                              <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Obs</th>
                               <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5 text-center">Ações</th>
                             </tr>
                           </thead>
@@ -1066,15 +1125,33 @@ export default function MovimentoPage() {
                                   <td className="px-2 py-1.5">
                                     <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-2 py-1">
                                       <div className={`text-[10px] font-bold uppercase ${
-                                        (() => {
-                                          const res = h.resultado.toUpperCase();
-                                          const isPositive = (res.includes('POSITIVO') || res.includes('REAGENTE')) && !res.includes('NEGATIVO') && !res.includes('NAO') && !res.includes('NÃO');
-                                          if (isPositive) return 'text-error';
-                                          if (h.resultado === '-') return 'text-on-surface-variant/40';
-                                          return 'text-success';
-                                        })()
+                                        (h.tipo || h.rotinas?.tipo) === 'CONSULTA' 
+                                          ? 'text-on-surface-variant/40'
+                                          : (() => {
+                                              const res = (h.resultado || '').toUpperCase();
+                                              const isPositive = (res.includes('POSITIVO') || res.includes('REAGENTE')) && !res.includes('NEGATIVO') && !res.includes('NAO') && !res.includes('NÃO');
+                                              if (isPositive) return 'text-error';
+                                              if (h.resultado === '-') return 'text-on-surface-variant/40';
+                                              return 'text-success';
+                                            })()
                                       }`}>
-                                        {h.resultado}
+                                        {(h.tipo || h.rotinas?.tipo) === 'CONSULTA' ? '-' : h.resultado}
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td className="px-2 py-1.5">
+                                    <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-2 py-1">
+                                      <div className="text-[10px] font-bold text-on-surface uppercase">
+                                        {(h.tipo || h.rotinas?.tipo) === 'CONSULTA' && h.data_proxima_consulta 
+                                          ? new Date(h.data_proxima_consulta).toLocaleDateString('pt-BR') 
+                                          : '-'}
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td className="px-2 py-1.5">
+                                    <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-2 py-1">
+                                      <div className="text-[10px] font-bold text-on-surface uppercase truncate max-w-[80px]">
+                                        {(h.tipo || h.rotinas?.tipo) === 'CONSULTA' ? (h.observacoes || '-') : '-'}
                                       </div>
                                     </div>
                                   </td>
@@ -1112,28 +1189,32 @@ export default function MovimentoPage() {
                       <span className="material-symbols-outlined text-primary text-lg">history</span>
                       <h4 className="text-sm font-black text-primary uppercase tracking-widest">Movimento de Rotinas Realizadas</h4>
                     </div>
-                    {formData.sispn && selectedPatientHistory.length > 0 ? (
+                      {formData.sispn && selectedPatientHistory.length > 0 ? (
                       <div id="history-table" className="bg-surface-container-low rounded-2xl overflow-x-auto border border-outline-variant/10">
                         <table className="w-full text-left border-separate border-spacing-0" style={{ tableLayout: 'fixed' }}>
                           <colgroup>
-                            <col style={{ width: '10%' }} />
                             <col style={{ width: '8%' }} />
-                            <col style={{ width: '16%' }} />
                             <col style={{ width: '8%' }} />
                             <col style={{ width: '14%' }} />
-                            <col style={{ width: '10%' }} />
-                            <col style={{ width: '18%' }} />
+                            <col style={{ width: '6%' }} />
+                            <col style={{ width: '14%' }} />
                             <col style={{ width: '8%' }} />
+                            <col style={{ width: '8%' }} />
+                            <col style={{ width: '8%' }} />
+                            <col style={{ width: '10%' }} />
+                            <col style={{ width: '6%' }} />
                           </colgroup>
                           <thead className="bg-surface-container-low">
                             <tr>
-                              <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Data Realização</th>
-                              <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Trimestre</th>
+                              <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Data</th>
+                              <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Trim</th>
                               <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Rotina</th>
                               <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Tipo</th>
                               <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Profissional</th>
                               <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Grupo</th>
                               <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Resultado</th>
+                              <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Próxima</th>
+                              <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Obs</th>
                               <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5 text-center">Ações</th>
                             </tr>
                           </thead>
@@ -1174,22 +1255,40 @@ export default function MovimentoPage() {
                                     </div>
                                   </div>
                                 </td>
-                                <td className="px-2 py-1.5">
-                                  <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-2 py-1">
-                                    <div className={`text-[10px] font-bold uppercase ${
-                                      (() => {
-                                        const res = h.resultado.toUpperCase();
-                                        const isPositive = (res.includes('POSITIVO') || res.includes('REAGENTE')) && !res.includes('NEGATIVO') && !res.includes('NAO') && !res.includes('NÃO');
-                                        if (isPositive) return 'text-error';
-                                        if (h.resultado === '-') return 'text-on-surface-variant/40';
-                                        return 'text-success';
-                                      })()
-                                    }`}>
-                                      {h.resultado}
+                                  <td className="px-2 py-1.5">
+                                    <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-2 py-1">
+                                      <div className={`text-[10px] font-bold uppercase ${
+                                        (h.tipo || h.rotinas?.tipo) === 'CONSULTA' 
+                                          ? 'text-on-surface-variant/40'
+                                          : (() => {
+                                              const res = (h.resultado || '').toUpperCase();
+                                              const isPositive = (res.includes('POSITIVO') || res.includes('REAGENTE')) && !res.includes('NEGATIVO') && !res.includes('NAO') && !res.includes('NÃO');
+                                              if (isPositive) return 'text-error';
+                                              if (h.resultado === '-') return 'text-on-surface-variant/40';
+                                              return 'text-success';
+                                            })()
+                                      }`}>
+                                        {(h.tipo || h.rotinas?.tipo) === 'CONSULTA' ? '-' : h.resultado}
+                                      </div>
                                     </div>
-                                  </div>
-                                </td>
-                                <td className="px-2 py-1.5">
+                                  </td>
+                                  <td className="px-2 py-1.5">
+                                    <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-2 py-1">
+                                      <div className="text-[10px] font-bold text-on-surface uppercase">
+                                        {(h.tipo || h.rotinas?.tipo) === 'CONSULTA' && h.data_proxima_consulta 
+                                          ? new Date(h.data_proxima_consulta).toLocaleDateString('pt-BR') 
+                                          : '-'}
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td className="px-2 py-1.5">
+                                    <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-2 py-1">
+                                      <div className="text-[10px] font-bold text-on-surface uppercase truncate max-w-[80px]">
+                                        {(h.tipo || h.rotinas?.tipo) === 'CONSULTA' ? (h.observacoes || '-') : '-'}
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td className="px-2 py-1.5">
                                   <div className="flex items-center justify-center gap-1">
                                     <button 
                                       type="button"
@@ -1272,6 +1371,7 @@ export default function MovimentoPage() {
                 <option value="">Tipo</option>
                 <option value="EXAME">EXAME</option>
                 <option value="VACINA">VACINA</option>
+                <option value="CONSULTA">CONSULTA</option>
               </select>
 
               <select 
