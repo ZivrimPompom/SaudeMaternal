@@ -55,6 +55,7 @@ interface Rotina {
   descricao: string;
   trimestre: string;
   categoria: string;
+  quantidade?: number;
 }
 
 interface RegistroRotina {
@@ -265,20 +266,19 @@ export default function AcompanhamentoIndividual() {
     const weeks = getWeeksFromDum(gestacao.dum);
     const triAtual = getTrimestreAtual(gestacao.dum);
     
-    const consultasMedico = [0, 0, 0];
-    const consultasEnfermeiro = [0, 0, 0];
+    const consultasPorTri = [0, 0, 0];
+    const consultasEsperadas = [0, 0, 0];
     
     const consultas = registrosRotinas.filter(r => r.tipo === 'CONSULTA');
     consultas.forEach(c => {
       const tri = TRIMESTRE_MAP[c.trimestre_realizacao];
+      if (tri) consultasPorTri[tri - 1]++;
+    });
+    
+    rotinas.filter(r => r.tipo === 'CONSULTA').forEach(r => {
+      const tri = TRIMESTRE_MAP[r.trimestre];
       if (tri) {
-        const prof = profissionais.find(p => p.cpf === c.cpf_profissional);
-        const cat = categorias.find(cat => cat.cbo === prof?.cbo);
-        if (cat?.categoria === 'MEDICO') {
-          consultasMedico[tri - 1]++;
-        } else if (cat?.categoria === 'ENFERMEIRO') {
-          consultasEnfermeiro[tri - 1]++;
-        }
+        consultasEsperadas[tri - 1] += r.quantidade || 0;
       }
     });
 
@@ -289,8 +289,7 @@ export default function AcompanhamentoIndividual() {
     const diasDecorridos = (semanaAtual - inicioTri) * 7;
     const diasRestantes = Math.max(0, diasTotaisTri - diasDecorridos);
     
-    const consultasRestantesMedico = Math.max(0, 1 - consultasMedico[triAtual - 1]);
-    const consultasRestantesEnfermeiro = Math.max(0, 1 - consultasEnfermeiro[triAtual - 1]);
+    const consultasRestantes = Math.max(0, consultasEsperadas[triAtual - 1] - consultasPorTri[triAtual - 1]);
 
     const rotinasPorTri: Record<number, { total: number; realizadas: number; pendentes: number; vencidas: number; rotinasPendentes: string[] }> = {
       1: { total: 0, realizadas: 0, pendentes: 0, vencidas: 0, rotinasPendentes: [] },
@@ -298,7 +297,7 @@ export default function AcompanhamentoIndividual() {
       3: { total: 0, realizadas: 0, pendentes: 0, vencidas: 0, rotinasPendentes: [] }
     };
 
-    rotinas.forEach(r => {
+    rotinas.filter(r => r.tipo !== 'CONSULTA').forEach(r => {
       const triRotina = TRIMESTRE_MAP[r.trimestre];
       if (triRotina) {
         const registros = registrosRotinas.filter(rr => {
@@ -307,7 +306,7 @@ export default function AcompanhamentoIndividual() {
         });
         
         const realizadas = registros.length;
-        const totalEsperado = 1;
+        const totalEsperado = r.quantidade || 1;
         
         rotinasPorTri[triRotina].total += totalEsperado;
         rotinasPorTri[triRotina].realizadas += Math.min(realizadas, totalEsperado);
@@ -326,13 +325,12 @@ export default function AcompanhamentoIndividual() {
       status,
       weeks,
       triAtual,
-      consultasMedico,
-      consultasEnfermeiro,
-      consultasRestantesMedico,
-      consultasRestantesEnfermeiro,
+      consultasPorTri,
+      consultasEsperadas,
+      consultasRestantes,
       rotinasPorTri
     };
-  }, [gestacao, registrosRotinas, rotinas, profissionais, categorias]);
+  }, [gestacao, registrosRotinas, rotinas]);
 
   const examsPorTrimestre = useMemo(() => {
     if (!gestacao) return { 1: [], 2: [], 3: [] };
@@ -611,12 +609,9 @@ export default function AcompanhamentoIndividual() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {[1, 2, 3].map(tri => {
-            const consultasMed = info.consultasMedico[tri - 1];
-            const consultasEnf = info.consultasEnfermeiro[tri - 1];
-            const consultasMetaMed = 1;
-            const consultasMetaEnf = 1;
-            const consultasMedStatus = consultasMed >= consultasMetaMed ? 'completo' : consultasMed > 0 ? 'parcial' : 'pendente';
-            const consultasEnfStatus = consultasEnf >= consultasMetaEnf ? 'completo' : consultasEnf > 0 ? 'parcial' : 'pendente';
+            const consultasRealizadas = info.consultasPorTri[tri - 1];
+            const consultasMeta = info.consultasEsperadas[tri - 1] || 0;
+            const consultasStatus = consultasRealizadas >= consultasMeta ? 'completo' : consultasRealizadas > 0 ? 'parcial' : 'pendente';
             const exams = examsPorTrimestre[tri as keyof typeof examsPorTrimestre];
             const realizado = exams.filter(e => e.status === 'realizado').length;
             const pendente = exams.filter(e => e.status === 'pendente').length;
@@ -641,31 +636,16 @@ export default function AcompanhamentoIndividual() {
                 <div className="p-4 space-y-4 flex-1 flex flex-col">
                   <div className="flex items-center justify-between p-3 bg-surface-container-low rounded-xl">
                     <div className="flex items-center gap-3">
-                      <Stethoscope className={`w-5 h-5 ${consultasMedStatus === 'completo' ? 'text-green-500' : consultasMedStatus === 'parcial' ? 'text-amber-500' : 'text-gray-400'}`} />
-                      <span className="text-sm font-medium">Médico</span>
+                      <Stethoscope className={`w-5 h-5 ${consultasStatus === 'completo' ? 'text-green-500' : consultasStatus === 'parcial' ? 'text-amber-500' : 'text-gray-400'}`} />
+                      <span className="text-sm font-medium">Consultas</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className={`text-lg font-black ${
-                        consultasMedStatus === 'completo' ? 'text-green-500' : consultasMedStatus === 'parcial' ? 'text-amber-500' : 'text-red-500'
+                        consultasStatus === 'completo' ? 'text-green-500' : consultasStatus === 'parcial' ? 'text-amber-500' : 'text-red-500'
                       }`}>
-                        {consultasMed}
+                        {consultasRealizadas}
                       </span>
-                      <span className="text-sm text-on-surface-variant/60">/ {consultasMetaMed}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between p-3 bg-surface-container-low rounded-xl">
-                    <div className="flex items-center gap-3">
-                      <UserCheck className={`w-5 h-5 ${consultasEnfStatus === 'completo' ? 'text-green-500' : consultasEnfStatus === 'parcial' ? 'text-amber-500' : 'text-gray-400'}`} />
-                      <span className="text-sm font-medium">Enfermeiro</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`text-lg font-black ${
-                        consultasEnfStatus === 'completo' ? 'text-green-500' : consultasEnfStatus === 'parcial' ? 'text-amber-500' : 'text-red-500'
-                      }`}>
-                        {consultasEnf}
-                      </span>
-                      <span className="text-sm text-on-surface-variant/60">/ {consultasMetaEnf}</span>
+                      <span className="text-sm text-on-surface-variant/60">/ {consultasMeta}</span>
                     </div>
                   </div>
 
