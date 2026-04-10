@@ -297,14 +297,14 @@ export default function Page() {
             </div>
           </Link>
 
-          <Link href="/rotinas" className="bg-surface-container-lowest p-4 md:p-5 rounded-2xl shadow-xl shadow-black/5 border border-outline-variant/10 hover:border-primary/30 hover:shadow-primary/10 transition-all group relative overflow-hidden flex flex-col h-full min-h-[120px]">
+          <Link href="/movimento" className="bg-surface-container-lowest p-4 md:p-5 rounded-2xl shadow-xl shadow-black/5 border border-outline-variant/10 hover:border-primary/30 hover:shadow-primary/10 transition-all group relative overflow-hidden flex flex-col h-full min-h-[120px]">
             <div className="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-full -mr-8 -mt-8 group-hover:scale-150 transition-transform duration-700" />
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
                 <FlaskConical className="text-primary group-hover:text-white w-6 h-6 transition-colors" />
               </div>
               <div>
-                <h3 className="text-lg md:text-xl font-black font-headline mb-1 text-on-surface tracking-tight leading-tight">Rotinas</h3>
+                <h3 className="text-lg md:text-xl font-black font-headline mb-1 text-on-surface tracking-tight leading-tight">Movimento</h3>
                 <p className="text-xs md:text-sm text-on-surface-variant/60 font-body leading-tight line-clamp-1">Resultados.</p>
               </div>
             </div>
