@@ -18,6 +18,7 @@ interface Routine {
   descricao: string;
   tipo: string;
   trimestre: string;
+  tipo_resultado?: string;
 }
 
 const CBO_CATEGORIES: Record<string, string> = {
@@ -42,9 +43,12 @@ interface ExamResult {
   sispn: string;
   id_rotina: string;
   tipo: string;
+  tipo_resultado?: string;
   data_realizacao: string;
   resultado: string;
+  valor_quantitativo?: string;
   observacoes?: string;
+  data_proxima_consulta?: string;
   trimestre_realizacao: string;
   cbo: string;
   cpf_profissional: string;
@@ -191,8 +195,12 @@ export default function MovimentoPage() {
           id_rotina: '',
           descricao: '',
           tipo_temp: '',
+          tipo_resultado: '',
           data_realizacao: '',
           resultado: 'NEGATIVO / NÃO REAGENTE',
+          valor_quantitativo: '',
+          data_proxima_consulta: '',
+          observacoes: '',
           trimestre_realizacao: '---',
           cpf_profissional: '',
           categoria_profissional: 'MEDICO',
@@ -238,6 +246,9 @@ export default function MovimentoPage() {
         patientMap.set(g.sispn, {
           ...g,
           resultsCount: 0,
+          examsCount: 0,
+          consultasCount: 0,
+          vaccinesCount: 0,
           lastResultDate: null,
           hasPositive: false,
           status: status,
@@ -251,6 +262,10 @@ export default function MovimentoPage() {
       const p = patientMap.get(r.sispn);
       if (p) {
         p.resultsCount++;
+        const tipo = r.tipo || r.rotinas?.tipo;
+        if (tipo === 'EXAME') p.examsCount++;
+        else if (tipo === 'CONSULTA') p.consultasCount++;
+        else if (tipo === 'VACINA') p.vaccinesCount++;
         if (!p.lastResultDate || new Date(r.data_realizacao) > new Date(p.lastResultDate)) {
           p.lastResultDate = r.data_realizacao;
         }
@@ -278,11 +293,17 @@ export default function MovimentoPage() {
 
       if (!matchesSearch) return false;
       
-      if (filters.tipo || filters.trimestre || filters.rotina) {
+      if (filters.trimestre || filters.tipo || filters.rotina) {
         const patientResults = results.filter(r => r.sispn === p.sispn);
         const hasMatchingResult = patientResults.some(r => {
+          const triMap: Record<string, string> = {
+            '1º TRIMESTRE': 'PRIMEIRO',
+            '2º TRIMESTRE': 'SEGUNDO',
+            '3º TRIMESTRE': 'TERCEIRO'
+          };
+          const triRealizacao = triMap[r.trimestre_realizacao] || r.trimestre_realizacao;
+          if (filters.trimestre && triRealizacao !== filters.trimestre) return false;
           if (filters.tipo && (r.tipo || r.rotinas?.tipo) !== filters.tipo) return false;
-          if (filters.trimestre && r.trimestre_realizacao !== filters.trimestre) return false;
           if (filters.rotina && r.rotinas?.descricao !== filters.rotina) return false;
           return true;
         });
@@ -368,7 +389,7 @@ export default function MovimentoPage() {
 
       // Fetch routines, categories and professionals (usually < 1000)
       const [routinesRes, catsRes, prosRes] = await Promise.all([
-        supabase.from('rotinas').select('*').in('tipo', ['EXAME', 'VACINA']).order('descricao').limit(1000),
+        supabase.from('rotinas').select('id, descricao, tipo, trimestre, tipo_resultado').in('tipo', ['EXAME', 'VACINA', 'CONSULTA']).order('descricao').limit(1000),
         supabase.from('categorias_profissionais').select('*').order('categoria').limit(1000),
         supabase.from('profissionais').select('cpf, nome, cbo, situacao, equipe, categorias_profissionais(cbo, categoria, grupo)').order('nome').limit(1000)
       ]);
@@ -389,7 +410,7 @@ export default function MovimentoPage() {
       while (resultsHasMore) {
         const { data, error } = await supabase.from('registro_rotinas').select(`
           *,
-          rotinas (descricao, tipo, trimestre)
+          rotinas (descricao, tipo, trimestre, tipo_resultado, grupo)
         `).order('data_realizacao', { ascending: true }).order('id_registro', { ascending: true }).range(resultsFrom, resultsFrom + 999);
         if (error) throw error;
         if (data && data.length > 0) {
@@ -491,9 +512,21 @@ export default function MovimentoPage() {
   const selectedPatientHistory = useMemo(() => {
     if (!formData.sispn) return [];
     return results
-      .filter(r => r.sispn === formData.sispn)
+      .filter(r => {
+        if (r.sispn !== formData.sispn) return false;
+        const triMap: Record<string, string> = {
+          '1º TRIMESTRE': 'PRIMEIRO',
+          '2º TRIMESTRE': 'SEGUNDO',
+          '3º TRIMESTRE': 'TERCEIRO'
+        };
+        const triRealizacao = triMap[r.trimestre_realizacao] || r.trimestre_realizacao;
+        if (filters.trimestre && triRealizacao !== filters.trimestre) return false;
+        if (filters.tipo && (r.tipo || r.rotinas?.tipo) !== filters.tipo) return false;
+        if (filters.rotina && r.rotinas?.descricao !== filters.rotina) return false;
+        return true;
+      })
       .sort((a, b) => new Date(b.data_realizacao).getTime() - new Date(a.data_realizacao).getTime());
-  }, [formData.sispn, results]);
+  }, [formData.sispn, results, filters]);
 
   const uniqueEquipes = Array.from(new Set(gestacoes.map(g => g.equipe))).filter(Boolean).sort();
 
@@ -544,17 +577,25 @@ export default function MovimentoPage() {
 
         const professional = allProfessionals.find(p => p.cpf === entry.cpf_profissional);
 
-        return {
+        const payload: any = {
           sispn: formData.sispn,
           id_rotina: routine?.id || entry.id_rotina,
           data_realizacao: entry.data_realizacao,
           resultado: entry.resultado,
+          valor_quantitativo: entry.valor_quantitativo || null,
           trimestre_realizacao: trimestre,
           cbo: professional?.cbo || null,
           cpf_profissional: entry.cpf_profissional || 'NÃO INFORMADO',
           unidade_cnes: authUser?.unidade_cnes || null,
           cpf_operador: authUser?.cpf || null
         };
+
+        if (entry.tipo_temp === 'CONSULTA') {
+          payload.data_proxima_consulta = entry.data_proxima_consulta || null;
+          payload.observacoes = entry.observacoes || null;
+        }
+
+        return payload;
       });
 
       if (payloads.some(p => !p.id_rotina)) return setError('Selecione uma descrição válida para todas as linhas.');
@@ -652,8 +693,14 @@ export default function MovimentoPage() {
 
       if (!matchesSearch) return false;
       if (filters.status && gestacaoStatus !== filters.status) return false;
+      const triMap: Record<string, string> = {
+        '1º TRIMESTRE': 'PRIMEIRO',
+        '2º TRIMESTRE': 'SEGUNDO',
+        '3º TRIMESTRE': 'TERCEIRO'
+      };
+      const triRealizacao = triMap[r.trimestre_realizacao] || r.trimestre_realizacao;
+      if (filters.trimestre && triRealizacao !== filters.trimestre) return false;
       if (filters.tipo && (r.tipo || r.rotinas?.tipo) !== filters.tipo) return false;
-      if (filters.trimestre && r.trimestre_realizacao !== filters.trimestre) return false;
       if (filters.rotina && r.rotinas?.descricao !== filters.rotina) return false;
       if (filters.equipe && (gest as any)?.equipe !== filters.equipe) return false;
       
@@ -789,6 +836,8 @@ export default function MovimentoPage() {
                                 tipo_temp: '',
                                 data_realizacao: '',
                                 resultado: 'NEGATIVO / NÃO REAGENTE',
+                                data_proxima_consulta: '',
+                                observacoes: '',
                                 trimestre_realizacao: '---',
                                 cpf_profissional: '',
                                 categoria_profissional: 'MEDICO',
@@ -804,26 +853,31 @@ export default function MovimentoPage() {
                       </div>
 
                         <div className="bg-surface-container-low rounded-2xl overflow-x-auto border border-outline-variant/10">
-                        <table className="w-full text-left border-separate border-spacing-0" style={{ tableLayout: 'fixed' }}>
-                          <colgroup>
-                            <col style={{ width: '12%' }} />
-                            <col style={{ width: '10%' }} />
-                            <col style={{ width: '18%' }} />
-                            <col style={{ width: '8%' }} />
-                            <col style={{ width: '18%' }} />
-                            <col style={{ width: '12%' }} />
-                            <col style={{ width: '15%' }} />
-                            <col style={{ width: '7%' }} />
-                          </colgroup>
+                          <table className="w-full text-left border-separate border-spacing-0" style={{ tableLayout: 'fixed' }}>
+                            <colgroup>
+                              <col style={{ width: '10%' }} />
+                              <col style={{ width: '8%' }} />
+                              <col style={{ width: '15%' }} />
+                              <col style={{ width: '8%' }} />
+                              <col style={{ width: '15%' }} />
+                              <col style={{ width: '10%' }} />
+                              <col style={{ width: '10%' }} />
+                              <col style={{ width: '8%' }} />
+                              <col style={{ width: '10%' }} />
+                              <col style={{ width: '6%' }} />
+                            </colgroup>
                           <thead className="bg-surface-container-low">
                             <tr>
-                              <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Data Realização</th>
-                              <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Trimestre</th>
+                              <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Data</th>
+                              <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Trim</th>
                               <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Rotina</th>
                               <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Tipo</th>
                               <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Profissional</th>
                               <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Grupo</th>
                               <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Resultado</th>
+                              <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Valor</th>
+                              <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Próxima</th>
+                              <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Obs</th>
                               <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5 text-center">Ações</th>
                             </tr>
                           </thead>
@@ -863,8 +917,19 @@ export default function MovimentoPage() {
                                         const routine = routines.find(r => r.descricao === desc);
                                         if (routine) {
                                           newEntries[index].tipo_temp = routine.tipo;
+                                          newEntries[index].tipo_resultado = routine.tipo_resultado || '';
+                                          if (routine.tipo_resultado === 'quantitativo') {
+                                            newEntries[index].resultado = 'NORMAL';
+                                          } else if (routine.tipo_resultado === 'sorologia') {
+                                            newEntries[index].resultado = 'NÃO REAGENTE';
+                                          } else if (routine.tipo_resultado === 'microbiologico') {
+                                            newEntries[index].resultado = 'NEGATIVO';
+                                          } else if (routine.tipo_resultado === 'citologia' || routine.tipo_resultado === 'analise' || routine.tipo_resultado === 'imagem') {
+                                            newEntries[index].resultado = 'NORMAL';
+                                          }
                                         } else {
                                           newEntries[index].tipo_temp = '';
+                                          newEntries[index].tipo_resultado = '';
                                         }
                                         setFormEntries(newEntries);
                                       }}
@@ -937,27 +1002,132 @@ export default function MovimentoPage() {
                                   </div>
                                 </td>
                                 <td className="px-2 py-1.5">
-                                  <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-2 py-1">
-                                    <select 
-                                      className={`bg-transparent border-none p-0 text-[10px] font-bold outline-none focus:ring-0 w-full uppercase cursor-pointer appearance-none ${
-                                        entry.resultado === '-' 
-                                          ? 'text-on-surface-variant/40' 
-                                          : (entry.resultado.includes('POSITIVO') || entry.resultado.includes('REAGENTE')) 
-                                            ? 'text-error' 
-                                            : 'text-green-600'
-                                      }`}
-                                      value={entry.resultado}
-                                      onChange={(e) => {
-                                        const newEntries = [...formEntries];
-                                        newEntries[index].resultado = e.target.value;
-                                        setFormEntries(newEntries);
-                                      }}
-                                    >
-                                      <option value="POSITIVO / REAGENTE">POSITIVO / REAGENTE</option>
-                                      <option value="NEGATIVO / NÃO REAGENTE">NEGATIVO / NÃO REAGENTE</option>
-                                      <option value="-">-</option>
-                                    </select>
-                                  </div>
+                                  {entry.tipo_temp === 'CONSULTA' ? (
+                                    <div className="text-[10px] text-on-surface-variant/40">-</div>
+                                  ) : (
+                                    <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-2 py-1">
+              <select 
+                className="w-full lg:w-auto px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
+                value={filters.tipo}
+                onChange={(e) => setFilters({ ...filters, tipo: e.target.value })}
+              >
+                <option value="">Tipo</option>
+                <option value="EXAME">EXAME</option>
+                <option value="VACINA">VACINA</option>
+                <option value="CONSULTA">CONSULTA</option>
+              </select>
+
+              <select
+                                        className={`bg-transparent border-none p-0 text-[10px] font-bold outline-none focus:ring-0 w-full uppercase cursor-pointer appearance-none ${
+                                          entry.resultado === '-' || entry.resultado === 'N/A'
+                                            ? 'text-on-surface-variant/40' 
+                                            : (entry.resultado.includes('POSITIVO') || entry.resultado.includes('REAGENTE') || entry.resultado === 'ALTERADO') 
+                                              ? 'text-error' 
+                                              : 'text-green-600'
+                                        }`}
+                                        value={entry.resultado}
+                                        onChange={(e) => {
+                                          const newEntries = [...formEntries];
+                                          newEntries[index].resultado = e.target.value;
+                                          setFormEntries(newEntries);
+                                        }}
+                                      >
+                                        {entry.tipo_resultado === 'sorologia' && (
+                                          <>
+                                            <option value="REAGENTE">REAGENTE</option>
+                                            <option value="NÃO REAGENTE">NÃO REAGENTE</option>
+                                          </>
+                                        )}
+                                        {entry.tipo_resultado === 'microbiologico' && (
+                                          <>
+                                            <option value="POSITIVO">POSITIVO</option>
+                                            <option value="NEGATIVO">NEGATIVO</option>
+                                          </>
+                                        )}
+                                        {(entry.tipo_resultado === 'quantitativo' || entry.tipo_resultado === 'analise' || entry.tipo_resultado === 'imagem' || entry.tipo_resultado === 'citologia') && (
+                                          <>
+                                            <option value="NORMAL">NORMAL</option>
+                                            <option value="ALTERADO">ALTERADO</option>
+                                          </>
+                                        )}
+                                        {entry.tipo_resultado === 'tipagem' && (
+                                          <>
+                                            <option value="A+">A+</option>
+                                            <option value="A-">A-</option>
+                                            <option value="B+">B+</option>
+                                            <option value="B-">B-</option>
+                                            <option value="AB+">AB+</option>
+                                            <option value="AB-">AB-</option>
+                                            <option value="O+">O+</option>
+                                            <option value="O-">O-</option>
+                                          </>
+                                        )}
+                                        {(entry.tipo_resultado === 'n/a' || entry.tipo_resultado === 'variavel' || !entry.tipo_resultado) && (
+                                          <>
+                                            <option value="POSITIVO / REAGENTE">POSITIVO / REAGENTE</option>
+                                            <option value="NEGATIVO / NÃO REAGENTE">NEGATIVO / NÃO REAGENTE</option>
+                                            <option value="-">-</option>
+                                          </>
+                                        )}
+                                      </select>
+                                    </div>
+                                  )}
+                                </td>
+                                <td className="px-2 py-1.5">
+                                  {entry.tipo_resultado === 'quantitativo' ? (
+                                    <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-2 py-1">
+                                      <input 
+                                        type="text"
+                                        className="bg-transparent border-none p-0 text-[10px] font-bold outline-none focus:ring-0 w-full text-on-surface"
+                                        value={entry.valor_quantitativo || ''}
+                                        onChange={(e) => {
+                                          const newEntries = [...formEntries];
+                                          newEntries[index].valor_quantitativo = e.target.value;
+                                          setFormEntries(newEntries);
+                                        }}
+                                        placeholder="Valor"
+                                      />
+                                    </div>
+                                  ) : (
+                                    <div className="text-[10px] text-on-surface-variant/40">-</div>
+                                  )}
+                                </td>
+                                <td className="px-2 py-1.5">
+                                  {entry.tipo_temp === 'CONSULTA' ? (
+                                    <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-2 py-1">
+                                      <input 
+                                        type="date" 
+                                        className="bg-transparent border-none p-0 text-[10px] font-bold outline-none focus:ring-0 w-full text-on-surface"
+                                        value={entry.data_proxima_consulta || ''}
+                                        onChange={(e) => {
+                                          const newEntries = [...formEntries];
+                                          newEntries[index].data_proxima_consulta = e.target.value;
+                                          setFormEntries(newEntries);
+                                        }}
+                                      />
+                                    </div>
+                                  ) : (
+                                    <div className="text-[10px] text-on-surface-variant/40">-</div>
+                                  )}
+                                </td>
+                                <td className="px-2 py-1.5">
+                                  {entry.tipo_temp === 'CONSULTA' ? (
+                                    <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-2 py-1">
+                                      <input 
+                                        type="text"
+                                        className="bg-transparent border-none p-0 text-[10px] font-bold outline-none focus:ring-0 w-full text-on-surface"
+                                        value={entry.observacoes || ''}
+                                        onChange={(e) => {
+                                          const newEntries = [...formEntries];
+                                          newEntries[index].observacoes = e.target.value;
+                                          setFormEntries(newEntries);
+                                        }}
+                                        placeholder="Obs"
+                                      />
+                                    </div>
+                                  ) : (
+                                    <div className="text-[10px] text-on-surface-variant/40">-</div>
+                                  )}
                                 </td>
                                 {!editingId && (
                                   <td className="px-2 py-1.5 text-center">
@@ -1003,26 +1173,29 @@ export default function MovimentoPage() {
                           </div>
                         </div>
                         <div className="bg-surface-container-low rounded-2xl overflow-x-auto border border-outline-variant/10">
-                          <table className="w-full text-left border-separate border-spacing-0" style={{ tableLayout: 'fixed' }}>
-                            <colgroup>
-                              <col style={{ width: '12%' }} />
-                              <col style={{ width: '10%' }} />
-                              <col style={{ width: '18%' }} />
-                              <col style={{ width: '8%' }} />
-                              <col style={{ width: '18%' }} />
-                              <col style={{ width: '12%' }} />
-                              <col style={{ width: '15%' }} />
-                              <col style={{ width: '7%' }} />
-                            </colgroup>
+                        <table className="w-full text-left border-separate border-spacing-0" style={{ tableLayout: 'fixed' }}>
+                          <colgroup>
+                            <col style={{ width: '10%' }} />
+                            <col style={{ width: '8%' }} />
+                            <col style={{ width: '15%' }} />
+                            <col style={{ width: '8%' }} />
+                            <col style={{ width: '15%' }} />
+                            <col style={{ width: '10%' }} />
+                            <col style={{ width: '12%' }} />
+                            <col style={{ width: '10%' }} />
+                            <col style={{ width: '12%' }} />
+                          </colgroup>
                             <thead className="bg-surface-container-low">
                             <tr>
-                              <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Data Realização</th>
-                              <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Trimestre</th>
+                              <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Data</th>
+                              <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Trim</th>
                               <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Rotina</th>
                               <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Tipo</th>
                               <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Profissional</th>
                               <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Grupo</th>
                               <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Resultado</th>
+                              <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Próxima</th>
+                              <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Obs</th>
                               <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5 text-center">Ações</th>
                             </tr>
                           </thead>
@@ -1066,15 +1239,33 @@ export default function MovimentoPage() {
                                   <td className="px-2 py-1.5">
                                     <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-2 py-1">
                                       <div className={`text-[10px] font-bold uppercase ${
-                                        (() => {
-                                          const res = h.resultado.toUpperCase();
-                                          const isPositive = (res.includes('POSITIVO') || res.includes('REAGENTE')) && !res.includes('NEGATIVO') && !res.includes('NAO') && !res.includes('NÃO');
-                                          if (isPositive) return 'text-error';
-                                          if (h.resultado === '-') return 'text-on-surface-variant/40';
-                                          return 'text-success';
-                                        })()
+                                        (h.tipo || h.rotinas?.tipo) === 'CONSULTA' 
+                                          ? 'text-on-surface-variant/40'
+                                          : (() => {
+                                              const res = (h.resultado || '').toUpperCase();
+                                              const isPositive = (res.includes('POSITIVO') || res.includes('REAGENTE')) && !res.includes('NEGATIVO') && !res.includes('NAO') && !res.includes('NÃO');
+                                              if (isPositive) return 'text-error';
+                                              if (h.resultado === '-') return 'text-on-surface-variant/40';
+                                              return 'text-success';
+                                            })()
                                       }`}>
-                                        {h.resultado}
+                                        {(h.tipo || h.rotinas?.tipo) === 'CONSULTA' ? '-' : h.resultado}
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td className="px-2 py-1.5">
+                                    <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-2 py-1">
+                                      <div className="text-[10px] font-bold text-on-surface uppercase">
+                                        {(h.tipo || h.rotinas?.tipo) === 'CONSULTA' && h.data_proxima_consulta 
+                                          ? new Date(h.data_proxima_consulta).toLocaleDateString('pt-BR') 
+                                          : '-'}
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td className="px-2 py-1.5">
+                                    <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-2 py-1">
+                                      <div className="text-[10px] font-bold text-on-surface uppercase truncate max-w-[80px]">
+                                        {(h.tipo || h.rotinas?.tipo) === 'CONSULTA' ? (h.observacoes || '-') : '-'}
                                       </div>
                                     </div>
                                   </td>
@@ -1105,6 +1296,8 @@ export default function MovimentoPage() {
                         </div>
                       </div>
                     )}
+                    {error && <div className="mt-2 p-3 bg-error/10 rounded-xl text-error text-xs font-bold">{error}</div>}
+                    {success && <div className="mt-2 p-3 bg-green-500/10 rounded-xl text-green-600 text-xs font-bold">{success}</div>}
                   </form>
                 ) : (
                   <div className="space-y-4">
@@ -1112,28 +1305,32 @@ export default function MovimentoPage() {
                       <span className="material-symbols-outlined text-primary text-lg">history</span>
                       <h4 className="text-sm font-black text-primary uppercase tracking-widest">Movimento de Rotinas Realizadas</h4>
                     </div>
-                    {formData.sispn && selectedPatientHistory.length > 0 ? (
+                      {formData.sispn && selectedPatientHistory.length > 0 ? (
                       <div id="history-table" className="bg-surface-container-low rounded-2xl overflow-x-auto border border-outline-variant/10">
                         <table className="w-full text-left border-separate border-spacing-0" style={{ tableLayout: 'fixed' }}>
                           <colgroup>
-                            <col style={{ width: '10%' }} />
                             <col style={{ width: '8%' }} />
-                            <col style={{ width: '16%' }} />
                             <col style={{ width: '8%' }} />
                             <col style={{ width: '14%' }} />
-                            <col style={{ width: '10%' }} />
-                            <col style={{ width: '18%' }} />
+                            <col style={{ width: '6%' }} />
+                            <col style={{ width: '14%' }} />
                             <col style={{ width: '8%' }} />
+                            <col style={{ width: '8%' }} />
+                            <col style={{ width: '8%' }} />
+                            <col style={{ width: '10%' }} />
+                            <col style={{ width: '6%' }} />
                           </colgroup>
                           <thead className="bg-surface-container-low">
                             <tr>
-                              <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Data Realização</th>
-                              <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Trimestre</th>
+                              <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Data</th>
+                              <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Trim</th>
                               <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Rotina</th>
                               <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Tipo</th>
                               <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Profissional</th>
                               <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Grupo</th>
                               <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Resultado</th>
+                              <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Próxima</th>
+                              <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Obs</th>
                               <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5 text-center">Ações</th>
                             </tr>
                           </thead>
@@ -1174,22 +1371,40 @@ export default function MovimentoPage() {
                                     </div>
                                   </div>
                                 </td>
-                                <td className="px-2 py-1.5">
-                                  <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-2 py-1">
-                                    <div className={`text-[10px] font-bold uppercase ${
-                                      (() => {
-                                        const res = h.resultado.toUpperCase();
-                                        const isPositive = (res.includes('POSITIVO') || res.includes('REAGENTE')) && !res.includes('NEGATIVO') && !res.includes('NAO') && !res.includes('NÃO');
-                                        if (isPositive) return 'text-error';
-                                        if (h.resultado === '-') return 'text-on-surface-variant/40';
-                                        return 'text-success';
-                                      })()
-                                    }`}>
-                                      {h.resultado}
+                                  <td className="px-2 py-1.5">
+                                    <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-2 py-1">
+                                      <div className={`text-[10px] font-bold uppercase ${
+                                        (h.tipo || h.rotinas?.tipo) === 'CONSULTA' 
+                                          ? 'text-on-surface-variant/40'
+                                          : (() => {
+                                              const res = (h.resultado || '').toUpperCase();
+                                              const isPositive = (res.includes('POSITIVO') || res.includes('REAGENTE')) && !res.includes('NEGATIVO') && !res.includes('NAO') && !res.includes('NÃO');
+                                              if (isPositive) return 'text-error';
+                                              if (h.resultado === '-') return 'text-on-surface-variant/40';
+                                              return 'text-success';
+                                            })()
+                                      }`}>
+                                        {(h.tipo || h.rotinas?.tipo) === 'CONSULTA' ? '-' : h.resultado}
+                                      </div>
                                     </div>
-                                  </div>
-                                </td>
-                                <td className="px-2 py-1.5">
+                                  </td>
+                                  <td className="px-2 py-1.5">
+                                    <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-2 py-1">
+                                      <div className="text-[10px] font-bold text-on-surface uppercase">
+                                        {(h.tipo || h.rotinas?.tipo) === 'CONSULTA' && h.data_proxima_consulta 
+                                          ? new Date(h.data_proxima_consulta).toLocaleDateString('pt-BR') 
+                                          : '-'}
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td className="px-2 py-1.5">
+                                    <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-2 py-1">
+                                      <div className="text-[10px] font-bold text-on-surface uppercase truncate max-w-[80px]">
+                                        {(h.tipo || h.rotinas?.tipo) === 'CONSULTA' ? (h.observacoes || '-') : '-'}
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td className="px-2 py-1.5">
                                   <div className="flex items-center justify-center gap-1">
                                     <button 
                                       type="button"
@@ -1224,8 +1439,6 @@ export default function MovimentoPage() {
                     )}
                   </div>
                 )}
-                {error && <div className="p-4 bg-error/10 rounded-2xl text-error text-xs font-bold">{error}</div>}
-                {success && <div className="p-4 bg-green-500/10 rounded-2xl text-green-600 text-xs font-bold">{success}</div>}
               </div>
             </motion.section>
           )}
@@ -1267,11 +1480,12 @@ export default function MovimentoPage() {
               <select 
                 className="w-full lg:w-auto px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
                 value={filters.tipo}
-                onChange={(e) => setFilters({ ...filters, tipo: e.target.value })}
+                onChange={(e) => setFilters({ ...filters, tipo: e.target.value, rotina: '' })}
               >
                 <option value="">Tipo</option>
                 <option value="EXAME">EXAME</option>
                 <option value="VACINA">VACINA</option>
+                <option value="CONSULTA">CONSULTA</option>
               </select>
 
               <select 
@@ -1280,7 +1494,11 @@ export default function MovimentoPage() {
                 onChange={(e) => setFilters({ ...filters, rotina: e.target.value })}
               >
                 <option value="">Rotina</option>
-                {Array.from(new Set(routines.map(r => r.descricao))).sort().map(desc => (
+                {Array.from(new Set(
+                  filters.tipo 
+                    ? routines.filter(r => r.tipo === filters.tipo).map(r => r.descricao)
+                    : routines.map(r => r.descricao)
+                )).sort().map(desc => (
                   <option key={desc} value={desc}>{desc}</option>
                 ))}
               </select>
@@ -1313,7 +1531,9 @@ export default function MovimentoPage() {
                   <tr>
                     <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Gestante</th>
                     <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Status</th>
-                    <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Registros</th>
+                    <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-center">Exames</th>
+                    <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-center">Consultas</th>
+                    <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-center">Vacinas</th>
                     <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">DPP</th>
                     <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Alertas</th>
                     <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-center">Ações</th>
@@ -1321,9 +1541,9 @@ export default function MovimentoPage() {
                 </thead>
                 <tbody className="divide-y divide-outline-variant/5">
                   {loading ? (
-                    <tr><td colSpan={6} className="p-24 text-center"><div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full mx-auto"></div></td></tr>
+                    <tr><td colSpan={8} className="p-24 text-center"><div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full mx-auto"></div></td></tr>
                   ) : filteredPatients.length === 0 ? (
-                    <tr><td colSpan={6} className="p-24 text-center opacity-20 text-xl font-black uppercase tracking-widest">Nenhum paciente encontrado</td></tr>
+                    <tr><td colSpan={8} className="p-24 text-center opacity-20 text-xl font-black uppercase tracking-widest">Nenhum paciente encontrado</td></tr>
                   ) : (
                     filteredPatients.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((p) => (
                       <tr key={p.sispn} className="hover:bg-primary/[0.02] transition-colors group">
@@ -1350,10 +1570,13 @@ export default function MovimentoPage() {
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          <div className="flex flex-col gap-0.5">
-                            <span className="text-[11px] font-bold text-on-surface">{p.resultsCount} reg.</span>
-                            <span className="text-[11px] font-bold text-on-surface">{p.lastResultDate ? new Date(p.lastResultDate).toLocaleDateString('pt-BR') : '---'}</span>
-                          </div>
+                          <span className="text-[11px] font-bold text-on-surface">{p.examsCount}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-[11px] font-bold text-on-surface">{p.consultasCount}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-[11px] font-bold text-on-surface">{p.vaccinesCount}</span>
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex flex-col gap-0.5">

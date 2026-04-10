@@ -19,6 +19,7 @@ interface Rotina {
   categoria: 'OBRIGATORIO' | 'OPCIONAL' | 'EVENTUAL';
   quantidade?: number;
   grupo?: string;
+  tipo_resultado?: string;
   unidade_cnes?: string;
   cpf_operador?: string;
   operador_nome?: string;
@@ -141,6 +142,7 @@ export default function RotinasPage() {
         categoria: formData.categoria,
         quantidade: formData.quantidade || 1,
         grupo: formData.grupo || null,
+        tipo_resultado: formData.tipo_resultado || null,
         unidade_cnes: authUser?.unidade_cnes || null,
         cpf_operador: authUser?.cpf || null
       };
@@ -185,7 +187,8 @@ export default function RotinasPage() {
       trimestre: rot.trimestre,
       categoria: rot.categoria,
       quantidade: rot.quantidade || 1,
-      grupo: rot.grupo || ''
+      grupo: rot.grupo || '',
+      tipo_resultado: rot.tipo_resultado || ''
     });
     setError(null);
     setSuccess(null);
@@ -378,6 +381,24 @@ export default function RotinasPage() {
                           ))}
                         </select>
                       </div>
+
+                      <div className="w-40 space-y-2">
+                        <label className="text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/50 ml-2">Tipo Resultado</label>
+                        <select 
+                          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl px-3 py-4 transition-all text-input outline-none appearance-none text-[10px]"
+                          value={formData.tipo_resultado || ''}
+                          onChange={(e) => setFormData({ ...formData, tipo_resultado: e.target.value })}
+                        >
+                          <option value="">Selecione...</option>
+                          <option value="sorologia">Sorologia</option>
+                          <option value="citologia">Citologia</option>
+                          <option value="analise">Análise</option>
+                          <option value="microbiológico">Microbiológico</option>
+                          <option value="imagem">Imagem</option>
+                          <option value="n/a">N/A</option>
+                          <option value="tipagem">Tipagem</option>
+                        </select>
+                      </div>
                     </div>
 
                     <div className="pt-4 flex flex-col gap-3">
@@ -462,6 +483,7 @@ export default function RotinasPage() {
                           <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Trimestre</th>
                           <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Qtd</th>
                           <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Grupo</th>
+                          <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Tipo Resultado</th>
                           <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Categoria</th>
                           <th className="px-4 py-3 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5 text-center">Ações</th>
                         </tr>
@@ -498,6 +520,9 @@ export default function RotinasPage() {
                             </td>
                             <td className="px-4 py-3">
                               <span className="text-[9px] font-black text-on-surface bg-secondary/10 px-2 py-0.5 rounded-full">{rot.grupo || '---'}</span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className="text-[9px] font-black text-on-surface-variant/60 uppercase">{rot.tipo_resultado || '---'}</span>
                             </td>
                             <td className="px-4 py-3">
                               <span className={`inline-flex px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest ${

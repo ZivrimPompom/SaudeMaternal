@@ -17,6 +17,16 @@ export default function Page() {
   const [error, setError] = useState<string | null>(null);
   const [unidadeFilter, setUnidadeFilter] = useState('');
   const [unidades, setUnidades] = useState<any[]>([]);
+  const [gestacoes, setGestacoes] = useState<any[]>([]);
+
+  const getGestacaoStatus = (dum: string): 'ATIVA' | 'VENCIDA' => {
+    if (!dum) return 'ATIVA';
+    const dumDate = new Date(dum);
+    const today = new Date();
+    const limitDate = new Date(dumDate);
+    limitDate.setDate(limitDate.getDate() + 280);
+    return today >= limitDate ? 'VENCIDA' : 'ATIVA';
+  };
 
   useEffect(() => {
     if (!mounted) return;
@@ -37,7 +47,7 @@ export default function Page() {
         supabase.from('rotinas').select('*', { count: 'exact', head: true }),
         supabase.from('pacientes').select('*', { count: 'exact', head: true }),
         supabase.from('unidades_saude').select('*', { count: 'exact', head: true }),
-        supabase.from('gestacoes').select('*', { count: 'exact', head: true }),
+        supabase.from('gestacoes').select('*'),
         supabase.from('atendimentos').select('*', { count: 'exact', head: true }),
         supabase.from('registro_rotinas').select('*', { count: 'exact', head: true }),
         supabase.from('desfechos_e_rn').select('*', { count: 'exact', head: true })
@@ -49,8 +59,11 @@ export default function Page() {
         const errors = [ops, cats, pros, rots, pacs, units, gests, cons, exams, outcomes].filter(r => r.error);
         if (errors.length > 0) {
           console.error('Alguns erros ao buscar estatísticas:', errors);
-          // We still set what we got, but log errors
         }
+
+        if (gests.data) setGestacoes(gests.data);
+        
+        const gestacoesAtivas = gests.data ? gests.data.filter((g: any) => getGestacaoStatus(g.dum) === 'ATIVA').length : (gests.count || 0);
 
         setStats({
           operators: ops.count || 0,
@@ -59,7 +72,7 @@ export default function Page() {
           routines: rots.count || 0,
           patients: pacs.count || 0,
           units: units.count || 0,
-          gestations: gests.count || 0,
+          gestations: gestacoesAtivas,
           consultations: cons.count || 0,
           examResults: exams.count || 0,
           outcomes: outcomes.count || 0
@@ -268,28 +281,6 @@ export default function Page() {
               <div className="flex flex-col">
                 <span className="text-[11px] font-black uppercase tracking-[0.2em] text-on-surface-variant/40">Total</span>
                 <span className="text-2xl md:text-3xl font-black text-primary font-headline leading-none">{loading ? '...' : stats.gestations}</span>
-              </div>
-              <div className="w-10 h-10 rounded-xl bg-surface-container-low flex items-center justify-center group-hover:bg-primary/10 transition-colors">
-                <Plus className="w-5 h-5 text-on-surface-variant/40 group-hover:text-primary transition-colors" />
-              </div>
-            </div>
-          </Link>
-
-          <Link href="/atendimentos" className="bg-surface-container-lowest p-4 md:p-5 rounded-2xl shadow-xl shadow-black/5 border border-outline-variant/10 hover:border-primary/30 hover:shadow-primary/10 transition-all group relative overflow-hidden flex flex-col h-full min-h-[120px]">
-            <div className="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-full -mr-8 -mt-8 group-hover:scale-150 transition-transform duration-700" />
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:rotate-6 transition-all duration-500 shadow-lg shadow-primary/5">
-                <Stethoscope className="text-primary group-hover:text-white w-6 h-6 transition-colors" />
-              </div>
-              <div>
-                <h3 className="text-lg md:text-xl font-black font-headline mb-1 text-on-surface tracking-tight leading-none">Atendimentos</h3>
-                <p className="text-xs md:text-sm text-on-surface-variant/60 font-body leading-tight line-clamp-1">Consultas.</p>
-              </div>
-            </div>
-            <div className="mt-auto flex items-center justify-between pt-4 border-t border-outline-variant/10">
-              <div className="flex flex-col">
-                <span className="text-[11px] font-black uppercase tracking-[0.2em] text-on-surface-variant/40">Total</span>
-                <span className="text-2xl md:text-3xl font-black text-primary font-headline leading-none">{loading ? '...' : stats.consultations}</span>
               </div>
               <div className="w-10 h-10 rounded-xl bg-surface-container-low flex items-center justify-center group-hover:bg-primary/10 transition-colors">
                 <Plus className="w-5 h-5 text-on-surface-variant/40 group-hover:text-primary transition-colors" />

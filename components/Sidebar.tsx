@@ -64,7 +64,6 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
       name: 'Movimento', 
       icon: 'sync_alt', 
       subItems: [
-        { name: 'Atendimentos', href: '/atendimentos' },
         { name: 'Movimento', href: '/movimento' },
         { name: 'Desfechos', href: '/desfechos' },
       ]

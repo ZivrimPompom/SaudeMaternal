@@ -13,9 +13,10 @@ import {
   Search,
   ArrowLeft,
   ChevronRight,
-  FileText,
   Stethoscope,
-  Activity
+  FileText,
+  TestTube,
+  UserCheck
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -54,6 +55,8 @@ interface Rotina {
   descricao: string;
   trimestre: string;
   categoria: string;
+  quantidade?: number;
+  grupo?: string;
 }
 
 interface RegistroRotina {
@@ -64,15 +67,14 @@ interface RegistroRotina {
   trimestre_realizacao: string;
   resultado?: string;
   tipo?: string;
+  cpf_profissional: string;
+  cbo?: string;
 }
 
-interface Atendimento {
-  id_atendimento: string;
-  sispn: string;
-  data_consulta: string;
-  trimestre_consulta: string;
-  cbo?: string;
-  observacoes_clinicas?: string;
+interface Profissional {
+  cpf: string;
+  cbo: string;
+  nome: string;
 }
 
 interface CategoriaProfissional {
@@ -157,8 +159,8 @@ export default function AcompanhamentoIndividual() {
   const [paciente, setPaciente] = useState<Paciente | null>(null);
   const [rotinas, setRotinas] = useState<Rotina[]>([]);
   const [registrosRotinas, setRegistrosRotinas] = useState<RegistroRotina[]>([]);
-  const [atendimentos, setAtendimentos] = useState<Atendimento[]>([]);
   const [categorias, setCategorias] = useState<CategoriaProfissional[]>([]);
+  const [profissionais, setProfissionais] = useState<Profissional[]>([]);
   const [todasGestacoes, setTodasGestacoes] = useState<Gestacao[]>([]);
   const [todosPacientes, setTodosPacientes] = useState<Paciente[]>([]);
 
@@ -180,15 +182,15 @@ export default function AcompanhamentoIndividual() {
 
     const fetchData = async () => {
       try {
-        const [g, p, r, rr, a, tg, tp, cat] = await Promise.all([
+        const [g, p, r, rr, tg, tp, cat, pr] = await Promise.all([
           sispn ? supabase.from('gestacoes').select('*').eq('sispn', sispn).single() : Promise.resolve({ data: null }),
           sispn ? supabase.from('pacientes').select('*').eq('cpf', '').single() : Promise.resolve({ data: null }),
           supabase.from('rotinas').select('*').eq('categoria', 'OBRIGATORIO'),
           sispn ? supabase.from('registro_rotinas').select('*').eq('sispn', sispn) : Promise.resolve({ data: [] }),
-          sispn ? supabase.from('atendimentos').select('*').eq('sispn', sispn).order('data_consulta') : Promise.resolve({ data: [] }),
           supabase.from('gestacoes').select('*'),
-          supabase.from('pacientes').select('cpf, gestante, nome_mae'),
-          supabase.from('categorias_profissionais').select('cbo, categoria')
+          supabase.from('pacientes').select('*'),
+          supabase.from('categorias_profissionais').select('*'),
+          supabase.from('profissionais').select('*')
         ]);
 
         if (g.data) {
@@ -199,10 +201,10 @@ export default function AcompanhamentoIndividual() {
 
         if (r.data) setRotinas(r.data);
         if (rr.data) setRegistrosRotinas(rr.data);
-        if (a.data) setAtendimentos(a.data);
         if (tg.data) setTodasGestacoes(tg.data);
         if (tp.data) setTodosPacientes(tp.data);
         if (cat.data) setCategorias(cat.data);
+        if (pr.data) setProfissionais(pr.data);
       } catch (err) {
         console.error('Erro ao buscar dados:', err);
       } finally {
@@ -219,25 +221,25 @@ export default function AcompanhamentoIndividual() {
     const interval = setInterval(() => {
       const fetchData = async () => {
         try {
-          const [g, p, r, rr, a, tg, tp, cat] = await Promise.all([
+          const [g, p, r, rr, tg, tp, cat, pr] = await Promise.all([
             sispn ? supabase.from('gestacoes').select('*').eq('sispn', sispn).single() : Promise.resolve({ data: null }),
             sispn ? supabase.from('pacientes').select('*').eq('cpf', '').single() : Promise.resolve({ data: null }),
             supabase.from('rotinas').select('*').eq('categoria', 'OBRIGATORIO'),
             sispn ? supabase.from('registro_rotinas').select('*').eq('sispn', sispn) : Promise.resolve({ data: [] }),
-            sispn ? supabase.from('atendimentos').select('*').eq('sispn', sispn).order('data_consulta') : Promise.resolve({ data: [] }),
             supabase.from('gestacoes').select('*'),
-            supabase.from('pacientes').select('cpf, gestante, nome_mae'),
-            supabase.from('categorias_profissionais').select('cbo, categoria')
+            supabase.from('pacientes').select('*'),
+            supabase.from('categorias_profissionais').select('*'),
+            supabase.from('profissionais').select('*')
           ]);
 
           if (g.data) setGestacao(g.data);
           if (p.data) setPaciente(p.data);
           if (r.data) setRotinas(r.data);
           if (rr.data) setRegistrosRotinas(rr.data);
-          if (a.data) setAtendimentos(a.data);
           if (tg.data) setTodasGestacoes(tg.data);
           if (tp.data) setTodosPacientes(tp.data);
           if (cat.data) setCategorias(cat.data);
+          if (pr.data) setProfissionais(pr.data);
         } catch (err) {
           console.error('Erro ao buscar dados:', err);
         }
@@ -266,9 +268,19 @@ export default function AcompanhamentoIndividual() {
     const triAtual = getTrimestreAtual(gestacao.dum);
     
     const consultasPorTri = [0, 0, 0];
-    atendimentos.forEach(a => {
-      const tri = TRIMESTRE_MAP[a.trimestre_consulta];
+    const consultasEsperadas = [0, 0, 0];
+    
+    const consultas = registrosRotinas.filter(r => r.tipo === 'CONSULTA');
+    consultas.forEach(c => {
+      const tri = TRIMESTRE_MAP[c.trimestre_realizacao];
       if (tri) consultasPorTri[tri - 1]++;
+    });
+    
+    rotinas.filter(r => r.tipo === 'CONSULTA').forEach(r => {
+      const tri = TRIMESTRE_MAP[r.trimestre];
+      if (tri) {
+        consultasEsperadas[tri - 1] += r.quantidade || 0;
+      }
     });
 
     const inicioTri = triAtual === 1 ? 0 : triAtual === 2 ? 13 : 25;
@@ -278,7 +290,7 @@ export default function AcompanhamentoIndividual() {
     const diasDecorridos = (semanaAtual - inicioTri) * 7;
     const diasRestantes = Math.max(0, diasTotaisTri - diasDecorridos);
     
-    const consultasRestantes = Math.max(0, 3 - consultasPorTri[triAtual - 1]);
+    const consultasRestantes = Math.max(0, consultasEsperadas[triAtual - 1] - consultasPorTri[triAtual - 1]);
 
     const rotinasPorTri: Record<number, { total: number; realizadas: number; pendentes: number; vencidas: number; rotinasPendentes: string[] }> = {
       1: { total: 0, realizadas: 0, pendentes: 0, vencidas: 0, rotinasPendentes: [] },
@@ -286,7 +298,7 @@ export default function AcompanhamentoIndividual() {
       3: { total: 0, realizadas: 0, pendentes: 0, vencidas: 0, rotinasPendentes: [] }
     };
 
-    rotinas.forEach(r => {
+    rotinas.filter(r => r.tipo !== 'CONSULTA').forEach(r => {
       const triRotina = TRIMESTRE_MAP[r.trimestre];
       if (triRotina) {
         const registros = registrosRotinas.filter(rr => {
@@ -295,7 +307,7 @@ export default function AcompanhamentoIndividual() {
         });
         
         const realizadas = registros.length;
-        const totalEsperado = 1;
+        const totalEsperado = r.quantidade || 1;
         
         rotinasPorTri[triRotina].total += totalEsperado;
         rotinasPorTri[triRotina].realizadas += Math.min(realizadas, totalEsperado);
@@ -315,14 +327,16 @@ export default function AcompanhamentoIndividual() {
       weeks,
       triAtual,
       consultasPorTri,
+      consultasEsperadas,
+      consultasRestantes,
       rotinasPorTri
     };
-  }, [gestacao, atendimentos, registrosRotinas, rotinas]);
+  }, [gestacao, registrosRotinas, rotinas]);
 
   const examsPorTrimestre = useMemo(() => {
     if (!gestacao) return { 1: [], 2: [], 3: [] };
     
-    const result: Record<number, { descricao: string; status: 'realizado' | 'pendente' | 'vencido' | 'nao_realizado'; data?: string; resultado?: string; semanasRestantes?: number }[]> = {
+    const result: Record<number, { descricao: string; grupo?: string; status: 'realizado' | 'pendente' | 'vencido' | 'nao_realizado'; data?: string; resultado?: string; semanasRestantes?: number }[]> = {
       1: [],
       2: [],
       3: []
@@ -334,7 +348,7 @@ export default function AcompanhamentoIndividual() {
     const limitesTri: Record<number, number> = { 1: 12, 2: 24, 3: 40 };
     const inicioTri: Record<number, number> = { 1: 0, 2: 13, 3: 25 };
 
-    rotinas.forEach(r => {
+    rotinas.filter(r => r.tipo !== 'CONSULTA').forEach(r => {
       const triRotina = TRIMESTRE_MAP[r.trimestre];
       if (!triRotina) return;
 
@@ -364,6 +378,63 @@ export default function AcompanhamentoIndividual() {
 
       result[triRotina].push({
         descricao: r.descricao,
+        status,
+        data: registro?.data_realizacao,
+        resultado: registro?.resultado,
+        semanasRestantes
+      });
+    });
+
+    Object.keys(result).forEach(tri => {
+      result[parseInt(tri)].sort((a, b) => a.descricao.localeCompare(b.descricao));
+    });
+
+    return result;
+  }, [gestacao, gestacaoInfo, rotinas, registrosRotinas]);
+
+  const consultasPorTrimestre = useMemo(() => {
+    if (!gestacao) return { 1: [], 2: [], 3: [] };
+    
+    const result: Record<number, { descricao: string; grupo?: string; status: 'realizado' | 'pendente' | 'vencido' | 'nao_realizado'; data?: string; resultado?: string; semanasRestantes?: number }[]> = {
+      1: [],
+      2: [],
+      3: []
+    };
+
+    const triAtual = gestacaoInfo?.triAtual || 1;
+    const weeks = gestacaoInfo?.weeks || 0;
+
+    const limitesTri: Record<number, number> = { 1: 12, 2: 24, 3: 40 };
+    const inicioTri: Record<number, number> = { 1: 0, 2: 13, 3: 25 };
+
+    rotinas.filter(r => r.tipo === 'CONSULTA').forEach(r => {
+      const triRotina = TRIMESTRE_MAP[r.trimestre];
+      if (!triRotina) return;
+
+      const registro = registrosRotinas.find(rr => rr.id_rotina === r.id);
+
+      let status: 'realizado' | 'pendente' | 'vencido' | 'nao_realizado';
+      let semanasRestantes: number | undefined;
+
+      if (registro) {
+        status = 'realizado';
+      } else if (triAtual > triRotina) {
+        status = 'vencido';
+        semanasRestantes = 0;
+      } else if (triAtual === triRotina) {
+        status = 'pendente';
+        const limite = limitesTri[triRotina];
+        semanasRestantes = Math.max(0, limite - weeks);
+      } else {
+        status = 'pendente';
+        const limite = limitesTri[triRotina];
+        const inicio = inicioTri[triRotina];
+        semanasRestantes = Math.max(0, limite - inicio);
+      }
+
+      result[triRotina].push({
+        descricao: r.descricao,
+        grupo: r.grupo,
         status,
         data: registro?.data_realizacao,
         resultado: registro?.resultado,
@@ -596,10 +667,11 @@ export default function AcompanhamentoIndividual() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {[1, 2, 3].map(tri => {
-            const consultas = info.consultasPorTri[tri - 1];
-            const consultasMeta = 3;
-            const consultasStatus = consultas >= consultasMeta ? 'completo' : consultas > 0 ? 'parcial' : 'pendente';
+            const consultasRealizadas = info.consultasPorTri[tri - 1];
+            const consultasMeta = info.consultasEsperadas[tri - 1] || 0;
+            const consultasStatus = consultasRealizadas >= consultasMeta ? 'completo' : consultasRealizadas > 0 ? 'parcial' : 'pendente';
             const exams = examsPorTrimestre[tri as keyof typeof examsPorTrimestre];
+            const consultasItens = consultasPorTrimestre[tri as keyof typeof consultasPorTrimestre] || [];
             const realizado = exams.filter(e => e.status === 'realizado').length;
             const pendente = exams.filter(e => e.status === 'pendente').length;
             const vencido = exams.filter(e => e.status === 'vencido').length;
@@ -611,7 +683,7 @@ export default function AcompanhamentoIndividual() {
                   tri === info.triAtual ? 'border-primary/30' : 'border-outline-variant/10'
                 }`}
               >
-                <div className={`p-4 border-b ${tri === info.triAtual ? 'bg-primary/10' : 'bg-surface-container-low'}`}>
+                <div className={`p-2 border-b ${tri === info.triAtual ? 'bg-primary/10' : 'bg-surface-container-low'}`}>
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-black text-on-surface uppercase">{tri}º Trimestre</h3>
                     {tri === info.triAtual && (
@@ -620,53 +692,73 @@ export default function AcompanhamentoIndividual() {
                   </div>
                 </div>
 
-                <div className="p-4 space-y-4 flex-1 flex flex-col">
-                  <div className="flex items-center justify-between p-3 bg-surface-container-low rounded-xl">
-                    <div className="flex items-center gap-3">
-                      <Stethoscope className={`w-5 h-5 ${consultasStatus === 'completo' ? 'text-green-500' : consultasStatus === 'parcial' ? 'text-amber-500' : 'text-gray-400'}`} />
-                      <span className="text-sm font-medium">Consultas</span>
+                <div className="p-2 space-y-1 flex-1 flex flex-col">
+                  {consultasItens.length > 0 && (
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-2 text-sm font-black uppercase tracking-wider text-on-surface-variant/60 pl-2">
+                        <Stethoscope className="w-5 h-5" />
+                        <span>Consultas</span>
+                      </div>
+                      <div className="flex items-center justify-between p-2 bg-surface-container-low rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <span className={`w-2 h-2 rounded-full ${
+                            consultasStatus === 'completo' ? 'bg-green-500' :
+                            consultasStatus === 'parcial' ? 'bg-amber-500' : 'bg-gray-400'
+                          }`}></span>
+                          <span className="text-[12px] font-medium">Realizadas</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-sm font-bold ${
+                            consultasStatus === 'completo' ? 'text-green-600' :
+                            consultasStatus === 'parcial' ? 'text-amber-600' : 'text-gray-400'
+                          }`}>
+                            {consultasRealizadas}
+                          </span>
+                          <span className="text-[10px] text-on-surface-variant/60">/ {consultasMeta}</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`text-lg font-black ${
-                        consultasStatus === 'completo' ? 'text-green-500' : consultasStatus === 'parcial' ? 'text-amber-500' : 'text-red-500'
-                      }`}>
-                        {consultas}
-                      </span>
-                      <span className="text-sm text-on-surface-variant/60">/ {consultasMeta}</span>
-                    </div>
-                  </div>
+                  )}
 
-                  <div className="space-y-2 flex-1">
-                    <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-on-surface-variant/60 pl-2">
-                      <FileText className="w-4 h-4" />
-                      <span>Rotinas Obrigatórias</span>
+                  <div className="space-y-1 flex-1">
+                    <div className="flex items-center justify-between text-sm font-black uppercase tracking-wider text-on-surface-variant/60 pl-2">
+                      <div className="flex items-center gap-2">
+                        <FileText className="w-5 h-5" />
+                        <span>Rotinas Obrigatórias</span>
+                      </div>
+                      <span className="text-[12px] font-black">PRAZO</span>
                     </div>
-                    <div className="space-y-1.5">
+                    <div className="space-y-0.5">
                       {exams.length === 0 ? (
-                        <p className="text-xs text-on-surface-variant/40 py-2">Nenhum exame esperado</p>
+                        <p className="text-xs text-on-surface-variant/40 py-1">Nenhum exame esperado</p>
                       ) : (
                         exams.map((exam, idx) => (
                           <div 
                             key={idx} 
-                            className="grid grid-cols-[auto_1fr_auto] items-center gap-2 p-2 rounded-lg text-sm"
+                            className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-2 p-1.5 rounded-lg text-sm"
                           >
                             <div className="flex items-center justify-center w-3">
-                              <span className={`w-1.5 h-1.5 rounded-full ${
+                              <span className={`w-2 h-2 rounded-full ${
                                 exam.status === 'realizado' ? 'bg-green-500' :
                                 exam.status === 'vencido' ? 'bg-red-500' :
                                 exam.status === 'pendente' ? 'bg-amber-500' : 'bg-gray-400'
                               }`}></span>
                             </div>
-                            <div className="text-on-surface truncate">
+                            <div className="text-on-surface truncate text-[12px] font-medium">
                               {exam.descricao}
                             </div>
+                            {exam.grupo && (
+                              <span className="text-[10px] font-bold bg-secondary/10 px-1.5 py-0.5 rounded text-on-surface-variant">
+                                {exam.grupo}
+                              </span>
+                            )}
                             <div className="text-right">
                               {exam.status === 'realizado' ? (
-                                <span className="text-[10px] font-bold text-green-600">OK</span>
+                                <span className="text-[12px] font-bold text-green-600">OK</span>
                               ) : exam.semanasRestantes === 0 ? (
-                                <span className="text-[10px] font-bold text-red-600">VENCIDO</span>
+                                <span className="text-[12px] font-bold text-red-600">VENCIDO</span>
                               ) : (
-                                <span className={`text-[10px] font-bold ${
+                                <span className={`text-[12px] font-bold ${
                                   exam.status === 'pendente' ? 'text-amber-600' : 'text-gray-400'
                                 }`}>
                                   {exam.semanasRestantes} sem
@@ -679,17 +771,17 @@ export default function AcompanhamentoIndividual() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2 pt-2 border-t border-outline-variant/10 mt-auto">
+                  <div className="grid grid-cols-3 gap-1 pt-1 border-t border-outline-variant/10 mt-auto">
                     <div className="text-center p-2 bg-green-500/10 rounded-lg">
-                      <p className="text-lg font-black text-green-500">{realizado}</p>
+                      <p className="text-xl font-black text-green-500">{realizado}</p>
                       <p className="text-[10px] font-bold uppercase text-green-600">Feitos</p>
                     </div>
                     <div className="text-center p-2 bg-amber-500/10 rounded-lg">
-                      <p className="text-lg font-black text-amber-500">{pendente}</p>
+                      <p className="text-xl font-black text-amber-500">{pendente}</p>
                       <p className="text-[10px] font-bold uppercase text-amber-600">Pendente</p>
                     </div>
                     <div className="text-center p-2 bg-red-500/10 rounded-lg">
-                      <p className="text-lg font-black text-red-500">{vencido}</p>
+                      <p className="text-xl font-black text-red-500">{vencido}</p>
                       <p className="text-[10px] font-bold uppercase text-red-600">Vencido</p>
                     </div>
                   </div>
@@ -699,7 +791,7 @@ export default function AcompanhamentoIndividual() {
           })}
         </div>
 
-        {atendimentos.length > 0 && (
+        {registrosRotinas.filter(r => r.tipo === 'CONSULTA').length > 0 && (
           <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/10 overflow-hidden">
             <div className="p-4 border-b border-outline-variant/10">
               <h3 className="text-sm font-black uppercase tracking-wider text-on-surface-variant/60">Histórico de Consultas</h3>
@@ -717,16 +809,17 @@ export default function AcompanhamentoIndividual() {
                   </tr>
                 </thead>
                 <tbody className="text-sm divide-y divide-outline-variant/10">
-                  {atendimentos.map((a, idx) => {
-                    const cat = categorias.find(c => c.cbo === a.cbo);
+                  {registrosRotinas.filter(r => r.tipo === 'CONSULTA').map((a, idx) => {
+                    const prof = profissionais.find(p => p.cpf === a.cpf_profissional);
+                    const cat = categorias.find(c => c.cbo === prof?.cbo);
                     return (
-                      <tr key={a.id_atendimento || `atendimento-${idx}`} className="hover:bg-primary/5">
+                      <tr key={a.id_registro || `consulta-${idx}`} className="hover:bg-primary/5">
                         <td style={{ width: '16px' }}></td>
-                        <td className="px-4 py-2 text-[10px] font-bold text-on-surface">{a.data_consulta ? new Date(a.data_consulta).toLocaleDateString('pt-BR') : '---'}</td>
-                        <td className="px-4 py-2">{a.trimestre_consulta}</td>
-                        <td className="px-4 py-2">{cat?.categoria || a.cbo || '---'}</td>
+                        <td className="px-4 py-2 text-[10px] font-bold text-on-surface">{a.data_realizacao ? new Date(a.data_realizacao).toLocaleDateString('pt-BR') : '---'}</td>
+                        <td className="px-4 py-2">{a.trimestre_realizacao}</td>
+                        <td className="px-4 py-2">{cat?.categoria || prof?.nome || a.cpf_profissional || '---'}</td>
                         <td className="px-4 py-2 text-on-surface-variant/60 truncate max-w-xs">
-                          {a.observacoes_clinicas || '---'}
+                          {(a as any).observacoes || '---'}
                         </td>
                         <td style={{ width: '16px' }}></td>
                       </tr>
