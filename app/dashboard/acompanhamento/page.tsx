@@ -23,6 +23,7 @@ interface Gestacao {
   dum: string;
   dpp: string;
   data_cadastro: string;
+  classificacao_pn: string;
   unidade_cnes?: string;
 }
 
