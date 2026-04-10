@@ -616,7 +616,7 @@ export default function GestacoesAtivasDashboard() {
                     dataKey="value"
                     label={({ name, value }) => `${value}`}
                     labelLine={false}
-                    onClick={(entry) => setFilterStatus(getStatusFilter(entry.name))}
+                    onClick={(entry) => entry.name && setFilterStatus(getStatusFilter(entry.name))}
                     style={{ cursor: 'pointer' }}
                   >
                     {pieStatusData.map((entry, index) => (
