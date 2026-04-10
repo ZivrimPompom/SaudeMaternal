@@ -246,6 +246,9 @@ export default function MovimentoPage() {
         patientMap.set(g.sispn, {
           ...g,
           resultsCount: 0,
+          examsCount: 0,
+          consultasCount: 0,
+          vaccinesCount: 0,
           lastResultDate: null,
           hasPositive: false,
           status: status,
@@ -259,6 +262,10 @@ export default function MovimentoPage() {
       const p = patientMap.get(r.sispn);
       if (p) {
         p.resultsCount++;
+        const tipo = r.tipo || r.rotinas?.tipo;
+        if (tipo === 'EXAME') p.examsCount++;
+        else if (tipo === 'CONSULTA') p.consultasCount++;
+        else if (tipo === 'VACINA') p.vaccinesCount++;
         if (!p.lastResultDate || new Date(r.data_realizacao) > new Date(p.lastResultDate)) {
           p.lastResultDate = r.data_realizacao;
         }
@@ -1491,7 +1498,9 @@ export default function MovimentoPage() {
                   <tr>
                     <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Gestante</th>
                     <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Status</th>
-                    <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Registros</th>
+                    <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Exames</th>
+                    <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Consultas</th>
+                    <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Vacinas</th>
                     <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">DPP</th>
                     <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5">Alertas</th>
                     <th className="px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 font-headline border-b border-outline-variant/5 text-center">Ações</th>
@@ -1499,9 +1508,9 @@ export default function MovimentoPage() {
                 </thead>
                 <tbody className="divide-y divide-outline-variant/5">
                   {loading ? (
-                    <tr><td colSpan={6} className="p-24 text-center"><div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full mx-auto"></div></td></tr>
+                    <tr><td colSpan={8} className="p-24 text-center"><div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full mx-auto"></div></td></tr>
                   ) : filteredPatients.length === 0 ? (
-                    <tr><td colSpan={6} className="p-24 text-center opacity-20 text-xl font-black uppercase tracking-widest">Nenhum paciente encontrado</td></tr>
+                    <tr><td colSpan={8} className="p-24 text-center opacity-20 text-xl font-black uppercase tracking-widest">Nenhum paciente encontrado</td></tr>
                   ) : (
                     filteredPatients.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((p) => (
                       <tr key={p.sispn} className="hover:bg-primary/[0.02] transition-colors group">
@@ -1528,10 +1537,13 @@ export default function MovimentoPage() {
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          <div className="flex flex-col gap-0.5">
-                            <span className="text-[11px] font-bold text-on-surface">{p.resultsCount} reg.</span>
-                            <span className="text-[11px] font-bold text-on-surface">{p.lastResultDate ? new Date(p.lastResultDate).toLocaleDateString('pt-BR') : '---'}</span>
-                          </div>
+                          <span className="text-[11px] font-bold text-on-surface">{p.examsCount}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-[11px] font-bold text-on-surface">{p.consultasCount}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-[11px] font-bold text-on-surface">{p.vaccinesCount}</span>
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex flex-col gap-0.5">
