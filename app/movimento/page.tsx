@@ -397,7 +397,7 @@ export default function MovimentoPage() {
       while (resultsHasMore) {
         const { data, error } = await supabase.from('registro_rotinas').select(`
           *,
-          rotinas (descricao, tipo, trimestre)
+          rotinas (descricao, tipo, trimestre, tipo_resultado, grupo)
         `).order('data_realizacao', { ascending: true }).order('id_registro', { ascending: true }).range(resultsFrom, resultsFrom + 999);
         if (error) throw error;
         if (data && data.length > 0) {
@@ -1261,6 +1261,8 @@ export default function MovimentoPage() {
                       </div>
                     )}
                   </form>
+                  {error && <div className="mt-2 p-3 bg-error/10 rounded-xl text-error text-xs font-bold">{error}</div>}
+                  {success && <div className="mt-2 p-3 bg-green-500/10 rounded-xl text-green-600 text-xs font-bold">{success}</div>}
                 ) : (
                   <div className="space-y-4">
                     <div className="flex items-center gap-2">
@@ -1401,8 +1403,6 @@ export default function MovimentoPage() {
                     )}
                   </div>
                 )}
-                {error && <div className="p-4 bg-error/10 rounded-2xl text-error text-xs font-bold">{error}</div>}
-                {success && <div className="p-4 bg-green-500/10 rounded-2xl text-green-600 text-xs font-bold">{success}</div>}
               </div>
             </motion.section>
           )}
