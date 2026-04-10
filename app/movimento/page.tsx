@@ -18,6 +18,7 @@ interface Routine {
   descricao: string;
   tipo: string;
   trimestre: string;
+  tipo_resultado?: string;
 }
 
 const CBO_CATEGORIES: Record<string, string> = {
@@ -42,8 +43,10 @@ interface ExamResult {
   sispn: string;
   id_rotina: string;
   tipo: string;
+  tipo_resultado?: string;
   data_realizacao: string;
   resultado: string;
+  valor_quantitativo?: string;
   observacoes?: string;
   data_proxima_consulta?: string;
   trimestre_realizacao: string;
@@ -192,8 +195,10 @@ export default function MovimentoPage() {
           id_rotina: '',
           descricao: '',
           tipo_temp: '',
+          tipo_resultado: '',
           data_realizacao: '',
           resultado: 'NEGATIVO / NÃO REAGENTE',
+          valor_quantitativo: '',
           data_proxima_consulta: '',
           observacoes: '',
           trimestre_realizacao: '---',
@@ -371,7 +376,7 @@ export default function MovimentoPage() {
 
       // Fetch routines, categories and professionals (usually < 1000)
       const [routinesRes, catsRes, prosRes] = await Promise.all([
-        supabase.from('rotinas').select('*').in('tipo', ['EXAME', 'VACINA', 'CONSULTA']).order('descricao').limit(1000),
+        supabase.from('rotinas').select('id, descricao, tipo, trimestre, tipo_resultado').in('tipo', ['EXAME', 'VACINA', 'CONSULTA']).order('descricao').limit(1000),
         supabase.from('categorias_profissionais').select('*').order('categoria').limit(1000),
         supabase.from('profissionais').select('cpf, nome, cbo, situacao, equipe, categorias_profissionais(cbo, categoria, grupo)').order('nome').limit(1000)
       ]);
@@ -558,6 +563,7 @@ export default function MovimentoPage() {
           id_rotina: routine?.id || entry.id_rotina,
           data_realizacao: entry.data_realizacao,
           resultado: entry.resultado,
+          valor_quantitativo: entry.valor_quantitativo || null,
           trimestre_realizacao: trimestre,
           cbo: professional?.cbo || null,
           cpf_profissional: entry.cpf_profissional || 'NÃO INFORMADO',
@@ -830,9 +836,10 @@ export default function MovimentoPage() {
                               <col style={{ width: '8%' }} />
                               <col style={{ width: '15%' }} />
                               <col style={{ width: '10%' }} />
-                              <col style={{ width: '12%' }} />
                               <col style={{ width: '10%' }} />
-                              <col style={{ width: '12%' }} />
+                              <col style={{ width: '8%' }} />
+                              <col style={{ width: '10%' }} />
+                              <col style={{ width: '6%' }} />
                             </colgroup>
                           <thead className="bg-surface-container-low">
                             <tr>
@@ -843,6 +850,7 @@ export default function MovimentoPage() {
                               <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Profissional</th>
                               <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Grupo</th>
                               <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Resultado</th>
+                              <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Valor</th>
                               <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Próxima</th>
                               <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5">Obs</th>
                               <th className="px-2 py-1.5 text-xs font-black uppercase tracking-wider text-on-surface-variant/40 border-b border-outline-variant/5 text-center">Ações</th>
@@ -884,8 +892,19 @@ export default function MovimentoPage() {
                                         const routine = routines.find(r => r.descricao === desc);
                                         if (routine) {
                                           newEntries[index].tipo_temp = routine.tipo;
+                                          newEntries[index].tipo_resultado = routine.tipo_resultado || '';
+                                          if (routine.tipo_resultado === 'quantitativo') {
+                                            newEntries[index].resultado = 'NORMAL';
+                                          } else if (routine.tipo_resultado === 'sorologia') {
+                                            newEntries[index].resultado = 'NÃO REAGENTE';
+                                          } else if (routine.tipo_resultado === 'microbiologico') {
+                                            newEntries[index].resultado = 'NEGATIVO';
+                                          } else if (routine.tipo_resultado === 'citologia' || routine.tipo_resultado === 'analise' || routine.tipo_resultado === 'imagem') {
+                                            newEntries[index].resultado = 'NORMAL';
+                                          }
                                         } else {
                                           newEntries[index].tipo_temp = '';
+                                          newEntries[index].tipo_resultado = '';
                                         }
                                         setFormEntries(newEntries);
                                       }}
@@ -964,9 +983,9 @@ export default function MovimentoPage() {
                                     <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-2 py-1">
                                       <select 
                                         className={`bg-transparent border-none p-0 text-[10px] font-bold outline-none focus:ring-0 w-full uppercase cursor-pointer appearance-none ${
-                                          entry.resultado === '-' 
+                                          entry.resultado === '-' || entry.resultado === 'N/A'
                                             ? 'text-on-surface-variant/40' 
-                                            : (entry.resultado.includes('POSITIVO') || entry.resultado.includes('REAGENTE')) 
+                                            : (entry.resultado.includes('POSITIVO') || entry.resultado.includes('REAGENTE') || entry.resultado === 'ALTERADO') 
                                               ? 'text-error' 
                                               : 'text-green-600'
                                         }`}
@@ -977,14 +996,67 @@ export default function MovimentoPage() {
                                           setFormEntries(newEntries);
                                         }}
                                       >
-                                        <option value="POSITIVO / REAGENTE">POSITIVO / REAGENTE</option>
-                                        <option value="NEGATIVO / NÃO REAGENTE">NEGATIVO / NÃO REAGENTE</option>
-                                        <option value="-">-</option>
+                                        {entry.tipo_resultado === 'sorologia' && (
+                                          <>
+                                            <option value="REAGENTE">REAGENTE</option>
+                                            <option value="NÃO REAGENTE">NÃO REAGENTE</option>
+                                          </>
+                                        )}
+                                        {entry.tipo_resultado === 'microbiologico' && (
+                                          <>
+                                            <option value="POSITIVO">POSITIVO</option>
+                                            <option value="NEGATIVO">NEGATIVO</option>
+                                          </>
+                                        )}
+                                        {(entry.tipo_resultado === 'quantitativo' || entry.tipo_resultado === 'analise' || entry.tipo_resultado === 'imagem' || entry.tipo_resultado === 'citologia') && (
+                                          <>
+                                            <option value="NORMAL">NORMAL</option>
+                                            <option value="ALTERADO">ALTERADO</option>
+                                          </>
+                                        )}
+                                        {entry.tipo_resultado === 'tipagem' && (
+                                          <>
+                                            <option value="A+">A+</option>
+                                            <option value="A-">A-</option>
+                                            <option value="B+">B+</option>
+                                            <option value="B-">B-</option>
+                                            <option value="AB+">AB+</option>
+                                            <option value="AB-">AB-</option>
+                                            <option value="O+">O+</option>
+                                            <option value="O-">O-</option>
+                                          </>
+                                        )}
+                                        {(entry.tipo_resultado === 'n/a' || entry.tipo_resultado === 'variavel' || !entry.tipo_resultado) && (
+                                          <>
+                                            <option value="POSITIVO / REAGENTE">POSITIVO / REAGENTE</option>
+                                            <option value="NEGATIVO / NÃO REAGENTE">NEGATIVO / NÃO REAGENTE</option>
+                                            <option value="-">-</option>
+                                          </>
+                                        )}
                                       </select>
                                     </div>
                                   )}
                                 </td>
-                                  <td className="px-2 py-1.5">
+                                <td className="px-2 py-1.5">
+                                  {entry.tipo_resultado === 'quantitativo' ? (
+                                    <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-2 py-1">
+                                      <input 
+                                        type="text"
+                                        className="bg-transparent border-none p-0 text-[10px] font-bold outline-none focus:ring-0 w-full text-on-surface"
+                                        value={entry.valor_quantitativo || ''}
+                                        onChange={(e) => {
+                                          const newEntries = [...formEntries];
+                                          newEntries[index].valor_quantitativo = e.target.value;
+                                          setFormEntries(newEntries);
+                                        }}
+                                        placeholder="Valor"
+                                      />
+                                    </div>
+                                  ) : (
+                                    <div className="text-[10px] text-on-surface-variant/40">-</div>
+                                  )}
+                                </td>
+                                <td className="px-2 py-1.5">
                                   {entry.tipo_temp === 'CONSULTA' ? (
                                     <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-2 py-1">
                                       <input 
