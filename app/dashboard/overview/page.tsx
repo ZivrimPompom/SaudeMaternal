@@ -548,7 +548,7 @@ export default function GestacoesAtivasDashboard() {
                     radius={[4, 4, 0, 0]}
                     onClick={(data) => {
                       const triMap: Record<string, string> = { '1º Tri': 'PRIMEIRO', '2º Tri': 'SEGUNDO', '3º Tri': 'TERCEIRO' };
-                      setFilterTrimestre(triMap[data.name] || 'all');
+                      setFilterTrimestre((data.name && triMap[data.name]) || 'all');
                     }}
                     style={{ cursor: 'pointer' }}
                   >
@@ -561,7 +561,7 @@ export default function GestacoesAtivasDashboard() {
                     radius={[4, 4, 0, 0]}
                     onClick={(data) => {
                       const triMap: Record<string, string> = { '1º Tri': 'PRIMEIRO', '2º Tri': 'SEGUNDO', '3º Tri': 'TERCEIRO' };
-                      setFilterTrimestre(triMap[data.name] || 'all');
+                      setFilterTrimestre((data.name && triMap[data.name]) || 'all');
                     }}
                     style={{ cursor: 'pointer' }}
                   >
