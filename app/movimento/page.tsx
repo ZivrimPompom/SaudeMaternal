@@ -1006,18 +1006,7 @@ export default function MovimentoPage() {
                                     <div className="text-[10px] text-on-surface-variant/40">-</div>
                                   ) : (
                                     <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-2 py-1">
-              <select 
-                className="w-full lg:w-auto px-4 py-2.5 text-sm bg-surface-container-lowest border border-outline-variant/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
-                value={filters.tipo}
-                onChange={(e) => setFilters({ ...filters, tipo: e.target.value })}
-              >
-                <option value="">Tipo</option>
-                <option value="EXAME">EXAME</option>
-                <option value="VACINA">VACINA</option>
-                <option value="CONSULTA">CONSULTA</option>
-              </select>
-
-              <select
+                                      <select
                                         className={`bg-transparent border-none p-0 text-[10px] font-bold outline-none focus:ring-0 w-full uppercase cursor-pointer appearance-none ${
                                           entry.resultado === '-' || entry.resultado === 'N/A'
                                             ? 'text-on-surface-variant/40' 
